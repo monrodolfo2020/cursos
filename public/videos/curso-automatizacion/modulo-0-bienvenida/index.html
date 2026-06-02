@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 0 — Videos del curso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b12; --bg2:#0c1320; --ink:#e9f1fc; --mut:#90a6c4; --dim:#56708f;
+    --line:rgba(120,165,220,0.18); --lineS:rgba(120,165,220,0.40);
+    --cyan:oklch(78% 0.14 225); --amber:oklch(82% 0.13 72);
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 700px at 18% 12%, oklch(40% 0.10 225 / 0.22), transparent 60%),
+      radial-gradient(circle 600px at 88% 80%, oklch(45% 0.08 72 / 0.10), transparent 60%),
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:auto,auto,54px 54px,54px 54px;
+    background-position:center;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:72px 40px 100px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.34em;text-transform:uppercase;color:var(--cyan);
+    display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:1px;background:var(--cyan);}
+  h1{font-size:64px;font-weight:700;letter-spacing:-.02em;line-height:1.04;margin:22px 0 14px;max-width:18ch;text-wrap:balance;}
+  .sub{font-size:22px;color:var(--mut);font-weight:400;max-width:62ch;line-height:1.5;}
+  .meta{display:flex;gap:30px;margin-top:30px;flex-wrap:wrap;}
+  .meta div{display:flex;flex-direction:column;gap:4px;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--cyan);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);}
+  .grid{margin-top:56px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;}
+  a.card{
+    position:relative;display:flex;flex-direction:column;gap:14px;text-decoration:none;color:inherit;
+    border:1px solid var(--line);border-radius:10px;padding:26px 26px 24px;
+    background:linear-gradient(180deg,rgba(20,34,54,0.5),rgba(12,20,32,0.4));
+    transition:transform .18s ease,border-color .18s ease,background .18s ease;overflow:hidden;
+  }
+  a.card:hover{transform:translateY(-4px);border-color:var(--lineS);background:linear-gradient(180deg,rgba(26,44,68,0.6),rgba(14,24,38,0.5));}
+  a.card .no{font-family:var(--mono);font-size:13px;letter-spacing:.24em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-10px;top:-30px;font-family:var(--disp);font-size:180px;font-weight:700;color:var(--cyan);opacity:.06;line-height:1;pointer-events:none;}
+  a.card h2{font-size:28px;font-weight:700;letter-spacing:-.01em;line-height:1.1;max-width:16ch;}
+  a.card p{font-size:16px;color:var(--mut);line-height:1.45;font-weight:400;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:10px;}
+  a.card .dur{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--cyan);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--mut);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card.amber{border-color:rgba(220,170,90,.28);}
+  a.card.amber .ghost,a.card.amber .dur{color:var(--amber);}
+  .tag{position:absolute;top:18px;right:18px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;border:1px solid var(--line);border-radius:3px;padding:5px 9px;}
+  footer{margin-top:34px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.08em;line-height:1.8;}
+  .nextmod{display:inline-flex;align-items:center;margin-top:48px;font-family:var(--disp);font-size:22px;font-weight:600;color:var(--ink);text-decoration:none;border:1px solid var(--lineS);border-radius:10px;padding:20px 30px;background:linear-gradient(180deg,rgba(20,34,54,0.5),rgba(12,20,32,0.4));transition:transform .18s,border-color .18s;}
+  .nextmod:hover{transform:translateY(-3px);border-color:var(--cyan);color:#fff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 0 — Bienvenida y Orientación</h1>
+  <p class="sub">Tu punto de partida en el mundo de la automatización industrial. Siete videos que te orientan antes de entrar al contenido técnico.</p>
+  <div class="meta">
+    <div><span class="n">7</span><span class="l">Videos</span></div>
+    <div><span class="n">11</span><span class="l">Módulos del curso</span></div>
+    <div><span class="n">~115</span><span class="l">Lecciones totales</span></div>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="Video Módulo 0.html">
+      <span class="ghost">01</span>
+      <span class="no">CLASE 01</span>
+      <h2>¿En qué mundo industrial vivimos?</h2>
+      <p>La industria de procesos en tu vida diaria y por qué la automatización es una carrera del siglo XXI.</p>
+      <div class="foot"><span class="dur">12–15 min</span><span class="go">Ver video →</span></div>
+    </a>
+
+    <a class="card" href="Clase 2 - Qué es la automatización.html">
+      <span class="ghost">02</span>
+      <span class="no">CLASE 02</span>
+      <h2>¿Qué es la automatización y qué no es?</h2>
+      <p>Automatización, robótica y control de procesos: los 4 pilares y los mitos, con honestidad.</p>
+      <div class="foot"><span class="dur">15–18 min</span><span class="go">Ver video →</span></div>
+    </a>
+
+    <a class="card" href="Clase 3 - Los personajes.html">
+      <span class="ghost">03</span>
+      <span class="no">CLASE 03</span>
+      <h2>Los personajes del mundo industrial</h2>
+      <p>Los perfiles de una planta y la pirámide ISA-95 — y dónde encajas tú.</p>
+      <div class="foot"><span class="dur">12–14 min</span><span class="go">Ver video →</span></div>
+    </a>
+
+    <a class="card" href="Clase 4 - Ruta de aprendizaje.html">
+      <span class="ghost">04</span>
+      <span class="no">CLASE 04</span>
+      <h2>Ruta de aprendizaje del curso</h2>
+      <p>Cómo escala la dificultad a través de los 11 módulos y la anatomía de cada clase.</p>
+      <div class="foot"><span class="dur">10–12 min</span><span class="go">Ver video →</span></div>
+    </a>
+
+    <a class="card" href="Clase 5 - Herramientas.html">
+      <span class="ghost">05</span>
+      <span class="no">CLASE 05</span>
+      <h2>Herramientas del curso</h2>
+      <p>Seis bloques de software profesional — todas gratuitas — y tu checklist de instalación.</p>
+      <div class="foot"><span class="dur">18–22 min</span><span class="go">Ver video →</span></div>
+    </a>
+
+    <a class="card" href="Clase 6 - Glosario base.html">
+      <span class="ghost">06</span>
+      <span class="no">CLASE 06</span>
+      <h2>Glosario base</h2>
+      <p>El idioma de la automatización: el triángulo del control, la cadena y el muro de siglas.</p>
+      <div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div>
+    </a>
+
+    <a class="card amber" href="Clase 7 - Planta industrial real.html">
+      <span class="ghost">07</span>
+      <span class="no">CLASE 07 · ESPECIAL</span>
+      <h2>Conoce una planta industrial real</h2>
+      <p>Recorrido por una planta de agua y el viaje del dato: del sensor a tu pantalla.</p>
+      <div class="foot"><span class="dur">20–25 min</span><span class="go">Ver video →</span></div>
+    </a>
+  </div>
+
+  <a class="nextmod" href="../modulo-1-fundamentos/index.html">Continuar al Módulo 1 — Fundamentos de Física y Electricidad →</a>
+
+  <footer>
+    Motion graphics · texto en pantalla sincronizado · 1920×1080<br>
+    Los recuadros con esquineros son placeholders — coloca ahí tus renders o metraje real.
+  </footer>
+</div>
+</body>
+</html>

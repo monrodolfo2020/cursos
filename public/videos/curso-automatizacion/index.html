@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Curso de Instrumentación y Automatización — Índice maestro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e14; --paper:#121823; --ink:#eef3f9; --mut:#93a3b8; --dim:#5a6b80;
+    --line:rgba(140,170,210,0.14); --lineS:rgba(140,170,210,0.28);
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 16px 48px rgba(0,0,0,0.5);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{background-image:
+    radial-gradient(circle 800px at 14% 6%, rgba(40,90,160,0.22), transparent 60%),
+    radial-gradient(circle 760px at 88% 92%, rgba(60,150,110,0.14), transparent 60%);}
+  .wrap{max-width:1180px;margin:0 auto;padding:80px 40px 110px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.32em;text-transform:uppercase;color:#7fb4ff;font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:40px;height:2px;background:#7fb4ff;}
+  h1{font-size:66px;font-weight:700;letter-spacing:-.025em;line-height:1.03;margin:22px 0 16px;max-width:18ch;text-wrap:balance;}
+  .sub{font-size:22px;color:var(--mut);max-width:62ch;line-height:1.55;}
+  .meta{display:flex;gap:36px;margin-top:30px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:36px;font-weight:700;color:#7fb4ff;}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .mods{margin-top:56px;display:flex;flex-direction:column;gap:18px;}
+  a.mod{position:relative;display:flex;align-items:center;gap:30px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:16px;padding:30px 34px;background:var(--paper);box-shadow:var(--shadow);
+    transition:transform .18s ease,border-color .18s ease;overflow:hidden;}
+  a.mod:hover{transform:translateY(-4px);}
+  a.mod .swatch{flex-shrink:0;width:74px;height:74px;border-radius:14px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.12);}
+  a.mod .num{flex-shrink:0;font-family:var(--disp);font-size:30px;font-weight:700;width:54px;text-align:center;}
+  a.mod .body{flex:1;min-width:0;}
+  a.mod h2{font-size:30px;font-weight:700;letter-spacing:-.01em;line-height:1.1;}
+  a.mod p{font-size:17px;color:var(--mut);margin-top:6px;line-height:1.4;}
+  a.mod .right{flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  a.mod .count{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);}
+  a.mod .go{font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:8px;transition:gap .18s;}
+  a.mod:hover .go{gap:14px;}
+  a.mod .theme{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-top:2px;}
+  a.mod.m0{border-left:4px solid #3a8ad0;} a.mod.m0 .num{color:#3a8ad0;}
+  a.mod.m1{border-left:4px solid #6f86d6;} a.mod.m1 .num{color:#6f86d6;}
+  a.mod.m2{border-left:4px solid #2bb6a6;} a.mod.m2 .num{color:#2bb6a6;}
+  a.mod.m3{border-left:4px solid #3ea66a;} a.mod.m3 .num{color:#3ea66a;}
+  a.mod.extra{border-left:4px solid #d6b66a;} a.mod.extra .num{color:#d6b66a;font-size:22px;}
+  .s0{background:linear-gradient(135deg,#0c1320,#1f4a82);}
+  .s1{background:linear-gradient(135deg,#e7ecf2,#aab9d0);}
+  .s2{background:linear-gradient(135deg,#08110f,#1d6f64);}
+  .s3{background:linear-gradient(135deg,#060b08,#1d6b3f 70%,#7a2420);}
+  .sx{background:linear-gradient(135deg,#0e2452,#d6b66a);}
+  footer{margin-top:60px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.9;}
+  code{color:var(--mut);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">Paquete de videos · Handoff</div>
+  <h1>Curso de Instrumentación y Automatización</h1>
+  <p class="sub">Videos de motion graphics, un archivo HTML por clase. Cada módulo es una carpeta autocontenida que puedes abrir o desplegar por separado.</p>
+  <div class="meta">
+    <div><span class="n">4+1</span><span class="l">Módulos</span></div>
+    <div><span class="n">37</span><span class="l">Videos de clase</span></div>
+    <div><span class="n">1920×1080</span><span class="l">Sin build, sin servidor</span></div>
+  </div>
+
+  <div class="mods">
+    <a class="mod m0" href="modulo-0-bienvenida/index.html">
+      <div class="swatch s0"></div><div class="num">00</div>
+      <div class="body"><h2>Bienvenida y Orientación</h2><p>El mundo industrial, la automatización, los personajes, la ruta y el glosario.</p><div class="theme">Tema · Azul industrial</div></div>
+      <div class="right"><span class="count">7 clases</span><span class="go">Abrir →</span></div>
+    </a>
+    <a class="mod m1" href="modulo-1-fundamentos/index.html">
+      <div class="swatch s1"></div><div class="num">01</div>
+      <div class="body"><h2>Fundamentos de Física y Electricidad</h2><p>SI, magnitudes, ley de Ohm, AC/DC, potencia, señales y semiconductores.</p><div class="theme">Tema · Blueprint claro</div></div>
+      <div class="right"><span class="count">8 clases</span><span class="go">Abrir →</span></div>
+    </a>
+    <a class="mod m2" href="modulo-2-instrumentacion/index.html">
+      <div class="swatch s2"></div><div class="num">02</div>
+      <div class="body"><h2>Introducción a la Instrumentación</h2><p>Lazo de control, señales 4-20 mA, calibración, simbología ISA y P&amp;ID.</p><div class="theme">Tema · Oscuro teal</div></div>
+      <div class="right"><span class="count">10 clases</span><span class="go">Abrir →</span></div>
+    </a>
+    <a class="mod m3" href="modulo-3-sensores/index.html">
+      <div class="swatch s3"></div><div class="num">03</div>
+      <div class="body"><h2>Sensores y Transmisores</h2><p>Temperatura, presión, nivel y caudal: 12 clases de medición industrial.</p><div class="theme">Tema · Negro + verde + rojo</div></div>
+      <div class="right"><span class="count">12 clases</span><span class="go">Abrir →</span></div>
+    </a>
+    <a class="mod extra" href="extra-ia-vida-real/index.html">
+      <div class="swatch sx"></div><div class="num">IA</div>
+      <div class="body"><h2>IA para la Vida Real</h2><p>Video independiente de 10 capítulos. No forma parte del temario del curso.</p><div class="theme">Tema · Azul + dorado</div></div>
+      <div class="right"><span class="count">Extra</span><span class="go">Abrir →</span></div>
+    </a>
+  </div>
+
+  <footer>
+    Para Claude Code: ver <code>README.md</code> y <code>manifest.json</code> en esta carpeta.<br>
+    Cada módulo es autocontenido (lleva su copia de <code>animations.jsx</code> y sus temas).
+  </footer>
+</div>
+</body>
+</html>

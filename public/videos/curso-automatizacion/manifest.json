@@ -1,0 +1,105 @@
+{
+  "course": "Curso de Instrumentación y Automatización Industrial",
+  "format": "Motion-graphics HTML videos (React 18 + Babel standalone, 1920×1080)",
+  "renderer": "Each video is a self-contained HTML file. Open it directly in a browser. No build step, no server required (works over file:// and http://).",
+  "convention": {
+    "self_contained_modules": "Every module folder holds its own copy of animations.jsx and its theme/scene .jsx files, so a folder can be opened, moved or deployed independently of the others.",
+    "module_index": "Each module folder has an index.html that links every lesson of that module and cross-links to sibling modules via ../",
+    "lesson_naming": "Lesson HTML filenames encode the module: 'Clase 1.x' = Módulo 1, 'Clase 2.x' = Módulo 2, 'Clase 3.x' = Módulo 3. Módulo 0 lessons are 'Clase 2..7' + 'Video Módulo 0.html'.",
+    "playhead_persistence": "Each video stores its scrubber position in localStorage under a unique key (e.g. m3c6), so courses never collide."
+  },
+  "shared_dependencies_per_folder": [
+    "animations.jsx (timeline engine: Stage, useTime, Easing, clamp)"
+  ],
+  "modules": [
+    {
+      "id": "modulo-0",
+      "folder": "modulo-0-bienvenida",
+      "title": "Módulo 0 — Bienvenida y Orientación",
+      "theme": "Azul industrial (oscuro)",
+      "theme_files": ["video-lib.jsx", "clase-lib.jsx", "scenes-a.jsx", "scenes-b.jsx"],
+      "index": "index.html",
+      "lessons": [
+        { "n": 1, "file": "Video Módulo 0.html", "title": "¿En qué mundo industrial vivimos?", "deps": ["animations.jsx", "video-lib.jsx", "scenes-a.jsx", "scenes-b.jsx"] },
+        { "n": 2, "file": "Clase 2 - Qué es la automatización.html", "title": "¿Qué es la automatización y qué no es?", "deps": ["animations.jsx", "video-lib.jsx", "clase-lib.jsx", "clase2.jsx"] },
+        { "n": 3, "file": "Clase 3 - Los personajes.html", "title": "Los personajes del mundo industrial", "deps": ["animations.jsx", "video-lib.jsx", "clase-lib.jsx", "clase3.jsx"] },
+        { "n": 4, "file": "Clase 4 - Ruta de aprendizaje.html", "title": "Ruta de aprendizaje del curso", "deps": ["animations.jsx", "video-lib.jsx", "clase-lib.jsx", "clase4.jsx"] },
+        { "n": 5, "file": "Clase 5 - Herramientas.html", "title": "Herramientas del curso", "deps": ["animations.jsx", "video-lib.jsx", "clase-lib.jsx", "clase5.jsx"] },
+        { "n": 6, "file": "Clase 6 - Glosario base.html", "title": "Glosario base", "deps": ["animations.jsx", "video-lib.jsx", "clase-lib.jsx", "clase6.jsx"] },
+        { "n": 7, "file": "Clase 7 - Planta industrial real.html", "title": "Conoce una planta industrial real", "deps": ["animations.jsx", "video-lib.jsx", "clase-lib.jsx", "clase7.jsx"] }
+      ]
+    },
+    {
+      "id": "modulo-1",
+      "folder": "modulo-1-fundamentos",
+      "title": "Módulo 1 — Fundamentos de Física y Electricidad",
+      "theme": "Blueprint claro (gris claro + azul + arcilla)",
+      "theme_files": ["m1-lib.jsx"],
+      "index": "index.html",
+      "lessons": [
+        { "n": "1.1", "file": "Clase 1.1 - Unidades del SI.html", "title": "Unidades del SI aplicadas a la industria", "deps": ["animations.jsx", "m1-lib.jsx", "m1c1.jsx"] },
+        { "n": "1.2", "file": "Clase 1.2 - Magnitudes fisicas.html", "title": "Magnitudes físicas industriales", "deps": ["animations.jsx", "m1-lib.jsx", "m1c2.jsx"] },
+        { "n": "1.3", "file": "Clase 1.3 - Ley de Ohm.html", "title": "Ley de Ohm y circuitos básicos", "deps": ["animations.jsx", "m1-lib.jsx", "m1c3.jsx"] },
+        { "n": "1.4", "file": "Clase 1.4 - AC vs DC.html", "title": "Corriente continua vs alterna", "deps": ["animations.jsx", "m1-lib.jsx", "m1c4.jsx"] },
+        { "n": "1.5", "file": "Clase 1.5 - Potencia y consumo.html", "title": "Potencia eléctrica y consumo", "deps": ["animations.jsx", "m1-lib.jsx", "m1c5.jsx"] },
+        { "n": "1.6", "file": "Clase 1.6 - Senales electricas.html", "title": "Señales: voltaje, corriente, resistencia", "deps": ["animations.jsx", "m1-lib.jsx", "m1c6.jsx"] },
+        { "n": "1.7", "file": "Clase 1.7 - Semiconductores.html", "title": "Introducción a los semiconductores", "deps": ["animations.jsx", "m1-lib.jsx", "m1c7.jsx"] },
+        { "n": "1.8", "file": "Clase 1.8 - Laboratorio virtual.html", "title": "Laboratorio virtual de circuitos", "deps": ["animations.jsx", "m1-lib.jsx", "m1c8.jsx"] }
+      ]
+    },
+    {
+      "id": "modulo-2",
+      "folder": "modulo-2-instrumentacion",
+      "title": "Módulo 2 — Introducción a la Instrumentación Industrial",
+      "theme": "Oscuro teal",
+      "theme_files": ["m2-dark.jsx"],
+      "index": "index.html",
+      "lessons": [
+        { "n": "2.1", "file": "Clase 2.1 - Que es la instrumentacion.html", "title": "¿Qué es la instrumentación?", "deps": ["animations.jsx", "m2-dark.jsx", "m2c1.jsx"] },
+        { "n": "2.2", "file": "Clase 2.2 - PV SP CV.html", "title": "PV, SP y CV: el lazo de control", "deps": ["animations.jsx", "m2-dark.jsx", "m2c2.jsx"] },
+        { "n": "2.3", "file": "Clase 2.3 - Clasificacion de instrumentos.html", "title": "Clasificación de instrumentos", "deps": ["animations.jsx", "m2-dark.jsx", "m2c3.jsx"] },
+        { "n": "2.4", "file": "Clase 2.4 - Senales estandar.html", "title": "Señales estándar (4-20 mA, HART)", "deps": ["animations.jsx", "m2-dark.jsx", "m2c4.jsx"] },
+        { "n": "2.5", "file": "Clase 2.5 - Rangos spans y calibracion.html", "title": "Rangos, spans y calibración", "deps": ["animations.jsx", "m2-dark.jsx", "m2c5.jsx"] },
+        { "n": "2.6", "file": "Clase 2.6 - Documentacion industrial.html", "title": "Documentación industrial", "deps": ["animations.jsx", "m2-dark.jsx", "m2c6.jsx"] },
+        { "n": "2.7", "file": "Clase 2.7 - Simbologia ISA-5.1.html", "title": "Simbología ISA-5.1", "deps": ["animations.jsx", "m2-dark.jsx", "m2c7.jsx"] },
+        { "n": "2.8", "file": "Clase 2.8 - Lectura de un PID real.html", "title": "Lectura de un P&ID real", "deps": ["animations.jsx", "m2-dark.jsx", "m2c8.jsx"] },
+        { "n": "2.9", "file": "Clase 2.9 - Campo vs sala de control.html", "title": "Campo vs sala de control", "deps": ["animations.jsx", "m2-dark.jsx", "m2c9.jsx"] },
+        { "n": "2.10", "file": "Clase 2.10 - Practica PID en drawio.html", "title": "Práctica: P&ID en draw.io", "deps": ["animations.jsx", "m2-dark.jsx", "m2c10.jsx"] }
+      ]
+    },
+    {
+      "id": "modulo-3",
+      "folder": "modulo-3-sensores",
+      "title": "Módulo 3 — Sensores y Transmisores",
+      "theme": "Negro + Verde Rolex + rojo",
+      "theme_files": ["m3-dark.jsx"],
+      "index": "index.html",
+      "lessons": [
+        { "n": "3.1", "file": "Clase 3.1 - Termopares.html", "title": "Termopares (J, K, T)", "deps": ["animations.jsx", "m3-dark.jsx", "m3c1.jsx"] },
+        { "n": "3.2", "file": "Clase 3.2 - RTDs y PT100.html", "title": "RTDs y PT100", "deps": ["animations.jsx", "m3-dark.jsx", "m3c2.jsx"] },
+        { "n": "3.3", "file": "Clase 3.3 - Termistores e IR.html", "title": "Termistores e infrarrojo", "deps": ["animations.jsx", "m3-dark.jsx", "m3c3.jsx"] },
+        { "n": "3.4", "file": "Clase 3.4 - Tipos de presion.html", "title": "Tipos de presión", "deps": ["animations.jsx", "m3-dark.jsx", "m3c4.jsx"] },
+        { "n": "3.5", "file": "Clase 3.5 - Sensores de presion.html", "title": "Sensores de presión", "deps": ["animations.jsx", "m3-dark.jsx", "m3c5.jsx"] },
+        { "n": "3.6", "file": "Clase 3.6 - Transmisor DP.html", "title": "Transmisor de presión diferencial", "deps": ["animations.jsx", "m3-dark.jsx", "m3c6.jsx"] },
+        { "n": "3.7", "file": "Clase 3.7 - Nivel hidrostatico.html", "title": "Nivel por presión hidrostática", "deps": ["animations.jsx", "m3-dark.jsx", "m3c7.jsx"] },
+        { "n": "3.8", "file": "Clase 3.8 - Nivel ultrasonico radar flotador.html", "title": "Nivel: ultrasónico, radar y flotador", "deps": ["animations.jsx", "m3-dark.jsx", "m3c8.jsx"] },
+        { "n": "3.9", "file": "Clase 3.9 - Nivel capacitivo.html", "title": "Sensores capacitivos de nivel", "deps": ["animations.jsx", "m3-dark.jsx", "m3c9.jsx"] },
+        { "n": "3.10", "file": "Clase 3.10 - Placa orificio y Venturi.html", "title": "Placa orificio y tubo Venturi", "deps": ["animations.jsx", "m3-dark.jsx", "m3c10.jsx"] },
+        { "n": "3.11", "file": "Clase 3.11 - Caudalimetros.html", "title": "Caudalímetros modernos", "deps": ["animations.jsx", "m3-dark.jsx", "m3c11.jsx"] },
+        { "n": "3.12", "file": "Clase 3.12 - Practica seleccion.html", "title": "Práctica: selección de instrumentos", "deps": ["animations.jsx", "m3-dark.jsx", "m3c12.jsx"] }
+      ]
+    },
+    {
+      "id": "extra-ia",
+      "folder": "extra-ia-vida-real",
+      "title": "Extra — IA para la Vida Real (video independiente)",
+      "theme": "Azul profundo + dorado (premium)",
+      "theme_files": ["ia-lib.jsx", "ia-scenes-a.jsx", "ia-scenes-b.jsx"],
+      "index": "index.html",
+      "standalone": true,
+      "lessons": [
+        { "n": 1, "file": "index.html", "title": "IA para la Vida Real (10 capítulos)", "deps": ["animations.jsx", "ia-lib.jsx", "ia-scenes-a.jsx", "ia-scenes-b.jsx"] }
+      ]
+    }
+  ]
+}

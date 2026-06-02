@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 3 — Sensores y Transmisores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060b08; --bg2:#0a120d; --paper:#0f1712; --ink:#eef4ef; --mut:#90a89a; --dim:#566b5e;
+    --line:rgba(110,210,150,0.12); --lineS:rgba(110,210,150,0.24);
+    --green:oklch(58% 0.13 158); --greenD:oklch(48% 0.13 158); --red:oklch(60% 0.20 27); --green2:oklch(66% 0.12 150);
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 14px 44px rgba(0,0,0,0.62); --shadowSm:0 6px 18px rgba(0,0,0,0.5);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 820px at 14% 8%, oklch(46% 0.14 158 / 0.34), transparent 60%),
+      radial-gradient(circle 700px at 90% 90%, oklch(48% 0.17 28 / 0.20), transparent 60%),
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:auto,auto,54px 54px,54px 54px;background-position:center;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:72px 40px 100px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--green);font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:2px;background:var(--green);}
+  h1{font-size:60px;font-weight:700;letter-spacing:-.02em;line-height:1.04;margin:22px 0 14px;max-width:20ch;text-wrap:balance;}
+  .sub{font-size:22px;color:var(--mut);max-width:64ch;line-height:1.5;}
+  .meta{display:flex;gap:30px;margin-top:30px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--green);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .group{margin-top:46px;display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--green2);}
+  .group::after{content:"";flex:1;height:1px;background:var(--lineS);}
+  .group.red{color:var(--red);}
+  .grid{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;}
+  a.card{position:relative;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:12px;padding:24px 24px 20px;background:var(--paper);box-shadow:var(--shadowSm);
+    transition:transform .18s ease,box-shadow .18s ease;overflow:hidden;}
+  a.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);}
+  a.card .no{font-family:var(--mono);font-size:13px;letter-spacing:.22em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-6px;top:-26px;font-family:var(--disp);font-size:140px;font-weight:700;color:var(--green);opacity:.12;line-height:1;pointer-events:none;}
+  a.card h2{font-size:25px;font-weight:700;letter-spacing:-.01em;line-height:1.12;max-width:18ch;}
+  a.card p{font-size:15px;color:var(--mut);line-height:1.45;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:12px;}
+  a.card .dur{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--green);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--mut);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green);}
+  a.card.red .bar{background:var(--red);} a.card.red .ghost,a.card.red .dur{color:var(--red);}
+  a.card.g2 .bar{background:var(--green2);} a.card.g2 .ghost,a.card.g2 .dur{color:var(--green2);}
+  .back{display:inline-flex;align-items:center;gap:10px;margin-bottom:30px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-decoration:none;border:1px solid var(--lineS);border-radius:6px;padding:9px 16px;background:var(--paper);transition:color .15s;}
+  .back:hover{color:var(--green);}
+  footer{margin-top:54px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../modulo-2-instrumentacion/index.html">← Módulo 2</a>
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 3 — Sensores y Transmisores</h1>
+  <p class="sub">El corazón de la medición industrial. Doce clases para dominar cómo se mide temperatura, presión, nivel y caudal con instrumentos reales.</p>
+  <div class="meta">
+    <div><span class="n">12</span><span class="l">Clases</span></div>
+    <div><span class="n">4</span><span class="l">Variables de proceso</span></div>
+    <div><span class="n">15+</span><span class="l">Tecnologías de sensor</span></div>
+  </div>
+
+  <div class="group">Temperatura</div>
+  <div class="grid">
+    <a class="card" href="Clase 3.1 - Termopares.html"><span class="bar"></span><span class="ghost">01</span><span class="no">CLASE 3.1</span><h2>Termopares (J, K, T)</h2><p>El efecto Seebeck y cómo elegir el tipo correcto.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 3.2 - RTDs y PT100.html"><span class="bar"></span><span class="ghost">02</span><span class="no">CLASE 3.2</span><h2>RTDs y PT100</h2><p>Resistencia lineal y el estándar de precisión.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 3.3 - Termistores e IR.html"><span class="bar"></span><span class="ghost">03</span><span class="no">CLASE 3.3</span><h2>Termistores e infrarrojo</h2><p>El sensor ultrasensible y la medición sin contacto.</p><div class="foot"><span class="dur">12–14 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group red">Presión</div>
+  <div class="grid">
+    <a class="card red" href="Clase 3.4 - Tipos de presion.html"><span class="bar"></span><span class="ghost">04</span><span class="no">CLASE 3.4</span><h2>Tipos de presión</h2><p>Absoluta, manométrica y diferencial.</p><div class="foot"><span class="dur">12–14 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card red" href="Clase 3.5 - Sensores de presion.html"><span class="bar"></span><span class="ghost">05</span><span class="no">CLASE 3.5</span><h2>Sensores de presión</h2><p>Capacitivo, piezoresistivo y piezoeléctrico.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card red" href="Clase 3.6 - Transmisor DP.html"><span class="bar"></span><span class="ghost">06</span><span class="no">CLASE 3.6</span><h2>Transmisor diferencial (DP)</h2><p>Una celda que mide caudal, nivel y presión.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group g2" style="color:var(--green2)">Nivel</div>
+  <div class="grid">
+    <a class="card g2" href="Clase 3.7 - Nivel hidrostatico.html"><span class="bar"></span><span class="ghost">07</span><span class="no">CLASE 3.7</span><h2>Nivel por presión hidrostática</h2><p>P = ρgh: el peso de la columna se vuelve nivel.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card g2" href="Clase 3.8 - Nivel ultrasonico radar flotador.html"><span class="bar"></span><span class="ghost">08</span><span class="no">CLASE 3.8</span><h2>Ultrasónico, radar y flotador</h2><p>Tres formas de seguir la superficie.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card g2" href="Clase 3.9 - Nivel capacitivo.html"><span class="bar"></span><span class="ghost">09</span><span class="no">CLASE 3.9</span><h2>Sensores capacitivos de nivel</h2><p>El tanque convertido en un condensador.</p><div class="foot"><span class="dur">12–14 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Caudal</div>
+  <div class="grid">
+    <a class="card" href="Clase 3.10 - Placa orificio y Venturi.html"><span class="bar"></span><span class="ghost">10</span><span class="no">CLASE 3.10</span><h2>Placa orificio y Venturi</h2><p>Caudal por presión diferencial.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 3.11 - Caudalimetros.html"><span class="bar"></span><span class="ghost">11</span><span class="no">CLASE 3.11</span><h2>Caudalímetros modernos</h2><p>Electromagnético, Coriolis y vórtex.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card red" href="Clase 3.12 - Practica seleccion.html"><span class="bar"></span><span class="ghost">12</span><span class="no">CLASE 3.12 · PRÁCTICA</span><h2>Selección de instrumentos</h2><p>Elige el sensor correcto para cada variable.</p><div class="foot"><span class="dur">20–25 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <footer>
+    Tema oscuro «negro + Verde Rolex + rojo» · 1920×1080<br>
+    Contenido desarrollado a partir del temario y los principios físicos de cada sensor.
+  </footer>
+</div>
+</body>
+</html>

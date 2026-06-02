@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 2 — Introducción a la Instrumentación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0a07; --bg2:#15100a; --paper:#1b1610; --ink:#f6efe4; --mut:#a99c89; --dim:#6e6253;
+    --line:rgba(255,176,110,0.12); --lineS:rgba(255,176,110,0.26);
+    --teal:oklch(74% 0.17 52); --tealD:oklch(64% 0.17 50); --clay:oklch(72% 0.15 70); --blue:oklch(78% 0.14 62);
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 14px 44px rgba(0,0,0,0.55); --shadowSm:0 6px 18px rgba(0,0,0,0.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 820px at 16% 8%, oklch(60% 0.18 52 / 0.34), transparent 60%),
+      radial-gradient(circle 700px at 88% 88%, oklch(52% 0.15 32 / 0.24), transparent 60%),
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:auto,auto,54px 54px,54px 54px;background-position:center;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:72px 40px 100px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--teal);font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:2px;background:var(--teal);}
+  h1{font-size:60px;font-weight:700;letter-spacing:-.02em;line-height:1.04;margin:22px 0 14px;max-width:20ch;text-wrap:balance;}
+  .sub{font-size:22px;color:var(--mut);max-width:64ch;line-height:1.5;}
+  .meta{display:flex;gap:30px;margin-top:30px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--teal);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .grid{margin-top:54px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;}
+  a.card{position:relative;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:12px;padding:24px 24px 20px;background:var(--paper);box-shadow:var(--shadowSm);
+    transition:transform .18s ease,box-shadow .18s ease;overflow:hidden;}
+  a.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);}
+  a.card .no{font-family:var(--mono);font-size:13px;letter-spacing:.22em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-6px;top:-26px;font-family:var(--disp);font-size:140px;font-weight:700;color:var(--teal);opacity:.12;line-height:1;pointer-events:none;}
+  a.card h2{font-size:25px;font-weight:700;letter-spacing:-.01em;line-height:1.12;max-width:18ch;}
+  a.card p{font-size:15px;color:var(--mut);line-height:1.45;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:12px;}
+  a.card .dur{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--mut);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card.clay .ghost,a.card.clay .dur{color:var(--clay);}
+  a.card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--teal);}
+  a.card.clay .bar{background:var(--clay);}
+  .back{display:inline-flex;align-items:center;gap:10px;margin-bottom:30px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-decoration:none;border:1px solid var(--lineS);border-radius:6px;padding:9px 16px;background:var(--paper);transition:color .15s;}
+  .back:hover{color:var(--teal);}
+  footer{margin-top:34px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.8;}
+  .nextmod{display:inline-flex;align-items:center;margin-top:48px;font-family:var(--disp);font-size:22px;font-weight:600;color:#06120c;text-decoration:none;border-radius:10px;padding:20px 30px;background:oklch(58% 0.13 158);box-shadow:var(--shadow);transition:transform .18s,filter .18s;}
+  .nextmod:hover{transform:translateY(-3px);filter:brightness(1.08);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../modulo-1-fundamentos/index.html">← Módulo 1</a>
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 2 — Introducción a la Instrumentación Industrial</h1>
+  <p class="sub">Aprende a medir el mundo físico con instrumentos reales. Diez clases que te llevan del concepto de medición hasta dibujar tu primer P&ID.</p>
+  <div class="meta">
+    <div><span class="n">10</span><span class="l">Clases</span></div>
+    <div><span class="n">ISA-5.1</span><span class="l">Norma internacional</span></div>
+    <div><span class="n">P&ID</span><span class="l">Tu primer diagrama</span></div>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="Clase 2.1 - Que es la instrumentacion.html">
+      <span class="bar"></span><span class="ghost">01</span><span class="no">CLASE 2.1</span>
+      <h2>¿Qué es la instrumentación?</h2>
+      <p>Qué hace un instrumento y un siglo de evolución: de la neumática al IIoT.</p>
+      <div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card" href="Clase 2.2 - PV SP CV.html">
+      <span class="bar"></span><span class="ghost">02</span><span class="no">CLASE 2.2</span>
+      <h2>Variables: PV, SP y CV</h2>
+      <p>El triángulo del control y cómo se cierra un lazo automático.</p>
+      <div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card" href="Clase 2.3 - Clasificacion de instrumentos.html">
+      <span class="bar"></span><span class="ghost">03</span><span class="no">CLASE 2.3</span>
+      <h2>Clasificación de instrumentos</h2>
+      <p>Sensores, transmisores y actuadores, y cómo se encadenan.</p>
+      <div class="foot"><span class="dur">12–14 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card" href="Clase 2.4 - Senales estandar.html">
+      <span class="bar"></span><span class="ghost">04</span><span class="no">CLASE 2.4</span>
+      <h2>Señales: 4-20 mA, 0-10 V, HART</h2>
+      <p>El estándar universal y por qué empieza en 4 — el “cero vivo”.</p>
+      <div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card clay" href="Clase 2.5 - Rangos spans y calibracion.html">
+      <span class="bar"></span><span class="ghost">05</span><span class="no">CLASE 2.5</span>
+      <h2>Rangos, spans y calibración</h2>
+      <p>Rango vs span, los tres errores típicos y por qué se calibra.</p>
+      <div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card" href="Clase 2.6 - Documentacion industrial.html">
+      <span class="bar"></span><span class="ghost">06</span><span class="no">CLASE 2.6</span>
+      <h2>Documentación industrial</h2>
+      <p>Anatomía de un tag number y los documentos clave de una planta.</p>
+      <div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card" href="Clase 2.7 - Simbologia ISA-5.1.html">
+      <span class="bar"></span><span class="ghost">07</span><span class="no">CLASE 2.7</span>
+      <h2>Simbología ISA-5.1</h2>
+      <p>Los globos de instrumento y el código de letras de la norma.</p>
+      <div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card" href="Clase 2.8 - Lectura de un PID real.html">
+      <span class="bar"></span><span class="ghost">08</span><span class="no">CLASE 2.8</span>
+      <h2>Lectura de un P&ID real</h2>
+      <p>Recorre un P&ID lazo por lazo con un método infalible.</p>
+      <div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card" href="Clase 2.9 - Campo vs sala de control.html">
+      <span class="bar"></span><span class="ghost">09</span><span class="no">CLASE 2.9</span>
+      <h2>Campo vs sala de control</h2>
+      <p>Los dos mundos del instrumento y qué los conecta.</p>
+      <div class="foot"><span class="dur">12–14 min</span><span class="go">Ver video →</span></div>
+    </a>
+    <a class="card clay" href="Clase 2.10 - Practica PID en drawio.html">
+      <span class="bar"></span><span class="ghost">10</span><span class="no">CLASE 2.10 · PRÁCTICA</span>
+      <h2>Dibuja tu primer P&ID</h2>
+      <p>Construye un lazo de nivel completo en draw.io, paso a paso.</p>
+      <div class="foot"><span class="dur">20–25 min</span><span class="go">Ver video →</span></div>
+    </a>
+  </div>
+
+  <a class="nextmod" href="../modulo-3-sensores/index.html">Continuar al Módulo 3 — Sensores y Transmisores →</a>
+
+  <footer>
+    Tema oscuro «carbón + naranja» · high-tech · 1920×1080<br>
+    Contenido desarrollado a partir de los títulos del temario y la norma ISA-5.1.
+  </footer>
+</div>
+</body>
+</html>
