@@ -273,6 +273,56 @@ const lessons = [
     durationSec: 600,
     videoPath: `${BASE}/modulo-3-sensores/Clase 3.12 - Practica seleccion.html`,
   },
+  // ── MÓDULO 4 — Actuadores y Elementos Finales de Control ─────────────
+  {
+    order: 38,
+    title: "Válvulas de control",
+    description: "Regula vs bloquea: las 3 partes de una válvula de control, tipos de cuerpo (globo, mariposa, bola) y condición de falla FC/FO/FL.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-4-actuadores/Clase 4.1 - Valvulas de control.html`,
+  },
+  {
+    order: 39,
+    title: "Actuadores y posicionadores",
+    description: "Diafragma neumático ATO/ATC, actuadores de pistón y el lazo de posición cerrado con posicionador electro-neumático.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-4-actuadores/Clase 4.2 - Actuadores y posicionadores.html`,
+  },
+  {
+    order: 40,
+    title: "Motores eléctricos industriales",
+    description: "Campo giratorio animado, deslizamiento, par de arranque y corriente de arranque comparada en motores de inducción trifásicos.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-4-actuadores/Clase 4.3 - Motores electricos.html`,
+  },
+  {
+    order: 41,
+    title: "Variadores de frecuencia (VFD)",
+    description: "Arquitectura rectificador–bus DC–inversor, control V/f y la ley del cubo: cómo el VFD reduce el consumo energético.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-4-actuadores/Clase 4.4 - Variadores de frecuencia.html`,
+  },
+  {
+    order: 42,
+    title: "Bombas, compresores y sopladores",
+    description: "Curva de operación, punto de trabajo, NPSH y cavitación. Familias por diferencial de presión y criterios de selección.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-4-actuadores/Clase 4.5 - Bombas compresores sopladores.html`,
+  },
+  {
+    order: 43,
+    title: "Relés, contactores y arrancadores",
+    description: "El circuito de sello de marcha animado paso a paso: bobina, contactos auxiliares y arrancadores estrella-triángulo.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-4-actuadores/Clase 4.6 - Reles contactores arrancadores.html`,
+  },
+  {
+    order: 44,
+    title: "Práctica: dimensionamiento de válvula",
+    description: "Calcula el Cv y selecciona la válvula correcta para FCV-201: caudal, densidad, caída de presión y verificación de cavitación.",
+    durationSec: 600,
+    videoPath: `${BASE}/modulo-4-actuadores/Clase 4.7 - Practica dimensionamiento valvula.html`,
+  },
 ];
 
 const totalSec = lessons.reduce((s, l) => s + l.durationSec, 0);
@@ -287,7 +337,7 @@ async function main() {
       slug: "instrumentacion-industrial",
       title: "Instrumentación y Automatización Industrial",
       description:
-        "Domina la instrumentación industrial de cero a profesional. Cuatro módulos progresivos: fundamentos de electricidad y física, lectura de P&IDs, señales estándar y todos los sensores clave — temperatura, presión, nivel y caudal — con animaciones interactivas.",
+        "Domina la instrumentación industrial de cero a profesional. Cinco módulos progresivos: fundamentos de electricidad y física, lectura de P&IDs, señales estándar, sensores clave de temperatura, presión, nivel y caudal, y actuadores y elementos finales de control — con animaciones interactivas.",
       instructor: "Instrumex",
       level: "Principiante",
       category: "Ingeniería Industrial",
