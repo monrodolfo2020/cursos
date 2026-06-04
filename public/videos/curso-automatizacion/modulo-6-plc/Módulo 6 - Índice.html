@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 6 — Controladores Lógicos Programables (PLC)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f1a; --bg2:#0e1422; --paper:#161d2d; --paper2:#1b2336;
+    --ink:#e9eefb; --mut:#94a0bd; --dim:#5b667f;
+    --line:rgba(60,201,232,0.09); --lineS:rgba(60,201,232,0.20);
+    --cyan:#3cc9e8; --cyanD:#1ea7c9; --cyanLt:#86e2f6;
+    --grn:#46d98c; --grnD:#27b46d; --amber:#f5b14b; --red:#fa5d6f;
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 22px 60px rgba(0,0,0,0.5); --shadowSm:0 8px 22px rgba(0,0,0,0.38);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 880px at 12% 4%, rgba(60,201,232,0.14), transparent 60%),
+      radial-gradient(circle 720px at 92% 96%, rgba(70,217,140,0.10), transparent 60%),
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:auto,auto,56px 56px,56px 56px;background-position:center;
+  }
+  .wrap{max-width:1300px;margin:0 auto;padding:60px 40px 100px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan);font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:2px;background:var(--cyan);}
+  h1{font-size:62px;font-weight:700;letter-spacing:-.02em;line-height:1.03;margin:22px 0 16px;max-width:21ch;text-wrap:balance;}
+  h1 .em{color:var(--cyan);}
+  .sub{font-size:22px;color:var(--mut);max-width:66ch;line-height:1.5;}
+  .meta{display:flex;gap:34px;margin-top:32px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--grn);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .group{margin-top:48px;display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);}
+  .group::after{content:"";flex:1;height:1px;background:var(--lineS);}
+  .group .sx{font-size:11px;color:var(--dim);letter-spacing:.18em;}
+  .group.gr{color:var(--grn);}
+  .grid{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;}
+  a.card{position:relative;display:flex;flex-direction:column;gap:11px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:14px;padding:22px 22px 18px;background:linear-gradient(160deg,var(--paper),var(--bg2));box-shadow:var(--shadowSm);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;}
+  a.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--cyan);}
+  a.card .no{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-8px;top:-30px;font-family:var(--disp);font-size:140px;font-weight:700;color:var(--cyan);opacity:.08;line-height:1;pointer-events:none;}
+  a.card h2{font-size:23px;font-weight:700;letter-spacing:-.01em;line-height:1.14;max-width:19ch;}
+  a.card p{font-size:14.5px;color:var(--mut);line-height:1.46;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:12px;}
+  a.card .dur{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--cyanD);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cyan);}
+  a.card.gr .bar{background:var(--grn);} a.card.gr .ghost,a.card.gr .dur{color:var(--grn);}
+  a.card.cd .bar{background:var(--cyanD);} a.card.cd .ghost,a.card.cd .dur{color:var(--cyanLt);}
+  a.card.pr{border-color:rgba(245,177,75,0.34);} a.card.pr .bar{background:var(--amber);} a.card.pr .ghost,a.card.pr .dur{color:var(--amber);}
+  a.card.pr:hover{border-color:var(--amber);}
+  .back{display:inline-flex;align-items:center;gap:10px;margin-bottom:30px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-decoration:none;border:1px solid var(--lineS);border-radius:8px;padding:9px 16px;background:var(--paper);transition:color .15s,border-color .15s;}
+  .back:hover{color:var(--cyan);border-color:var(--cyan);}
+  footer{margin-top:56px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="Módulo 5 - Índice.html">← Módulo 5</a>
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 6 — <span class="em">Controladores Lógicos Programables</span> (PLC)</h1>
+  <p class="sub">El cerebro de la automatización. Donde sensores, actuadores, señales y lógica convergen: del relé de 1968 al primer proyecto completo corriendo en TIA Portal con PLC simulado. El módulo más extenso y práctico del curso.</p>
+  <div class="meta">
+    <div><span class="n">15</span><span class="l">Clases</span></div>
+    <div><span class="n">3</span><span class="l">Secciones</span></div>
+    <div><span class="n">5</span><span class="l">Lenguajes IEC 61131-3</span></div>
+    <div><span class="n">2</span><span class="l">Proyectos integradores</span></div>
+  </div>
+
+  <div class="group">Sección A — Fundamentos del PLC <span class="sx">· hardware y arquitectura</span></div>
+  <div class="grid">
+    <a class="card" href="Clase 6.1 - Que es un PLC.html"><span class="bar"></span><span class="ghost">01</span><span class="no">CLASE 6.1</span><h2>¿Qué es un PLC? Historia y arquitectura</h2><p>Del panel de relés al Modicon 084; CPU, memoria, E/S y tipos de PLC.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card cd" href="Clase 6.2 - Partes del PLC.html"><span class="bar"></span><span class="ghost">02</span><span class="no">CLASE 6.2</span><h2>Partes del PLC: CPU, E/S, fuente y rack</h2><p>El S7-1214C por dentro, módulos de señal y configuración de hardware.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card gr" href="Clase 6.3 - Entradas y salidas digitales.html"><span class="bar"></span><span class="ghost">03</span><span class="no">CLASE 6.3</span><h2>Entradas y salidas digitales</h2><p>Optoacoplador, el dilema Sinking/Sourcing y los errores de cableado.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 6.4 - Entradas y salidas analogicas.html"><span class="bar"></span><span class="ghost">04</span><span class="no">CLASE 6.4</span><h2>Entradas y salidas analógicas</h2><p>El número mágico 27648, NORM_X/SCALE_X y detección de fallo de cable.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card cd" href="Clase 6.5 - El ciclo de scan.html"><span class="bar"></span><span class="ghost">05</span><span class="no">CLASE 6.5</span><h2>El ciclo de scan del PLC</h2><p>La imagen de proceso, los OB y por qué el PID va en interrupción cíclica.</p><div class="foot"><span class="dur">15–17 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card gr" href="Clase 6.6 - Sistemas de numeracion.html"><span class="bar"></span><span class="ghost">06</span><span class="no">CLASE 6.6</span><h2>Sistemas de numeración</h2><p>Binario, hexadecimal y BCD; bit, byte, word y la memoria del PLC.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group gr">Sección B — Programación del PLC <span class="sx">· lenguajes y bloques</span></div>
+  <div class="grid">
+    <a class="card gr" href="Clase 6.7 - Lenguajes IEC 61131-3.html"><span class="bar"></span><span class="ghost">07</span><span class="no">CLASE 6.7</span><h2>Lenguajes IEC 61131-3</h2><p>Ladder, FBD, ST, SFC e IL: cuál usar para cada tipo de tarea.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 6.8 - Ladder avanzado.html"><span class="bar"></span><span class="ghost">08</span><span class="no">CLASE 6.8</span><h2>Ladder avanzado: temporizadores y contadores</h2><p>TON, TOF, TP, CTU/CTD y la secuencia temporizada con sello.</p><div class="foot"><span class="dur">20–22 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card cd" href="Clase 6.9 - Comparadores y matematicas.html"><span class="bar"></span><span class="ghost">09</span><span class="no">CLASE 6.9</span><h2>Comparadores, matemáticas y movimiento de datos</h2><p>Tipos de dato, MOVE, conversiones y operaciones aritméticas.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card gr" href="Clase 6.10 - Bloques de funcion analogica.html"><span class="bar"></span><span class="ghost">10</span><span class="no">CLASE 6.10</span><h2>Bloques de función analógica</h2><p>Crear un FB reutilizable de escalado 4-20 mA con diagnóstico.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 6.11 - Programacion estructurada.html"><span class="bar"></span><span class="ghost">11</span><span class="no">CLASE 6.11</span><h2>Programación estructurada</h2><p>OB, FC, FB y DB: organizar un proyecto real como un profesional.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Sección C — Práctica con software <span class="sx">· TIA Portal · Factory IO · proyectos</span></div>
+  <div class="grid">
+    <a class="card cd" href="Clase 6.12 - Introduccion a TIA Portal.html"><span class="bar"></span><span class="ghost">12</span><span class="no">CLASE 6.12</span><h2>Introducción a TIA Portal</h2><p>Instalación, primer proyecto y configuración del PLC del curso.</p><div class="foot"><span class="dur">20–22 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card gr" href="Clase 6.13 - Factory IO + TIA Portal.html"><span class="bar"></span><span class="ghost">13</span><span class="no">CLASE 6.13</span><h2>Factory IO + TIA Portal: simulación 3D</h2><p>Conectar PLCSIM a una planta virtual y programar la clasificación.</p><div class="foot"><span class="dur">22–25 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card pr" href="Clase 6.14 - Proyecto PLC 1.html"><span class="bar"></span><span class="ghost">14</span><span class="no">CLASE 6.14 · PROYECTO 1</span><h2>Control de nivel de tanque</h2><p>Bomba, válvula, lazo PID de nivel y gestión de alarmas, de punta a punta.</p><div class="foot"><span class="dur">28–30 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card pr" href="Clase 6.15 - Proyecto PLC 2.html"><span class="bar"></span><span class="ghost">15</span><span class="no">CLASE 6.15 · PROYECTO 2</span><h2>Control integrado de planta</h2><p>Secuencias de arranque/paro, múltiples PID y la planta completa simulada.</p><div class="foot"><span class="dur">35–40 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <footer>
+    Tema oscuro «control panel» — grafito + cian + verde RUN · 1920×1080<br>
+    Contenido desarrollado a partir del temario del curso y la norma IEC 61131 · plataforma Siemens TIA Portal + S7-1200/1500 (PLCSIM).
+  </footer>
+</div>
+</body>
+</html>
