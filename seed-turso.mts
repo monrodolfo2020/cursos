@@ -486,6 +486,49 @@ const lessons = [
     durationSec: 600,
     videoPath: `${BASE}/modulo-6-plc/Clase 6.15 - Proyecto PLC 2.html`,
   },
+  // ── Módulo 7 — Redes Industriales y Comunicaciones ──
+  {
+    order: 68,
+    title: "Introducción a redes industriales",
+    description: "La pirámide de automatización ISA-95: campo, control, supervisión, MES y ERP. Protocolos por nivel y por qué importa la topología.",
+    durationSec: 360,
+    videoPath: `${BASE}/modulo-7/Clase 7.1 - Introduccion a redes industriales.html`,
+  },
+  {
+    order: 69,
+    title: "Modbus RTU y TCP/IP",
+    description: "El protocolo más extendido en la industria: trama RTU byte a byte, función codes 03/06/16, y migración a Modbus TCP sobre Ethernet.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-7/Clase 7.2 - Modbus RTU y TCP.html`,
+  },
+  {
+    order: 70,
+    title: "PROFIBUS y PROFINET",
+    description: "PROFIBUS DP: maestro/esclavo, GSD, diagnóstico de bus. PROFINET IO: RT y IRT, device model y configuración en TIA Portal.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-7/Clase 7.3 - PROFIBUS y PROFINET.html`,
+  },
+  {
+    order: 71,
+    title: "OPC y OPC-UA",
+    description: "OPC clásico vs OPC-UA: modelo de información, seguridad con certificados, servidor/cliente UA y conexión a SCADA y MES.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-7/Clase 7.4 - OPC y OPC-UA.html`,
+  },
+  {
+    order: 72,
+    title: "Ethernet industrial y seguridad IT/OT",
+    description: "Switches gestionados, redundancia MRP/RSTP, VLANs, segmentación IT/OT con DMZ y buenas prácticas de ciberseguridad industrial.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-7/Clase 7.5 - Ethernet industrial.html`,
+  },
+  {
+    order: 73,
+    title: "Práctica: Modbus PLC↔HMI",
+    description: "Proyecto integrador: servidor MB_SERVER en S7-1200, mini-HMI Node-RED y análisis de tramas con Wireshark. Conecta campo con supervisión.",
+    durationSec: 600,
+    videoPath: `${BASE}/modulo-7/Clase 7.6 - Practica Modbus PLC-HMI.html`,
+  },
 ];
 
 const totalSec = lessons.reduce((s, l) => s + l.durationSec, 0);

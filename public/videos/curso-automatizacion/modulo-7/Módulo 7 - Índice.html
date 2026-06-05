@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 7 — Redes Industriales y Comunicaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#100a1e; --bg2:#160d29; --paper:#1f1538; --paper2:#281a47;
+    --ink:#efe9fb; --mut:#a99cc8; --dim:#6c5f8c;
+    --line:rgba(176,102,255,0.10); --lineS:rgba(176,102,255,0.24);
+    --vio:#b066ff; --vioD:#8b3ff0; --vioLt:#cfa3ff;
+    --cyan:#2fd9e0; --cyanD:#16b3ba; --amber:#f7b733; --pink:#f0509c; --grn:#46d98c;
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 22px 60px rgba(0,0,0,0.55); --shadowSm:0 8px 22px rgba(0,0,0,0.42);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 880px at 12% 4%, rgba(176,102,255,0.16), transparent 60%),
+      radial-gradient(circle 720px at 92% 96%, rgba(47,217,224,0.11), transparent 60%);
+  }
+  .wrap{max-width:1300px;margin:0 auto;padding:60px 40px 100px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan);font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:2px;background:var(--cyan);}
+  h1{font-size:60px;font-weight:700;letter-spacing:-.02em;line-height:1.04;margin:22px 0 16px;max-width:22ch;text-wrap:balance;}
+  h1 .em{color:var(--vio);}
+  .sub{font-size:22px;color:var(--mut);max-width:68ch;line-height:1.5;}
+  .meta{display:flex;gap:34px;margin-top:32px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--cyan);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .group{margin-top:48px;display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--vio);}
+  .group::after{content:"";flex:1;height:1px;background:var(--lineS);}
+  .group .sx{font-size:11px;color:var(--dim);letter-spacing:.18em;}
+  .grid{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;}
+  a.card{position:relative;display:flex;flex-direction:column;gap:11px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:14px;padding:24px 24px 20px;background:linear-gradient(160deg,var(--paper),var(--bg2));box-shadow:var(--shadowSm);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;}
+  a.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--vio);}
+  a.card .no{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-8px;top:-30px;font-family:var(--disp);font-size:140px;font-weight:700;color:var(--vio);opacity:.08;line-height:1;pointer-events:none;}
+  a.card h2{font-size:24px;font-weight:700;letter-spacing:-.01em;line-height:1.14;max-width:20ch;}
+  a.card p{font-size:15px;color:var(--mut);line-height:1.46;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:14px;}
+  a.card .dur{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--cyanD);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--vio);}
+  a.card.cy .bar{background:var(--cyan);} a.card.cy .ghost,a.card.cy .dur{color:var(--cyan);}
+  a.card.am .bar{background:var(--amber);} a.card.am .ghost,a.card.am .dur{color:var(--amber);}
+  a.card.pk .bar{background:var(--pink);} a.card.pk .ghost,a.card.pk .dur{color:var(--pink);}
+  a.card.gr{border-color:rgba(70,217,140,0.32);} a.card.gr .bar{background:var(--grn);} a.card.gr .ghost,a.card.gr .dur{color:var(--grn);}
+  a.card.gr:hover{border-color:var(--grn);}
+  .back{display:inline-flex;align-items:center;gap:10px;margin-bottom:30px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-decoration:none;border:1px solid var(--lineS);border-radius:8px;padding:9px 16px;background:var(--paper);transition:color .15s,border-color .15s;}
+  .back:hover{color:var(--vio);border-color:var(--vio);}
+  footer{margin-top:56px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="Módulo 6 - Índice.html">← Módulo 6</a>
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 7 — <span class="em">Redes Industriales</span> y Comunicaciones</h1>
+  <p class="sub">Los PLCs no trabajan solos. Un PLC aislado controla una máquina; una red de PLCs comunicados controla una planta entera, reporta al SCADA y se conecta con la empresa. Aprende cómo se hablan los dispositivos industriales: qué protocolos usan, por qué se eligieron y cómo configurarlos.</p>
+  <div class="meta">
+    <div><span class="n">6</span><span class="l">Clases</span></div>
+    <div><span class="n">4</span><span class="l">Protocolos clave</span></div>
+    <div><span class="n">5</span><span class="l">Niveles ISA-95</span></div>
+    <div><span class="n">1</span><span class="l">Práctica integradora</span></div>
+  </div>
+
+  <div class="group">Fundamentos y protocolos <span class="sx">· del cable al estándar abierto</span></div>
+  <div class="grid">
+    <a class="card" href="Clase 7.1 - Introduccion a redes industriales.html"><span class="bar"></span><span class="ghost">01</span><span class="no">CLASE 7.1</span><h2>¿Por qué comunicar dispositivos?</h2><p>IT vs OT, determinismo, la pirámide de automatización y las topologías de red.</p><div class="foot"><span class="dur">15–17 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card am" href="Clase 7.2 - Modbus RTU y TCP.html"><span class="bar"></span><span class="ghost">02</span><span class="no">CLASE 7.2</span><h2>Modbus RTU y Modbus TCP/IP</h2><p>Tramas, códigos de función, mapa de registros y los bloques MB_* en TIA Portal.</p><div class="foot"><span class="dur">20–22 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card am" href="Clase 7.3 - PROFIBUS y PROFINET.html"><span class="bar"></span><span class="ghost">03</span><span class="no">CLASE 7.3</span><h2>PROFIBUS y PROFINET</h2><p>Los estándares Siemens: bus de campo, GSD, RT/IRT y la migración a Ethernet.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card cy" href="Clase 7.4 - OPC y OPC-UA.html"><span class="bar"></span><span class="ghost">04</span><span class="no">CLASE 7.4</span><h2>OPC y OPC-UA</h2><p>El puente PLC ↔ SCADA: del caos de drivers al estándar semántico y seguro.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card cy" href="Clase 7.5 - Ethernet industrial.html"><span class="bar"></span><span class="ghost">05</span><span class="no">CLASE 7.5</span><h2>Ethernet industrial y topologías</h2><p>Switches industriales, redundancia MRP, segmentación IT/OT y la red del proyecto.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Práctica integradora <span class="sx">· flujo de datos de punta a punta</span></div>
+  <div class="grid">
+    <a class="card gr" href="Clase 7.6 - Practica Modbus PLC-HMI.html"><span class="bar"></span><span class="ghost">06</span><span class="no">CLASE 7.6 · PRÁCTICA</span><h2>Modbus entre PLC simulado y HMI</h2><p>MB_SERVER en TIA, mapeo de datos, mini-HMI en Node-RED y diagnóstico con Wireshark.</p><div class="foot"><span class="dur">28–30 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <footer>
+    Tema oscuro «red de datos» — violeta + cian + ámbar · 1920×1080<br>
+    Contenido desarrollado a partir del temario del curso · protocolos Modbus, PROFIBUS/PROFINET, OPC-UA y normas ISA-95 / IEC 62443.
+  </footer>
+</div>
+</body>
+</html>
