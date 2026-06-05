@@ -693,6 +693,63 @@ const lessons = [
     durationSec: 420,
     videoPath: `${BASE}/modulo-10/Clase 10.6 - pH conductividad y analisis.html`,
   },
+  // ── Módulo 11 — Proyecto Capstone ──
+  {
+    order: 97,
+    title: "Definición del proyecto y P&ID",
+    description: "Selección de la planta capstone, alcance del sistema de control, desarrollo del P&ID completo y lista de instrumentos (I/O list).",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-11/Clase 11.1 - Definicion del proyecto y P&ID.html`,
+  },
+  {
+    order: 98,
+    title: "Selección de instrumentos y control",
+    description: "Especificación de transmisores, válvulas y analizadores para la planta. Diseño de lazos de control PID y estrategia de control avanzado.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-11/Clase 11.2 - Seleccion de instrumentos y control.html`,
+  },
+  {
+    order: 99,
+    title: "Programación completa del PLC",
+    description: "Implementación en TIA Portal: bloques de organización, FBs de lazo PID, secuencia SFC de arranque/paro y gestión de modos de operación.",
+    durationSec: 540,
+    videoPath: `${BASE}/modulo-11/Clase 11.3 - Programacion completa del PLC.html`,
+  },
+  {
+    order: 100,
+    title: "Comunicaciones, redes y FAT",
+    description: "Configuración de PROFINET, OPC-UA y Modbus TCP entre campo, PLC y SCADA. Factory Acceptance Test (FAT): checklist y resolución de deficiencias.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-11/Clase 11.4 - Comunicaciones redes y FAT.html`,
+  },
+  {
+    order: 101,
+    title: "SCADA completo en Ignition",
+    description: "Sinópticos P&ID animados, gestión de alarmas multicapa, historian de proceso y dashboards de KPI para la planta capstone en Ignition.",
+    durationSec: 540,
+    videoPath: `${BASE}/modulo-11/Clase 11.5 - SCADA completo.html`,
+  },
+  {
+    order: 102,
+    title: "Reportes, seguridad y pruebas",
+    description: "Generación automática de reportes PDF por turno, gestión de roles y auditoría, pruebas SIL del sistema de seguridad (SIS) y validación final.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-11/Clase 11.6 - Reportes seguridad y pruebas.html`,
+  },
+  {
+    order: 103,
+    title: "Documentación técnica",
+    description: "Elabora el dossier técnico completo: manual de operación, planos As-Built, databooks de instrumentos, registros de calibración y plan de mantenimiento.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-11/Clase 11.7 - Documentacion tecnica.html`,
+  },
+  {
+    order: 104,
+    title: "Presentación final y evaluación",
+    description: "Defensa del proyecto capstone: demo en vivo del SCADA, rúbrica de evaluación por competencias y entrega del portafolio profesional completo.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-11/Clase 11.8 - Presentacion final y evaluacion.html`,
+  },
 ];
 
 const totalSec = lessons.reduce((s, l) => s + l.durationSec, 0);
