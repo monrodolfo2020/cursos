@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 9 — Seguridad Eléctrica e Industrial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#13120c; --bg2:#1a1810; --paper:#221f15; --paper2:#2c2819;
+    --ink:#f6f1e4; --mut:#b0a890; --dim:#766c54;
+    --line:rgba(255,194,30,0.10); --lineS:rgba(255,194,30,0.22);
+    --ylw:#ffc21e; --ylwD:#e0a400; --ylwLt:#ffe07a;
+    --org:#ff7a1f; --orgD:#e85f0a; --red:#ff4438; --grn:#4ccb78;
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 22px 60px rgba(0,0,0,0.6); --shadowSm:0 8px 22px rgba(0,0,0,0.46);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 880px at 12% 4%, rgba(255,194,30,0.12), transparent 60%),
+      radial-gradient(circle 760px at 92% 96%, rgba(255,122,31,0.10), transparent 60%);
+  }
+  .wrap{max-width:1300px;margin:0 auto;padding:60px 40px 100px;}
+  .hazard{height:14px;border-radius:3px;margin-bottom:30px;background:repeating-linear-gradient(-45deg,var(--ylw) 0 20px,#0c0b07 20px 40px);opacity:.85;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--ylw);font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:2px;background:var(--ylw);}
+  h1{font-size:58px;font-weight:700;letter-spacing:-.02em;line-height:1.04;margin:22px 0 16px;max-width:24ch;text-wrap:balance;}
+  h1 .em{color:var(--ylw);}
+  .sub{font-size:22px;color:var(--mut);max-width:70ch;line-height:1.5;}
+  .meta{display:flex;gap:34px;margin-top:32px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--org);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .group{margin-top:48px;display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--ylw);}
+  .group::after{content:"";flex:1;height:1px;background:var(--lineS);}
+  .group .sx{font-size:11px;color:var(--dim);letter-spacing:.18em;}
+  .grid{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;}
+  a.card{position:relative;display:flex;flex-direction:column;gap:11px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:14px;padding:24px 24px 20px;background:linear-gradient(160deg,var(--paper),var(--bg2));box-shadow:var(--shadowSm);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;}
+  a.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--ylw);}
+  a.card .no{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-8px;top:-30px;font-family:var(--disp);font-size:140px;font-weight:700;color:var(--ylw);opacity:.07;line-height:1;pointer-events:none;}
+  a.card h2{font-size:24px;font-weight:700;letter-spacing:-.01em;line-height:1.14;max-width:20ch;}
+  a.card p{font-size:15px;color:var(--mut);line-height:1.46;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:14px;}
+  a.card .dur{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--orgD);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ylw);}
+  a.card.og .bar{background:var(--org);} a.card.og .ghost,a.card.og .dur{color:var(--org);}
+  a.card.og:hover{border-color:var(--org);}
+  a.card.rd .bar{background:var(--red);} a.card.rd .ghost,a.card.rd .dur{color:var(--red);}
+  a.card.rd:hover{border-color:var(--red);}
+  a.card.gr .bar{background:var(--grn);} a.card.gr .ghost,a.card.gr .dur{color:var(--grn);}
+  a.card.gr:hover{border-color:var(--grn);}
+  .back{display:inline-flex;align-items:center;gap:10px;margin-bottom:30px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-decoration:none;border:1px solid var(--lineS);border-radius:8px;padding:9px 16px;background:var(--paper);transition:color .15s,border-color .15s;}
+  .back:hover{color:var(--ylw);border-color:var(--ylw);}
+  footer{margin-top:56px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="Módulo 8 - Índice.html">← Módulo 8</a>
+  <div class="hazard"></div>
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 9 — <span class="em">Seguridad Eléctrica</span> e Industrial</h1>
+  <p class="sub">El conocimiento que puede salvar tu vida. Todo lo técnico que aprendiste sirve para automatizar procesos — pero si no sabes trabajar con seguridad, la primera vez que entres a una planta real puedes no salir. Este módulo no es opcional: separa a quienes tienen carreras largas de quienes sufren accidentes.</p>
+  <div class="meta">
+    <div><span class="n">5</span><span class="l">Clases</span></div>
+    <div><span class="n">30 mA</span><span class="l">El límite que importa</span></div>
+    <div><span class="n">LOTO</span><span class="l">+ ATEX · NFPA 70E · IEC 61508</span></div>
+    <div><span class="n">∞</span><span class="l">Vidas en juego</span></div>
+  </div>
+
+  <div class="group">El riesgo y cómo gestionarlo <span class="sx">· de la corriente al procedimiento</span></div>
+  <div class="grid">
+    <a class="card rd" href="Clase 9.1 - Riesgos electricos.html"><span class="bar"></span><span class="ghost">01</span><span class="no">CLASE 9.1</span><h2>Riesgos eléctricos y el cuerpo humano</h2><p>Por qué mata la corriente y no el voltaje, los efectos por miliamperio, el trayecto y los 5 riesgos de planta.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 9.2 - LOTO y trabajo en altura.html"><span class="bar"></span><span class="ghost">02</span><span class="no">CLASE 9.2</span><h2>LOTO y trabajo en altura</h2><p>Las 6 fuentes de energía, los 7 pasos de Lockout/Tagout y los fundamentos del trabajo seguro en altura.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card og" href="Clase 9.3 - Atmosferas peligrosas.html"><span class="bar"></span><span class="ghost">03</span><span class="no">CLASE 9.3</span><h2>Atmósferas peligrosas y zonas</h2><p>El triángulo del fuego, las zonas ATEX/NEC, los modos de protección Ex y cómo leer la marcación.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Protección de las personas <span class="sx">· EPP, auxilios y normativa</span></div>
+  <div class="grid">
+    <a class="card og" href="Clase 9.4 - EPP y primeros auxilios.html"><span class="bar"></span><span class="ghost">04</span><span class="no">CLASE 9.4</span><h2>EPP, primeros auxilios y ergonomía</h2><p>La jerarquía de controles, guantes y arco eléctrico, el protocolo ante electrocución y la técnica de levantamiento.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card gr" href="Clase 9.5 - Normativa SIL SIS.html"><span class="bar"></span><span class="ghost">05</span><span class="no">CLASE 9.5</span><h2>Normativa, SIL/SIS y HAZOP</h2><p>Las normas IEC, los niveles SIL, BPCS vs SIS, las palabras guía del HAZOP y la cultura de seguridad.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <footer>
+    Tema oscuro «seguridad industrial» — negro alquitrán + amarillo hi-vis + naranja + rojo peligro + verde seguro · 1920×1080<br>
+    Contenido desarrollado a partir del temario del curso · normas OSHA 1910.147 (LOTO), NEC/ATEX, NFPA 70E, IEC 61508/61511/62443 y normativa latinoamericana.
+  </footer>
+</div>
+</body>
+</html>

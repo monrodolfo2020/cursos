@@ -614,6 +614,42 @@ const lessons = [
     durationSec: 480,
     videoPath: `${BASE}/modulo-8/Clase 8.12 - Cloud IIoT y Gemelos.html`,
   },
+  // ── Módulo 9 — Seguridad Eléctrica e Industrial ──
+  {
+    order: 86,
+    title: "Riesgos eléctricos",
+    description: "Efectos de la corriente en el cuerpo humano, arco eléctrico, categorías de incidente y distancias de seguridad según NFPA 70E e IEEE 1584.",
+    durationSec: 360,
+    videoPath: `${BASE}/modulo-9/Clase 9.1 - Riesgos electricos.html`,
+  },
+  {
+    order: 87,
+    title: "LOTO y trabajo en altura",
+    description: "Procedimiento de Bloqueo/Etiquetado (LOTO) paso a paso, permisos de trabajo, trabajo en altura y andamios seguros en planta industrial.",
+    durationSec: 360,
+    videoPath: `${BASE}/modulo-9/Clase 9.2 - LOTO y trabajo en altura.html`,
+  },
+  {
+    order: 88,
+    title: "Atmósferas peligrosas",
+    description: "Clasificación de áreas ATEX/NEC: zonas 0-2 y divisiones 1-2, equipos Ex-d/Ex-e/Ex-i, gas detectors y purga de recintos.",
+    durationSec: 360,
+    videoPath: `${BASE}/modulo-9/Clase 9.3 - Atmosferas peligrosas.html`,
+  },
+  {
+    order: 89,
+    title: "EPP y primeros auxilios eléctricos",
+    description: "Selección de EPP dieléctrico por categoría de arco, RCP y protocolo ante electrocución, desfibrilador y reporte de incidentes.",
+    durationSec: 300,
+    videoPath: `${BASE}/modulo-9/Clase 9.4 - EPP y primeros auxilios.html`,
+  },
+  {
+    order: 90,
+    title: "Normativa SIL y Sistemas SIS",
+    description: "IEC 61508/61511: niveles de integridad de seguridad (SIL), PFD, arquitecturas redundantes y validación de Sistemas Instrumentados de Seguridad.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-9/Clase 9.5 - Normativa SIL SIS.html`,
+  },
 ];
 
 const totalSec = lessons.reduce((s, l) => s + l.durationSec, 0);
