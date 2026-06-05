@@ -68,10 +68,13 @@ function groupByModule(lessons: Lesson[]): ModuleGroup[] {
 export default function LessonPlayer({
   course, lesson, lessons, prevLessonId, nextLessonId,
 }: Props) {
-  const [completed,    setCompleted]    = useState<Record<number, boolean>>({});
-  const [sidebarOpen,  setSidebarOpen]  = useState(false); // starts closed on mobile
-  const [openMap,      setOpenMap]      = useState<Record<string, boolean>>({});
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [completed,      setCompleted]      = useState<Record<number, boolean>>({});
+  const [sidebarOpen,    setSidebarOpen]    = useState(false);
+  const [openMap,        setOpenMap]        = useState<Record<string, boolean>>({});
+  const [videoExpanded,  setVideoExpanded]  = useState(false);
+  const [mobileLandscape, setMobileLandscape] = useState(false);
+  const iframeRef    = useRef<HTMLIFrameElement>(null);
+  const videoWrapRef = useRef<HTMLDivElement>(null);
 
   const storageKey      = `ia_progress_${course.slug}`;
   const activeModuleKey = getModuleKey(lesson.videoPath);
@@ -81,6 +84,48 @@ export default function LessonPlayer({
   useEffect(() => {
     if (window.innerWidth >= 768) setSidebarOpen(true);
   }, []);
+
+  // Detect mobile landscape orientation
+  useEffect(() => {
+    function check() {
+      const landscape = window.innerWidth > window.innerHeight;
+      const mobileH   = window.innerHeight < 500; // phone in landscape
+      setMobileLandscape(landscape && mobileH);
+    }
+    check();
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
+    };
+  }, []);
+
+  // Auto-close sidebar when entering landscape on mobile
+  useEffect(() => {
+    if (mobileLandscape) setSidebarOpen(false);
+  }, [mobileLandscape]);
+
+  // ESC key to exit expanded mode
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setVideoExpanded(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const showExpanded = videoExpanded || mobileLandscape;
+
+  // Lock body scroll when video is expanded
+  useEffect(() => {
+    if (showExpanded) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [showExpanded]);
 
   // Load saved progress
   useEffect(() => {
@@ -289,16 +334,66 @@ export default function LessonPlayer({
         </div>
 
         {/* Video */}
-        <div className="relative bg-black w-full" style={{ paddingBottom: "56.25%" }}>
+        <div
+          ref={videoWrapRef}
+          className={showExpanded ? "fixed inset-0 z-[200] bg-black" : "relative bg-black w-full"}
+          style={showExpanded ? {} : { paddingBottom: "56.25%" }}
+        >
           <iframe
             ref={iframeRef}
             key={lesson.id}
             src={lesson.videoPath}
-            className="absolute inset-0 w-full h-full border-0"
+            className={showExpanded ? "w-full h-full border-0" : "absolute inset-0 w-full h-full border-0"}
             allowFullScreen
             title={lesson.title}
             sandbox="allow-scripts allow-same-origin"
           />
+
+          {/* Expand button — visible on mobile/tablet when not expanded */}
+          {!showExpanded && (
+            <button
+              onClick={() => setVideoExpanded(true)}
+              title="Ver en pantalla completa"
+              className="absolute bottom-2 right-2 md:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-opacity opacity-70 hover:opacity-100"
+              style={{ background: "rgba(0,0,0,0.7)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", zIndex: 10 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="15 3 21 3 21 9"/>
+                <polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/>
+                <line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+              Expandir
+            </button>
+          )}
+
+          {/* Exit expanded mode button */}
+          {showExpanded && (
+            <button
+              onClick={() => { setVideoExpanded(false); }}
+              title="Salir de pantalla completa (ESC)"
+              className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity opacity-80 hover:opacity-100"
+              style={{ background: "rgba(0,0,0,0.75)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)", zIndex: 201 }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="4 14 10 14 10 20"/>
+                <polyline points="20 10 14 10 14 4"/>
+                <line x1="10" y1="14" x2="3" y2="21"/>
+                <line x1="21" y1="3" x2="14" y2="10"/>
+              </svg>
+              Salir · ESC
+            </button>
+          )}
+
+          {/* Landscape hint — shows briefly when auto-expanded */}
+          {mobileLandscape && !videoExpanded && (
+            <div
+              className="absolute bottom-3 left-3 text-[10px] px-2 py-1 rounded"
+              style={{ background: "rgba(0,0,0,0.6)", color: "rgba(255,255,255,0.7)" }}
+            >
+              Gira el teléfono para volver
+            </div>
+          )}
         </div>
 
         {/* Lesson info */}
