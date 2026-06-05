@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 10 — Instrumentación Avanzada y Tendencias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#090c14; --bg2:#0f1320; --paper:#161b2b; --paper2:#1f2538;
+    --ink:#eef1fb; --mut:#9aa3c0; --dim:#5a6285;
+    --line:rgba(120,140,200,0.10); --lineS:rgba(120,140,200,0.22);
+    --mag:#ff4d9d; --magD:#e02178; --magLt:#ff8fc4;
+    --mint:#2ee6c8; --mintD:#15bfa3; --iris:#6b8cff; --amber:#f6b53a; --grn:#3fd07a;
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 22px 60px rgba(0,0,0,0.6); --shadowSm:0 8px 22px rgba(0,0,0,0.46);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 880px at 12% 4%, rgba(255,77,157,0.11), transparent 60%),
+      radial-gradient(circle 760px at 92% 96%, rgba(46,230,200,0.10), transparent 60%);
+  }
+  .wrap{max-width:1300px;margin:0 auto;padding:60px 40px 100px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--mag);font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:2px;background:var(--mag);}
+  h1{font-size:58px;font-weight:700;letter-spacing:-.02em;line-height:1.04;margin:22px 0 16px;max-width:24ch;text-wrap:balance;}
+  h1 .em{color:var(--mag);}
+  .sub{font-size:22px;color:var(--mut);max-width:70ch;line-height:1.5;}
+  .meta{display:flex;gap:34px;margin-top:32px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--mint);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .group{margin-top:48px;display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--mag);}
+  .group::after{content:"";flex:1;height:1px;background:var(--lineS);}
+  .group .sx{font-size:11px;color:var(--dim);letter-spacing:.18em;}
+  .grid{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;}
+  a.card{position:relative;display:flex;flex-direction:column;gap:11px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:14px;padding:24px 24px 20px;background:linear-gradient(160deg,var(--paper),var(--bg2));box-shadow:var(--shadowSm);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;}
+  a.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--mag);}
+  a.card .no{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-8px;top:-30px;font-family:var(--disp);font-size:140px;font-weight:700;color:var(--mag);opacity:.07;line-height:1;pointer-events:none;}
+  a.card h2{font-size:24px;font-weight:700;letter-spacing:-.01em;line-height:1.14;max-width:20ch;}
+  a.card p{font-size:15px;color:var(--mut);line-height:1.46;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:14px;}
+  a.card .dur{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--mintD);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--mag);}
+  a.card.mt .bar{background:var(--mint);} a.card.mt .ghost,a.card.mt .dur{color:var(--mint);}
+  a.card.mt:hover{border-color:var(--mint);}
+  a.card.ir .bar{background:var(--iris);} a.card.ir .ghost,a.card.ir .dur{color:var(--iris);}
+  a.card.ir:hover{border-color:var(--iris);}
+  a.card.am .bar{background:var(--amber);} a.card.am .ghost,a.card.am .dur{color:var(--amber);}
+  a.card.am:hover{border-color:var(--amber);}
+  .back{display:inline-flex;align-items:center;gap:10px;margin-bottom:30px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-decoration:none;border:1px solid var(--lineS);border-radius:8px;padding:9px 16px;background:var(--paper);transition:color .15s,border-color .15s;}
+  .back:hover{color:var(--mag);border-color:var(--mag);}
+  footer{margin-top:56px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="Módulo 9 - Índice.html">← Módulo 9</a>
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 10 — <span class="em">Instrumentación Avanzada</span> y Tendencias</h1>
+  <p class="sub">El estado del arte de la medición industrial. Los módulos anteriores cubrieron el 90% de las plantas del mundo; este módulo te lleva al 10% restante — y al futuro que en cinco años será el estándar: HART en profundidad, los buses de campo modernos, Ethernet hasta el instrumento, gemelos digitales y mantenimiento predictivo.</p>
+  <div class="meta">
+    <div><span class="n">6</span><span class="l">Clases</span></div>
+    <div><span class="n">10 Mbps</span><span class="l">APL hasta el campo</span></div>
+    <div><span class="n">2027–30</span><span class="l">El futuro que se asoma</span></div>
+    <div><span class="n">IIoT</span><span class="l">+ gemelos digitales</span></div>
+  </div>
+
+  <div class="group">Comunicación e instrumentos inteligentes <span class="sx">· del 4-20 mA al Ethernet de campo</span></div>
+  <div class="grid">
+    <a class="card" href="Clase 10.1 - HART en profundidad.html"><span class="bar"></span><span class="ghost">01</span><span class="no">CLASE 10.1</span><h2>HART en profundidad</h2><p>FSK sobre 4-20 mA, la estructura de comandos, las 4 variables dinámicas, el diagnóstico CMD 48 y WirelessHART.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card mt" href="Clase 10.2 - Foundation Fieldbus e IO-Link.html"><span class="bar"></span><span class="ghost">02</span><span class="no">CLASE 10.2</span><h2>Foundation Fieldbus e IO-Link</h2><p>El control distribuido en el campo, los bloques funcionales y el «USB industrial» de la última milla.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card ir" href="Clase 10.3 - APL Ethernet de campo.html"><span class="bar"></span><span class="ghost">03</span><span class="no">CLASE 10.3</span><h2>APL: Ethernet hasta el instrumento</h2><p>Por qué el Ethernet no llegaba al campo, las 4 soluciones de APL y el instrumento con su propia IP.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">El futuro que ya llegó <span class="sx">· datos, modelos y predicción</span></div>
+  <div class="grid">
+    <a class="card mt" href="Clase 10.4 - Gemelos digitales.html"><span class="bar"></span><span class="ghost">04</span><span class="no">CLASE 10.4</span><h2>Gemelos digitales e instrumentación virtual</h2><p>Qué es un gemelo digital, sus 3 niveles, los sensores que no existen físicamente y el caso de la planta de agua.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card ir" href="Clase 10.5 - Mantenimiento predictivo e IIoT.html"><span class="bar"></span><span class="ghost">05</span><span class="no">CLASE 10.5</span><h2>Mantenimiento predictivo e IIoT</h2><p>Las 4 filosofías de mantenimiento, las técnicas predictivas, el stack IIoT y MQTT/Sparkplug.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card am" href="Clase 10.6 - pH conductividad y analisis.html"><span class="bar"></span><span class="ghost">06</span><span class="no">CLASE 10.6</span><h2>pH, conductividad y análisis en línea</h2><p>La medición de pH y su control no lineal, la conductividad y los analizadores de calidad del agua.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <footer>
+    Tema oscuro «estado del arte» — azul-noche + magenta/fucsia + menta/aqua + periwinkle · 1920×1080<br>
+    Contenido desarrollado a partir del temario del curso · HART 7, Foundation Fieldbus, IO-Link (IEC 61131-9), APL (IEEE 802.3cg), gemelos digitales, IIoT y MQTT/Sparkplug B.
+  </footer>
+</div>
+</body>
+</html>

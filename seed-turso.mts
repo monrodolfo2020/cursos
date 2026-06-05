@@ -650,6 +650,49 @@ const lessons = [
     durationSec: 420,
     videoPath: `${BASE}/modulo-9/Clase 9.5 - Normativa SIL SIS.html`,
   },
+  // ── Módulo 10 — Tecnologías Avanzadas ──
+  {
+    order: 91,
+    title: "HART en profundidad",
+    description: "Protocolo HART en detalle: comandos universales, comunes y específicos, multidrop, HART IP y diagnóstico avanzado de campo con comunicadores.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-10/Clase 10.1 - HART en profundidad.html`,
+  },
+  {
+    order: 92,
+    title: "Foundation Fieldbus e IO-Link",
+    description: "FF H1 y H2: bloques de función, descriptor de dispositivo (DD) y enlace LAS. IO-Link: punto a punto inteligente para actuadores y sensores simples.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-10/Clase 10.2 - Foundation Fieldbus e IO-Link.html`,
+  },
+  {
+    order: 93,
+    title: "APL: Ethernet de campo",
+    description: "Advanced Physical Layer: Ethernet 10 Mbit/s intrínsecamente seguro para zona 0/1. Topología, switches APL y migración desde 4-20 mA y HART.",
+    durationSec: 360,
+    videoPath: `${BASE}/modulo-10/Clase 10.3 - APL Ethernet de campo.html`,
+  },
+  {
+    order: 94,
+    title: "Gemelos digitales en instrumentación",
+    description: "Digital Twin de un instrumento: modelo físico + datos en tiempo real. Calibración virtual, predicción de falla y ajuste de parámetros sin parar planta.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-10/Clase 10.4 - Gemelos digitales.html`,
+  },
+  {
+    order: 95,
+    title: "Mantenimiento predictivo e IIoT",
+    description: "Vibración, temperatura y corriente como indicadores de salud. Edge computing, MQTT, análisis espectral y modelos ML para predecir fallas en campo.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-10/Clase 10.5 - Mantenimiento predictivo e IIoT.html`,
+  },
+  {
+    order: 96,
+    title: "pH, conductividad y análisis en línea",
+    description: "Instrumentos analíticos: sensores de pH, conductividad, turbidez y ORP. Calibración de dos puntos, temperatura compensada y mantenimiento de electrodos.",
+    durationSec: 420,
+    videoPath: `${BASE}/modulo-10/Clase 10.6 - pH conductividad y analisis.html`,
+  },
 ];
 
 const totalSec = lessons.reduce((s, l) => s + l.durationSec, 0);
