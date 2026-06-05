@@ -19,24 +19,23 @@ type Props = {
   nextLessonId: number | null;
 };
 
-// ── Module metadata ────────────────────────────────────────────────────────────
+// ── Module metadata ─────────────────────────────────────────────────────────
 const MODULE_META: Record<string, { label: string; icon: string }> = {
-  "modulo-0-bienvenida":      { label: "Módulo 0 — Bienvenida",                      icon: "🎯" },
-  "modulo-1-fundamentos":     { label: "Módulo 1 — Fundamentos",                     icon: "⚡" },
-  "modulo-2-instrumentacion": { label: "Módulo 2 — Instrumentación",                 icon: "📐" },
-  "modulo-3-sensores":        { label: "Módulo 3 — Sensores y Transmisores",         icon: "📡" },
-  "modulo-4-actuadores":      { label: "Módulo 4 — Actuadores",                      icon: "🔧" },
-  "modulo-5-control":         { label: "Módulo 5 — Control de Proceso",              icon: "🎛️" },
-  "modulo-6-plc":             { label: "Módulo 6 — PLCs Siemens",                    icon: "🖥️" },
-  "modulo-7":                 { label: "Módulo 7 — Redes Industriales",              icon: "🌐" },
-  "modulo-8":                 { label: "Módulo 8 — SCADA e IIoT",                    icon: "📊" },
-  "modulo-9":                 { label: "Módulo 9 — Seguridad Industrial",            icon: "🦺" },
-  "modulo-10":                { label: "Módulo 10 — Tecnologías Avanzadas",          icon: "🚀" },
-  "modulo-11":                { label: "Módulo 11 — Proyecto Capstone",              icon: "🏆" },
+  "modulo-0-bienvenida":      { label: "Módulo 0 — Bienvenida",                 icon: "🎯" },
+  "modulo-1-fundamentos":     { label: "Módulo 1 — Fundamentos",                icon: "⚡" },
+  "modulo-2-instrumentacion": { label: "Módulo 2 — Instrumentación",            icon: "📐" },
+  "modulo-3-sensores":        { label: "Módulo 3 — Sensores",                   icon: "📡" },
+  "modulo-4-actuadores":      { label: "Módulo 4 — Actuadores",                 icon: "🔧" },
+  "modulo-5-control":         { label: "Módulo 5 — Control de Proceso",         icon: "🎛️" },
+  "modulo-6-plc":             { label: "Módulo 6 — PLCs Siemens",               icon: "🖥️" },
+  "modulo-7":                 { label: "Módulo 7 — Redes Industriales",         icon: "🌐" },
+  "modulo-8":                 { label: "Módulo 8 — SCADA e IIoT",               icon: "📊" },
+  "modulo-9":                 { label: "Módulo 9 — Seguridad Industrial",       icon: "🦺" },
+  "modulo-10":                { label: "Módulo 10 — Tecnologías Avanzadas",     icon: "🚀" },
+  "modulo-11":                { label: "Módulo 11 — Proyecto Capstone",         icon: "🏆" },
 };
 
 function getModuleKey(videoPath: string): string {
-  // videoPath like "/videos/curso-automatizacion/modulo-6-plc/Clase..."
   const match = videoPath.match(/\/(modulo-[\w-]+)\//);
   return match ? match[1] : "otros";
 }
@@ -47,105 +46,93 @@ function fmtSec(s: number) {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-// ── Group lessons by module ────────────────────────────────────────────────────
-type ModuleGroup = {
-  key: string;
-  label: string;
-  icon: string;
-  lessons: Lesson[];
-};
+type ModuleGroup = { key: string; label: string; icon: string; lessons: Lesson[] };
 
 function groupByModule(lessons: Lesson[]): ModuleGroup[] {
-  const map = new Map<string, Lesson[]>();
+  const order: string[] = [];
+  const map: Record<string, Lesson[]> = {};
   for (const l of lessons) {
     const key = getModuleKey(l.videoPath);
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(l);
+    if (!map[key]) { map[key] = []; order.push(key); }
+    map[key].push(l);
   }
-  return [...map.entries()].map(([key, lsns]) => ({
+  return order.map((key) => ({
     key,
     label: MODULE_META[key]?.label ?? key,
-    icon: MODULE_META[key]?.icon ?? "📁",
-    lessons: lsns,
+    icon:  MODULE_META[key]?.icon  ?? "📁",
+    lessons: map[key],
   }));
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export default function LessonPlayer({ course, lesson, lessons, prevLessonId, nextLessonId }: Props) {
-  const [completed, setCompleted] = useState<Set<number>>(new Set());
+// ── Component ───────────────────────────────────────────────────────────────
+export default function LessonPlayer({
+  course, lesson, lessons, prevLessonId, nextLessonId,
+}: Props) {
+  const [completed, setCompleted]     = useState<Record<number, boolean>>({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [openMap, setOpenMap]         = useState<Record<string, boolean>>({});
+  const iframeRef                     = useRef<HTMLIFrameElement>(null);
 
+  const storageKey     = `ia_progress_${course.slug}`;
   const activeModuleKey = getModuleKey(lesson.videoPath);
-  const [openModules, setOpenModules] = useState<Set<string>>(new Set([activeModuleKey]));
+  const groups          = groupByModule(lessons);
 
-  const storageKey = `ia_progress_${course.slug}`;
-  const groups = groupByModule(lessons);
-
-  // Load progress from localStorage
+  // Load saved progress
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      if (raw) setCompleted(new Set(JSON.parse(raw)));
+      if (raw) {
+        const ids: number[] = JSON.parse(raw);
+        const rec: Record<number, boolean> = {};
+        ids.forEach((id) => (rec[id] = true));
+        setCompleted(rec);
+      }
     } catch {}
   }, [storageKey]);
 
   // Open the active module whenever the lesson changes
   useEffect(() => {
-    setOpenModules((prev) => new Set([...prev, activeModuleKey]));
+    setOpenMap((prev) => ({ ...prev, [activeModuleKey]: true }));
   }, [activeModuleKey]);
 
-  // Disable looping in the iframe after it loads
+  // Disable loop/autoplay in iframe after load
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
-
-    function disableLoop() {
+    const onLoad = () => {
       try {
-        const doc = iframe!.contentDocument;
-        if (!doc) return;
-        // Stop all <video> elements from looping
-        doc.querySelectorAll("video").forEach((v) => {
-          v.loop = false;
-          v.controls = true;
+        iframe.contentDocument?.querySelectorAll("video").forEach((v) => {
+          v.loop = false; v.controls = true;
         });
-        // Post message to any React animation that listens
-        iframe!.contentWindow?.postMessage({ type: "INSTRUMEX_PAUSE_LOOP" }, "*");
-      } catch {
-        // cross-origin — message only
-        iframe!.contentWindow?.postMessage({ type: "INSTRUMEX_PAUSE_LOOP" }, "*");
-      }
-    }
-
-    iframe.addEventListener("load", disableLoop);
-    return () => iframe.removeEventListener("load", disableLoop);
+      } catch {}
+      iframe.contentWindow?.postMessage({ type: "INSTRUMEX_PAUSE_LOOP" }, "*");
+    };
+    iframe.addEventListener("load", onLoad);
+    return () => iframe.removeEventListener("load", onLoad);
   }, [lesson.id]);
 
   function toggleComplete(id: number) {
     setCompleted((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      localStorage.setItem(storageKey, JSON.stringify([...next]));
+      const next = { ...prev, [id]: !prev[id] };
+      if (!next[id]) delete next[id];
+      localStorage.setItem(storageKey, JSON.stringify(Object.keys(next).map(Number)));
       return next;
     });
   }
 
   function toggleModule(key: string) {
-    setOpenModules((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    setOpenMap((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  const progress = Math.round((completed.size / lessons.length) * 100);
+  const completedCount = Object.keys(completed).length;
+  const progress = Math.round((completedCount / lessons.length) * 100);
 
   return (
     <div className="flex flex-1 h-[calc(100vh-3.5rem)] overflow-hidden">
-      {/* ── Main content ─────────────────────────────────────────────────────── */}
+
+      {/* ── Main content ───────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-auto">
+
         {/* Breadcrumb */}
         <div
           className="flex items-center gap-2 text-xs px-4 py-2 border-b"
@@ -153,12 +140,14 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
         >
           <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
           <span>/</span>
-          <Link href={`/cursos/${course.slug}`} className="hover:text-white transition-colors">{course.title}</Link>
+          <Link href={`/cursos/${course.slug}`} className="hover:text-white transition-colors">
+            {course.title}
+          </Link>
           <span>/</span>
           <span className="text-white">{lesson.title}</span>
         </div>
 
-        {/* Video iframe */}
+        {/* Video */}
         <div className="relative bg-black" style={{ paddingBottom: "56.25%" }}>
           <iframe
             ref={iframeRef}
@@ -175,7 +164,8 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
         <div className="px-6 py-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide mb-1" style={{ color: "var(--text-muted)" }}>
+              <p className="text-xs font-medium uppercase tracking-wide mb-1"
+                 style={{ color: "var(--text-muted)" }}>
                 Lección {lesson.order} de {lessons.length}
               </p>
               <h1 className="text-xl font-bold mb-2">{lesson.title}</h1>
@@ -187,12 +177,12 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
               onClick={() => toggleComplete(lesson.id)}
               className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
               style={{
-                background: completed.has(lesson.id) ? "rgba(0,209,102,0.2)" : "var(--bg-card)",
-                color: completed.has(lesson.id) ? "var(--green)" : "var(--text-secondary)",
-                border: `1px solid ${completed.has(lesson.id) ? "var(--green)" : "var(--border)"}`,
+                background: completed[lesson.id] ? "rgba(0,209,102,0.2)" : "var(--bg-card)",
+                color:      completed[lesson.id] ? "var(--green)" : "var(--text-secondary)",
+                border: `1px solid ${completed[lesson.id] ? "var(--green)" : "var(--border)"}`,
               }}
             >
-              {completed.has(lesson.id) ? "✓ Completado" : "Marcar completado"}
+              {completed[lesson.id] ? "✓ Completado" : "Marcar completado"}
             </button>
           </div>
 
@@ -206,9 +196,7 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
               >
                 ← Anterior
               </Link>
-            ) : (
-              <span />
-            )}
+            ) : <span />}
             {nextLessonId ? (
               <Link
                 href={`/cursos/${course.slug}/leccion/${nextLessonId}`}
@@ -229,30 +217,31 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
         </div>
       </div>
 
-      {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
+      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
       <aside
-        className={`shrink-0 flex flex-col border-l overflow-hidden transition-all duration-300 ${sidebarOpen ? "w-80" : "w-0"}`}
+        className={`shrink-0 flex flex-col border-l overflow-hidden transition-all duration-300 ${
+          sidebarOpen ? "w-80" : "w-0"
+        }`}
         style={{ borderColor: "var(--border)", background: "var(--bg-sidebar)" }}
       >
         {sidebarOpen && (
           <>
             {/* Sidebar header */}
-            <div className="px-4 py-3 border-b" style={{ borderColor: "var(--border)" }}>
+            <div className="px-4 py-3 border-b flex-shrink-0" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wide"
+                   style={{ color: "var(--text-muted)" }}>
                   Contenido del curso
                 </p>
                 <button
                   onClick={() => setSidebarOpen(false)}
                   className="text-xs hover:text-white transition-colors"
                   style={{ color: "var(--text-muted)" }}
-                >
-                  ✕
-                </button>
+                >✕</button>
               </div>
-              {/* Progress bar */}
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                <div className="flex-1 h-1.5 rounded-full overflow-hidden"
+                     style={{ background: "var(--border)" }}>
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${progress}%`, background: "var(--green)" }}
@@ -264,100 +253,135 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
               </div>
             </div>
 
-            {/* Accordion module list */}
+            {/* Accordion */}
             <div className="overflow-y-auto flex-1">
               {groups.map((group) => {
-                const isOpen = openModules.has(group.key);
-                const isActiveModule = group.key === activeModuleKey;
-                const groupDone = group.lessons.filter((l) => completed.has(l.id)).length;
-                const groupTotal = group.lessons.length;
+                const isOpen        = !!openMap[group.key];
+                const isActiveMod   = group.key === activeModuleKey;
+                const doneCnt       = group.lessons.filter((l) => !!completed[l.id]).length;
 
                 return (
-                  <div key={group.key} style={{ borderBottom: "1px solid var(--border)" }}>
-                    {/* Module header (accordion trigger) */}
+                  <div key={group.key}>
+
+                    {/* ── Module header ── */}
                     <button
                       onClick={() => toggleModule(group.key)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5"
+                      className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors"
                       style={{
-                        background: isActiveModule ? "rgba(0,209,102,0.05)" : "transparent",
+                        background:   isActiveMod ? "rgba(0,209,102,0.07)" : "transparent",
+                        borderBottom: "1px solid var(--border)",
                       }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = isActiveMod
+                          ? "rgba(0,209,102,0.12)"
+                          : "rgba(255,255,255,0.04)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = isActiveMod
+                          ? "rgba(0,209,102,0.07)"
+                          : "transparent")
+                      }
                     >
-                      <span className="text-base leading-none">{group.icon}</span>
-                      <div className="flex-1 min-w-0">
+                      <span style={{ fontSize: 15 }}>{group.icon}</span>
+
+                      <div className="flex-1 min-w-0 text-left">
                         <p
-                          className="text-xs font-semibold leading-tight"
-                          style={{ color: isActiveModule ? "var(--green)" : "var(--text)" }}
+                          className="text-xs font-semibold leading-snug"
+                          style={{ color: isActiveMod ? "var(--green)" : "var(--text)" }}
                         >
                           {group.label}
                         </p>
-                        <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                          {groupDone}/{groupTotal} clases
+                        <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                          {doneCnt}/{group.lessons.length} clases
                         </p>
                       </div>
+
                       <span
-                        className="text-[10px] transition-transform duration-200"
                         style={{
-                          color: "var(--text-muted)",
+                          color:     "var(--text-muted)",
+                          fontSize:  10,
                           transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                          display: "inline-block",
+                          transition: "transform 0.2s",
+                          display:   "inline-block",
+                          flexShrink: 0,
                         }}
-                      >
-                        ▼
-                      </span>
+                      >▼</span>
                     </button>
 
-                    {/* Lesson list (collapsible) */}
+                    {/* ── Lesson list (only when open) ── */}
                     {isOpen && (
-                      <ul>
+                      <div>
                         {group.lessons.map((l) => {
                           const isActive = l.id === lesson.id;
-                          const isDone = completed.has(l.id);
+                          const isDone   = !!completed[l.id];
+
                           return (
-                            <li key={l.id} style={{ borderTop: "1px solid var(--border)" }}>
-                              <Link
-                                href={`/cursos/${course.slug}/leccion/${l.id}`}
-                                className="flex items-start gap-3 pl-10 pr-4 py-2.5 transition-colors hover:bg-white/5"
+                            <Link
+                              key={l.id}
+                              href={`/cursos/${course.slug}/leccion/${l.id}`}
+                              className="flex items-start gap-3 py-2.5 pr-4 transition-colors"
+                              style={{
+                                paddingLeft:  "2.5rem",
+                                background:   isActive ? "rgba(0,209,102,0.09)" : "transparent",
+                                borderLeft:   isActive ? "3px solid var(--green)" : "3px solid transparent",
+                                borderBottom: "1px solid var(--border)",
+                                display:      "flex",
+                              }}
+                            >
+                              {/* Status dot */}
+                              <span
                                 style={{
-                                  background: isActive ? "rgba(0,209,102,0.08)" : "transparent",
-                                  borderLeft: isActive ? "2px solid var(--green)" : "2px solid transparent",
+                                  width:        14,
+                                  height:       14,
+                                  borderRadius: "50%",
+                                  flexShrink:   0,
+                                  marginTop:    2,
+                                  display:      "flex",
+                                  alignItems:   "center",
+                                  justifyContent: "center",
+                                  fontSize:     8,
+                                  fontWeight:   700,
+                                  background:   isDone
+                                    ? "var(--green)"
+                                    : isActive
+                                    ? "rgba(0,209,102,0.3)"
+                                    : "var(--bg-card)",
+                                  color:        isDone ? "#000" : "var(--green)",
+                                  border:       isDone || isActive
+                                    ? "none"
+                                    : "1px solid var(--border)",
                                 }}
                               >
-                                <span
-                                  className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5"
+                                {isDone ? "✓" : ""}
+                              </span>
+
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p
                                   style={{
-                                    background: isDone
+                                    fontSize:    12,
+                                    fontWeight:  isActive ? 600 : 400,
+                                    lineHeight:  1.35,
+                                    color:       isActive
                                       ? "var(--green)"
-                                      : isActive
-                                      ? "rgba(0,209,102,0.3)"
-                                      : "var(--bg-card)",
-                                    color: isDone ? "#000" : isActive ? "var(--green)" : "var(--text-muted)",
-                                    border: isDone || isActive ? "none" : "1px solid var(--border)",
+                                      : isDone
+                                      ? "var(--text-secondary)"
+                                      : "var(--text)",
+                                    display:     "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow:    "hidden",
                                   }}
                                 >
-                                  {isDone ? "✓" : ""}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <p
-                                    className="text-xs font-medium leading-tight line-clamp-2"
-                                    style={{
-                                      color: isActive
-                                        ? "var(--green)"
-                                        : isDone
-                                        ? "var(--text-secondary)"
-                                        : "var(--text)",
-                                    }}
-                                  >
-                                    {l.title}
-                                  </p>
-                                  <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                                    ▶ {fmtSec(l.durationSec)}
-                                  </p>
-                                </div>
-                              </Link>
-                            </li>
+                                  {l.title}
+                                </p>
+                                <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+                                  ▶ {fmtSec(l.durationSec)}
+                                </p>
+                              </div>
+                            </Link>
                           );
                         })}
-                      </ul>
+                      </div>
                     )}
                   </div>
                 );
@@ -367,16 +391,14 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
         )}
       </aside>
 
-      {/* Toggle sidebar button (when closed) */}
+      {/* Sidebar toggle (when closed) */}
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
           className="fixed right-0 top-1/2 -translate-y-1/2 px-1.5 py-4 rounded-l-lg text-xs font-medium z-10"
           style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
           title="Abrir contenido"
-        >
-          ☰
-        </button>
+        >☰</button>
       )}
     </div>
   );
