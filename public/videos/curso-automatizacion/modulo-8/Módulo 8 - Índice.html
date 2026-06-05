@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Módulo 8 — Sistemas SCADA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1116; --bg2:#15181f; --paper:#1c2029; --paper2:#252a35;
+    --ink:#f4f1ea; --mut:#9aa3b2; --dim:#5f6776;
+    --line:rgba(150,168,196,0.10); --lineS:rgba(150,168,196,0.22);
+    --coral:#ff6a4b; --coralD:#e8472a; --coralLt:#ff9b85;
+    --steel:#5891d8; --steelD:#3a6fb8; --steelLt:#8fb6e8;
+    --honey:#f4b53f; --honeyD:#d8991f; --grn:#54c98a;
+    --disp:'Space Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+    --shadow:0 22px 60px rgba(0,0,0,0.58); --shadowSm:0 8px 22px rgba(0,0,0,0.44);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--disp);min-height:100%;}
+  body{
+    background-image:
+      radial-gradient(circle 880px at 12% 4%, rgba(255,106,75,0.14), transparent 60%),
+      radial-gradient(circle 760px at 92% 96%, rgba(88,145,216,0.12), transparent 60%);
+  }
+  .wrap{max-width:1300px;margin:0 auto;padding:60px 40px 100px;}
+  .kick{font-family:var(--mono);font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:var(--coral);font-weight:600;display:flex;align-items:center;gap:14px;}
+  .kick::before{content:"";width:34px;height:2px;background:var(--coral);}
+  h1{font-size:60px;font-weight:700;letter-spacing:-.02em;line-height:1.04;margin:22px 0 16px;max-width:24ch;text-wrap:balance;}
+  h1 .em{color:var(--coral);}
+  .sub{font-size:22px;color:var(--mut);max-width:70ch;line-height:1.5;}
+  .meta{display:flex;gap:34px;margin-top:32px;flex-wrap:wrap;}
+  .meta .n{font-family:var(--disp);font-size:34px;font-weight:700;color:var(--steel);}
+  .meta .l{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);display:block;margin-top:4px;}
+  .group{margin-top:48px;display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--coral);}
+  .group::after{content:"";flex:1;height:1px;background:var(--lineS);}
+  .group .sx{font-size:11px;color:var(--dim);letter-spacing:.18em;}
+  .grid{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px;}
+  a.card{position:relative;display:flex;flex-direction:column;gap:11px;text-decoration:none;color:inherit;
+    border:1px solid var(--lineS);border-radius:14px;padding:24px 24px 20px;background:linear-gradient(160deg,var(--paper),var(--bg2));box-shadow:var(--shadowSm);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;overflow:hidden;}
+  a.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--coral);}
+  a.card .no{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--dim);}
+  a.card .ghost{position:absolute;right:-8px;top:-30px;font-family:var(--disp);font-size:140px;font-weight:700;color:var(--coral);opacity:.07;line-height:1;pointer-events:none;}
+  a.card h2{font-size:24px;font-weight:700;letter-spacing:-.01em;line-height:1.14;max-width:20ch;}
+  a.card p{font-size:15px;color:var(--mut);line-height:1.46;}
+  a.card .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:14px;}
+  a.card .dur{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--steelD);text-transform:uppercase;}
+  a.card .go{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:gap .18s,color .18s;}
+  a.card:hover .go{gap:14px;color:var(--ink);}
+  a.card .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--coral);}
+  a.card.st .bar{background:var(--steel);} a.card.st .ghost,a.card.st .dur{color:var(--steel);}
+  a.card.st:hover{border-color:var(--steel);}
+  a.card.hn .bar{background:var(--honey);} a.card.hn .ghost,a.card.hn .dur{color:var(--honey);}
+  a.card.hn:hover{border-color:var(--honey);}
+  a.card.gr{border-color:rgba(84,201,138,0.32);} a.card.gr .bar{background:var(--grn);} a.card.gr .ghost,a.card.gr .dur{color:var(--grn);}
+  a.card.gr:hover{border-color:var(--grn);}
+  .back{display:inline-flex;align-items:center;gap:10px;margin-bottom:30px;font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-decoration:none;border:1px solid var(--lineS);border-radius:8px;padding:9px 16px;background:var(--paper);transition:color .15s,border-color .15s;}
+  .back:hover{color:var(--coral);border-color:var(--coral);}
+  footer{margin-top:56px;font-family:var(--mono);font-size:13px;color:var(--dim);letter-spacing:.06em;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="Módulo 7 - Índice.html">← Módulo 7</a>
+  <div class="kick">Curso de Instrumentación y Automatización</div>
+  <h1>Módulo 8 — <span class="em">Sistemas SCADA</span></h1>
+  <p class="sub">La sala de control en tu pantalla. El SCADA es donde todo lo aprendido se vuelve visible y operable: la interfaz entre el proceso físico y las personas que lo operan. Diseñarás, construirás y conectarás un SCADA real con Ignition para la planta de tratamiento de agua del curso — desde el primer tag hasta el gemelo digital.</p>
+  <div class="meta">
+    <div><span class="n">12</span><span class="l">Clases</span></div>
+    <div><span class="n">Ignition</span><span class="l">Plataforma SCADA</span></div>
+    <div><span class="n">3</span><span class="l">Normas · ASM · ISA-101 · ISA-18.2</span></div>
+    <div><span class="n">1</span><span class="l">Proyecto integrador</span></div>
+  </div>
+
+  <div class="group">Fundamentos <span class="sx">· qué es y por qué importa</span></div>
+  <div class="grid">
+    <a class="card" href="Clase 8.1 - Que es un SCADA.html"><span class="bar"></span><span class="ghost">01</span><span class="no">CLASE 8.1</span><h2>¿Qué es un SCADA?</h2><p>Significado, las 4 generaciones, los 5 componentes, arquitecturas de despliegue y los estándares de HMI.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Construir el SCADA con Ignition <span class="sx">· del Gateway al flujo de datos</span></div>
+  <div class="grid">
+    <a class="card st" href="Clase 8.2 - Ignition instalacion.html"><span class="bar"></span><span class="ghost">02</span><span class="no">CLASE 8.2</span><h2>Ignition: instalación y primer proyecto</h2><p>Por qué Ignition, instalación del Gateway, arquitectura de módulos y el Designer.</p><div class="foot"><span class="dur">20–22 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card st" href="Clase 8.3 - Tags en Ignition.html"><span class="bar"></span><span class="ghost">03</span><span class="no">CLASE 8.3</span><h2>Tags en Ignition</h2><p>OPC, Memory, Expression y Query · el Historian con deadband · la estructura de tags del proyecto.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card st" href="Clase 8.4 - Conexion OPC-UA.html"><span class="bar"></span><span class="ghost">04</span><span class="no">CLASE 8.4</span><h2>Conectar Ignition con el PLC</h2><p>El puente OPC-UA, opciones de conexión, vincular tags y la calidad del dato.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Diseño de la interfaz <span class="sx">· sinópticos, alarmas y tendencias</span></div>
+  <div class="grid">
+    <a class="card hn" href="Clase 8.5 - Sinopticos ASM.html"><span class="bar"></span><span class="ghost">05</span><span class="no">CLASE 8.5</span><h2>Sinópticos: filosofía ASM</h2><p>Los 6 principios ASM, gris vs color, componentes Perspective y la Vista General Nivel 1.</p><div class="foot"><span class="dur">20–22 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card hn" href="Clase 8.6 - Sistema de alarmas.html"><span class="bar"></span><span class="ghost">06</span><span class="no">CLASE 8.6</span><h2>Sistema de alarmas</h2><p>El alarm flood, alarmas HH/H/L/LL, histéresis, prioridades y la vista de gestión.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card hn" href="Clase 8.7 - Tendencias historicas.html"><span class="bar"></span><span class="ghost">07</span><span class="no">CLASE 8.7</span><h2>Tendencias y datos históricos</h2><p>Por qué importan, el Easy Chart, la Vista de Tendencias y consultas SQL al Historian.</p><div class="foot"><span class="dur">16–18 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Programación y operación <span class="sx">· scripting, reportes y seguridad</span></div>
+  <div class="grid">
+    <a class="card" href="Clase 8.8 - Scripting Python.html"><span class="bar"></span><span class="ghost">08</span><span class="no">CLASE 8.8</span><h2>Scripting Python en Ignition</h2><p>Jython, los 4 contextos, las funciones system.* y la secuencia de arranque automatizada.</p><div class="foot"><span class="dur">18–20 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 8.9 - Reportes.html"><span class="bar"></span><span class="ghost">09</span><span class="no">CLASE 8.9</span><h2>Reportes en Ignition</h2><p>El reporte de turno, componentes del módulo Reporting y la programación con envío por email.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card" href="Clase 8.10 - Seguridad y roles.html"><span class="bar"></span><span class="ghost">10</span><span class="no">CLASE 8.10</span><h2>Seguridad de usuarios y roles</h2><p>Por qué importa, roles y zonas, restricción por rol y la auditoría de acciones.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <div class="group">Integración y futuro <span class="sx">· el sistema completo y lo que viene</span></div>
+  <div class="grid">
+    <a class="card gr" href="Clase 8.11 - Practica SCADA completo.html"><span class="bar"></span><span class="ghost">11</span><span class="no">CLASE 8.11 · PRÁCTICA</span><h2>SCADA completo del proyecto</h2><p>Lista de verificación, 4 escenarios de prueba y el sistema operando en vivo de punta a punta.</p><div class="foot"><span class="dur">35–40 min</span><span class="go">Ver video →</span></div></a>
+    <a class="card st" href="Clase 8.12 - Cloud IIoT y Gemelos.html"><span class="bar"></span><span class="ghost">12</span><span class="no">CLASE 8.12</span><h2>Cloud, IIoT y Gemelos Digitales</h2><p>Las 5 tendencias del SCADA 4.0, MQTT/Sparkplug, gemelos digitales y el futuro del operador.</p><div class="foot"><span class="dur">14–16 min</span><span class="go">Ver video →</span></div></a>
+  </div>
+
+  <footer>
+    Tema oscuro «sala de control» — grafito cálido + coral persimón + azul-acero + miel · 1920×1080<br>
+    Contenido desarrollado a partir del temario del curso · Ignition de Inductive Automation · normas ASM, ISA-101, ISA-18.2 / EEMUA 191 · proyecto de tratamiento de agua.
+  </footer>
+</div>
+</body>
+</html>
