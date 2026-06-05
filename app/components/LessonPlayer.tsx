@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type Lesson = {
   id: number;
@@ -19,24 +19,107 @@ type Props = {
   nextLessonId: number | null;
 };
 
+// ── Module metadata ────────────────────────────────────────────────────────────
+const MODULE_META: Record<string, { label: string; icon: string }> = {
+  "modulo-0-bienvenida":      { label: "Módulo 0 — Bienvenida",                      icon: "🎯" },
+  "modulo-1-fundamentos":     { label: "Módulo 1 — Fundamentos",                     icon: "⚡" },
+  "modulo-2-instrumentacion": { label: "Módulo 2 — Instrumentación",                 icon: "📐" },
+  "modulo-3-sensores":        { label: "Módulo 3 — Sensores y Transmisores",         icon: "📡" },
+  "modulo-4-actuadores":      { label: "Módulo 4 — Actuadores",                      icon: "🔧" },
+  "modulo-5-control":         { label: "Módulo 5 — Control de Proceso",              icon: "🎛️" },
+  "modulo-6-plc":             { label: "Módulo 6 — PLCs Siemens",                    icon: "🖥️" },
+  "modulo-7":                 { label: "Módulo 7 — Redes Industriales",              icon: "🌐" },
+  "modulo-8":                 { label: "Módulo 8 — SCADA e IIoT",                    icon: "📊" },
+  "modulo-9":                 { label: "Módulo 9 — Seguridad Industrial",            icon: "🦺" },
+  "modulo-10":                { label: "Módulo 10 — Tecnologías Avanzadas",          icon: "🚀" },
+  "modulo-11":                { label: "Módulo 11 — Proyecto Capstone",              icon: "🏆" },
+};
+
+function getModuleKey(videoPath: string): string {
+  // videoPath like "/videos/curso-automatizacion/modulo-6-plc/Clase..."
+  const match = videoPath.match(/\/(modulo-[\w-]+)\//);
+  return match ? match[1] : "otros";
+}
+
 function fmtSec(s: number) {
   const m = Math.floor(s / 60);
   const sec = s % 60;
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
+// ── Group lessons by module ────────────────────────────────────────────────────
+type ModuleGroup = {
+  key: string;
+  label: string;
+  icon: string;
+  lessons: Lesson[];
+};
+
+function groupByModule(lessons: Lesson[]): ModuleGroup[] {
+  const map = new Map<string, Lesson[]>();
+  for (const l of lessons) {
+    const key = getModuleKey(l.videoPath);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(l);
+  }
+  return [...map.entries()].map(([key, lsns]) => ({
+    key,
+    label: MODULE_META[key]?.label ?? key,
+    icon: MODULE_META[key]?.icon ?? "📁",
+    lessons: lsns,
+  }));
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function LessonPlayer({ course, lesson, lessons, prevLessonId, nextLessonId }: Props) {
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const activeModuleKey = getModuleKey(lesson.videoPath);
+  const [openModules, setOpenModules] = useState<Set<string>>(new Set([activeModuleKey]));
 
   const storageKey = `ia_progress_${course.slug}`;
+  const groups = groupByModule(lessons);
 
+  // Load progress from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) setCompleted(new Set(JSON.parse(raw)));
     } catch {}
   }, [storageKey]);
+
+  // Open the active module whenever the lesson changes
+  useEffect(() => {
+    setOpenModules((prev) => new Set([...prev, activeModuleKey]));
+  }, [activeModuleKey]);
+
+  // Disable looping in the iframe after it loads
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    function disableLoop() {
+      try {
+        const doc = iframe!.contentDocument;
+        if (!doc) return;
+        // Stop all <video> elements from looping
+        doc.querySelectorAll("video").forEach((v) => {
+          v.loop = false;
+          v.controls = true;
+        });
+        // Post message to any React animation that listens
+        iframe!.contentWindow?.postMessage({ type: "INSTRUMEX_PAUSE_LOOP" }, "*");
+      } catch {
+        // cross-origin — message only
+        iframe!.contentWindow?.postMessage({ type: "INSTRUMEX_PAUSE_LOOP" }, "*");
+      }
+    }
+
+    iframe.addEventListener("load", disableLoop);
+    return () => iframe.removeEventListener("load", disableLoop);
+  }, [lesson.id]);
 
   function toggleComplete(id: number) {
     setCompleted((prev) => {
@@ -48,11 +131,20 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
     });
   }
 
+  function toggleModule(key: string) {
+    setOpenModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   const progress = Math.round((completed.size / lessons.length) * 100);
 
   return (
     <div className="flex flex-1 h-[calc(100vh-3.5rem)] overflow-hidden">
-      {/* Main content */}
+      {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-auto">
         {/* Breadcrumb */}
         <div
@@ -69,6 +161,7 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
         {/* Video iframe */}
         <div className="relative bg-black" style={{ paddingBottom: "56.25%" }}>
           <iframe
+            ref={iframeRef}
             key={lesson.id}
             src={lesson.videoPath}
             className="absolute inset-0 w-full h-full border-0"
@@ -136,7 +229,7 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
         </div>
       </div>
 
-      {/* Sidebar */}
+      {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
       <aside
         className={`shrink-0 flex flex-col border-l overflow-hidden transition-all duration-300 ${sidebarOpen ? "w-80" : "w-0"}`}
         style={{ borderColor: "var(--border)", background: "var(--bg-sidebar)" }}
@@ -165,54 +258,111 @@ export default function LessonPlayer({ course, lesson, lessons, prevLessonId, ne
                     style={{ width: `${progress}%`, background: "var(--green)" }}
                   />
                 </div>
-                <span className="text-xs font-medium" style={{ color: "var(--green)" }}>{progress}%</span>
+                <span className="text-xs font-medium" style={{ color: "var(--green)" }}>
+                  {progress}%
+                </span>
               </div>
             </div>
 
-            {/* Lesson list */}
-            <ul className="overflow-y-auto flex-1">
-              {lessons.map((l) => {
-                const isActive = l.id === lesson.id;
-                const isDone = completed.has(l.id);
+            {/* Accordion module list */}
+            <div className="overflow-y-auto flex-1">
+              {groups.map((group) => {
+                const isOpen = openModules.has(group.key);
+                const isActiveModule = group.key === activeModuleKey;
+                const groupDone = group.lessons.filter((l) => completed.has(l.id)).length;
+                const groupTotal = group.lessons.length;
+
                 return (
-                  <li key={l.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <Link
-                      href={`/cursos/${course.slug}/leccion/${l.id}`}
-                      className="flex items-start gap-3 px-4 py-3 transition-colors"
+                  <div key={group.key} style={{ borderBottom: "1px solid var(--border)" }}>
+                    {/* Module header (accordion trigger) */}
+                    <button
+                      onClick={() => toggleModule(group.key)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5"
                       style={{
-                        background: isActive ? "rgba(0,209,102,0.08)" : "transparent",
-                        borderLeft: isActive ? "2px solid var(--green)" : "2px solid transparent",
+                        background: isActiveModule ? "rgba(0,209,102,0.05)" : "transparent",
                       }}
                     >
-                      <span
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5"
-                        style={{
-                          background: isDone
-                            ? "var(--green)"
-                            : isActive
-                            ? "rgba(0,209,102,0.3)"
-                            : "var(--bg-card)",
-                          color: isDone ? "#000" : isActive ? "var(--green)" : "var(--text-muted)",
-                        }}
-                      >
-                        {isDone ? "✓" : l.order}
-                      </span>
+                      <span className="text-base leading-none">{group.icon}</span>
                       <div className="flex-1 min-w-0">
                         <p
-                          className="text-xs font-medium leading-tight line-clamp-2"
-                          style={{ color: isActive ? "var(--green)" : isDone ? "var(--text-secondary)" : "var(--text)" }}
+                          className="text-xs font-semibold leading-tight"
+                          style={{ color: isActiveModule ? "var(--green)" : "var(--text)" }}
                         >
-                          {l.title}
+                          {group.label}
                         </p>
                         <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                          ▶ {fmtSec(l.durationSec)}
+                          {groupDone}/{groupTotal} clases
                         </p>
                       </div>
-                    </Link>
-                  </li>
+                      <span
+                        className="text-[10px] transition-transform duration-200"
+                        style={{
+                          color: "var(--text-muted)",
+                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          display: "inline-block",
+                        }}
+                      >
+                        ▼
+                      </span>
+                    </button>
+
+                    {/* Lesson list (collapsible) */}
+                    {isOpen && (
+                      <ul>
+                        {group.lessons.map((l) => {
+                          const isActive = l.id === lesson.id;
+                          const isDone = completed.has(l.id);
+                          return (
+                            <li key={l.id} style={{ borderTop: "1px solid var(--border)" }}>
+                              <Link
+                                href={`/cursos/${course.slug}/leccion/${l.id}`}
+                                className="flex items-start gap-3 pl-10 pr-4 py-2.5 transition-colors hover:bg-white/5"
+                                style={{
+                                  background: isActive ? "rgba(0,209,102,0.08)" : "transparent",
+                                  borderLeft: isActive ? "2px solid var(--green)" : "2px solid transparent",
+                                }}
+                              >
+                                <span
+                                  className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5"
+                                  style={{
+                                    background: isDone
+                                      ? "var(--green)"
+                                      : isActive
+                                      ? "rgba(0,209,102,0.3)"
+                                      : "var(--bg-card)",
+                                    color: isDone ? "#000" : isActive ? "var(--green)" : "var(--text-muted)",
+                                    border: isDone || isActive ? "none" : "1px solid var(--border)",
+                                  }}
+                                >
+                                  {isDone ? "✓" : ""}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className="text-xs font-medium leading-tight line-clamp-2"
+                                    style={{
+                                      color: isActive
+                                        ? "var(--green)"
+                                        : isDone
+                                        ? "var(--text-secondary)"
+                                        : "var(--text)",
+                                    }}
+                                  >
+                                    {l.title}
+                                  </p>
+                                  <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                                    ▶ {fmtSec(l.durationSec)}
+                                  </p>
+                                </div>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           </>
         )}
       </aside>

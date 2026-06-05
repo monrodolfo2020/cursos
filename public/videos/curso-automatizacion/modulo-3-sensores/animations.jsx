@@ -334,8 +334,8 @@ function Stage({
   duration = 10,
   background = '#f6f4ef',
   fps = 60,
-  loop = true,
-  autoplay = true,
+  loop = false,
+  autoplay = false,
   persistKey = 'animstage',
   children,
 }) {
