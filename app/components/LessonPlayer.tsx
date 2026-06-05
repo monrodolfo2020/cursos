@@ -21,18 +21,18 @@ type Props = {
 
 // ── Module metadata ─────────────────────────────────────────────────────────
 const MODULE_META: Record<string, { label: string; icon: string }> = {
-  "modulo-0-bienvenida":      { label: "Módulo 0 — Bienvenida",                 icon: "🎯" },
-  "modulo-1-fundamentos":     { label: "Módulo 1 — Fundamentos",                icon: "⚡" },
-  "modulo-2-instrumentacion": { label: "Módulo 2 — Instrumentación",            icon: "📐" },
-  "modulo-3-sensores":        { label: "Módulo 3 — Sensores",                   icon: "📡" },
-  "modulo-4-actuadores":      { label: "Módulo 4 — Actuadores",                 icon: "🔧" },
-  "modulo-5-control":         { label: "Módulo 5 — Control de Proceso",         icon: "🎛️" },
-  "modulo-6-plc":             { label: "Módulo 6 — PLCs Siemens",               icon: "🖥️" },
-  "modulo-7":                 { label: "Módulo 7 — Redes Industriales",         icon: "🌐" },
-  "modulo-8":                 { label: "Módulo 8 — SCADA e IIoT",               icon: "📊" },
-  "modulo-9":                 { label: "Módulo 9 — Seguridad Industrial",       icon: "🦺" },
-  "modulo-10":                { label: "Módulo 10 — Tecnologías Avanzadas",     icon: "🚀" },
-  "modulo-11":                { label: "Módulo 11 — Proyecto Capstone",         icon: "🏆" },
+  "modulo-0-bienvenida":      { label: "Módulo 0 — Bienvenida",              icon: "🎯" },
+  "modulo-1-fundamentos":     { label: "Módulo 1 — Fundamentos",             icon: "⚡" },
+  "modulo-2-instrumentacion": { label: "Módulo 2 — Instrumentación",         icon: "📐" },
+  "modulo-3-sensores":        { label: "Módulo 3 — Sensores",                icon: "📡" },
+  "modulo-4-actuadores":      { label: "Módulo 4 — Actuadores",              icon: "🔧" },
+  "modulo-5-control":         { label: "Módulo 5 — Control de Proceso",      icon: "🎛️" },
+  "modulo-6-plc":             { label: "Módulo 6 — PLCs Siemens",            icon: "🖥️" },
+  "modulo-7":                 { label: "Módulo 7 — Redes Industriales",      icon: "🌐" },
+  "modulo-8":                 { label: "Módulo 8 — SCADA e IIoT",            icon: "📊" },
+  "modulo-9":                 { label: "Módulo 9 — Seguridad Industrial",    icon: "🦺" },
+  "modulo-10":                { label: "Módulo 10 — Tecnologías Avanzadas",  icon: "🚀" },
+  "modulo-11":                { label: "Módulo 11 — Proyecto Capstone",      icon: "🏆" },
 };
 
 function getModuleKey(videoPath: string): string {
@@ -64,18 +64,23 @@ function groupByModule(lessons: Lesson[]): ModuleGroup[] {
   }));
 }
 
-// ── Component ───────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────────
 export default function LessonPlayer({
   course, lesson, lessons, prevLessonId, nextLessonId,
 }: Props) {
-  const [completed, setCompleted]     = useState<Record<number, boolean>>({});
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [openMap, setOpenMap]         = useState<Record<string, boolean>>({});
-  const iframeRef                     = useRef<HTMLIFrameElement>(null);
+  const [completed,    setCompleted]    = useState<Record<number, boolean>>({});
+  const [sidebarOpen,  setSidebarOpen]  = useState(false); // starts closed on mobile
+  const [openMap,      setOpenMap]      = useState<Record<string, boolean>>({});
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const storageKey     = `ia_progress_${course.slug}`;
+  const storageKey      = `ia_progress_${course.slug}`;
   const activeModuleKey = getModuleKey(lesson.videoPath);
   const groups          = groupByModule(lessons);
+
+  // On desktop, default sidebar to open
+  useEffect(() => {
+    if (window.innerWidth >= 768) setSidebarOpen(true);
+  }, []);
 
   // Load saved progress
   useEffect(() => {
@@ -90,12 +95,17 @@ export default function LessonPlayer({
     } catch {}
   }, [storageKey]);
 
-  // Open the active module whenever the lesson changes
+  // Open active module whenever lesson changes
   useEffect(() => {
     setOpenMap((prev) => ({ ...prev, [activeModuleKey]: true }));
   }, [activeModuleKey]);
 
-  // Disable loop/autoplay in iframe after load
+  // Close sidebar on mobile when navigating to a lesson
+  function handleLessonClick() {
+    if (window.innerWidth < 768) setSidebarOpen(false);
+  }
+
+  // Disable loop/autoplay in iframe
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
@@ -124,31 +134,162 @@ export default function LessonPlayer({
     setOpenMap((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  const completedCount = Object.keys(completed).length;
-  const progress = Math.round((completedCount / lessons.length) * 100);
+  const progress = Math.round((Object.keys(completed).length / lessons.length) * 100);
+
+  // ── Sidebar content (shared between desktop inline & mobile drawer) ───────
+  const SidebarContent = (
+    <>
+      {/* Header */}
+      <div className="px-4 py-3 border-b flex-shrink-0 flex flex-col gap-2"
+           style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wide"
+             style={{ color: "var(--text-muted)" }}>
+            Contenido del curso
+          </p>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="text-sm hover:text-white transition-colors p-1"
+            style={{ color: "var(--text-muted)" }}
+            aria-label="Cerrar"
+          >✕</button>
+        </div>
+        {/* Progress */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progress}%`, background: "var(--green)" }}
+            />
+          </div>
+          <span className="text-xs font-medium" style={{ color: "var(--green)" }}>{progress}%</span>
+        </div>
+      </div>
+
+      {/* Accordion */}
+      <div className="overflow-y-auto flex-1">
+        {groups.map((group) => {
+          const isOpen      = !!openMap[group.key];
+          const isActiveMod = group.key === activeModuleKey;
+          const doneCnt     = group.lessons.filter((l) => !!completed[l.id]).length;
+
+          return (
+            <div key={group.key}>
+              {/* Module header */}
+              <button
+                onClick={() => toggleModule(group.key)}
+                className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors"
+                style={{
+                  background:   isActiveMod ? "rgba(0,209,102,0.07)" : "transparent",
+                  borderBottom: "1px solid var(--border)",
+                }}
+              >
+                <span style={{ fontSize: 15, flexShrink: 0 }}>{group.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold leading-snug"
+                     style={{ color: isActiveMod ? "var(--green)" : "var(--text)" }}>
+                    {group.label}
+                  </p>
+                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                    {doneCnt}/{group.lessons.length} clases
+                  </p>
+                </div>
+                <span
+                  style={{
+                    color: "var(--text-muted)", fontSize: 10, flexShrink: 0,
+                    transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s", display: "inline-block",
+                  }}
+                >▼</span>
+              </button>
+
+              {/* Lesson list */}
+              {isOpen && (
+                <div>
+                  {group.lessons.map((l) => {
+                    const isActive = l.id === lesson.id;
+                    const isDone   = !!completed[l.id];
+                    return (
+                      <Link
+                        key={l.id}
+                        href={`/cursos/${course.slug}/leccion/${l.id}`}
+                        onClick={handleLessonClick}
+                        className="flex items-start gap-3 py-2.5 pr-4 transition-colors"
+                        style={{
+                          paddingLeft:  "2.5rem",
+                          background:   isActive ? "rgba(0,209,102,0.09)" : "transparent",
+                          borderLeft:   isActive ? "3px solid var(--green)" : "3px solid transparent",
+                          borderBottom: "1px solid var(--border)",
+                          display:      "flex",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
+                            marginTop: 2, display: "flex", alignItems: "center",
+                            justifyContent: "center", fontSize: 8, fontWeight: 700,
+                            background: isDone ? "var(--green)" : isActive ? "rgba(0,209,102,0.3)" : "var(--bg-card)",
+                            color: isDone ? "#000" : "var(--green)",
+                            border: isDone || isActive ? "none" : "1px solid var(--border)",
+                          }}
+                        >{isDone ? "✓" : ""}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            fontSize: 12, fontWeight: isActive ? 600 : 400, lineHeight: 1.35,
+                            color: isActive ? "var(--green)" : isDone ? "var(--text-secondary)" : "var(--text)",
+                            display: "-webkit-box", WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical", overflow: "hidden",
+                          }}>
+                            {l.title}
+                          </p>
+                          <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+                            ▶ {fmtSec(l.durationSec)}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
 
   return (
-    <div className="flex flex-1 h-[calc(100vh-3.5rem)] overflow-hidden">
+    <div className="flex flex-col flex-1 md:flex-row md:h-[calc(100vh-3.5rem)] md:overflow-hidden">
 
-      {/* ── Main content ───────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-auto">
+      {/* ── Main content ─────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col md:overflow-auto">
 
-        {/* Breadcrumb */}
+        {/* Top bar: breadcrumb + sidebar toggle */}
         <div
-          className="flex items-center gap-2 text-xs px-4 py-2 border-b"
+          className="flex items-center gap-2 text-xs px-3 sm:px-4 py-2 border-b"
           style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
         >
-          <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-          <span>/</span>
-          <Link href={`/cursos/${course.slug}`} className="hover:text-white transition-colors">
+          <Link href="/" className="hover:text-white transition-colors hidden sm:inline">Inicio</Link>
+          <span className="hidden sm:inline">/</span>
+          <Link href={`/cursos/${course.slug}`} className="hover:text-white transition-colors truncate max-w-[120px] sm:max-w-none">
             {course.title}
           </Link>
           <span>/</span>
-          <span className="text-white">{lesson.title}</span>
+          <span className="text-white truncate max-w-[140px] sm:max-w-xs">{lesson.title}</span>
+
+          {/* Sidebar toggle — always visible */}
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="ml-auto flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors shrink-0"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+          >
+            <span>☰</span>
+            <span className="hidden sm:inline">Temario</span>
+          </button>
         </div>
 
         {/* Video */}
-        <div className="relative bg-black" style={{ paddingBottom: "56.25%" }}>
+        <div className="relative bg-black w-full" style={{ paddingBottom: "56.25%" }}>
           <iframe
             ref={iframeRef}
             key={lesson.id}
@@ -161,33 +302,34 @@ export default function LessonPlayer({
         </div>
 
         {/* Lesson info */}
-        <div className="px-6 py-5">
+        <div className="px-4 sm:px-6 py-4 sm:py-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-medium uppercase tracking-wide mb-1"
                  style={{ color: "var(--text-muted)" }}>
                 Lección {lesson.order} de {lessons.length}
               </p>
-              <h1 className="text-xl font-bold mb-2">{lesson.title}</h1>
+              <h1 className="text-lg sm:text-xl font-bold mb-2">{lesson.title}</h1>
               <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                 {lesson.description}
               </p>
             </div>
             <button
               onClick={() => toggleComplete(lesson.id)}
-              className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              className="shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all"
               style={{
                 background: completed[lesson.id] ? "rgba(0,209,102,0.2)" : "var(--bg-card)",
                 color:      completed[lesson.id] ? "var(--green)" : "var(--text-secondary)",
                 border: `1px solid ${completed[lesson.id] ? "var(--green)" : "var(--border)"}`,
+                whiteSpace: "nowrap",
               }}
             >
-              {completed[lesson.id] ? "✓ Completado" : "Marcar completado"}
+              {completed[lesson.id] ? "✓ Completado" : "Completado"}
             </button>
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-3 mt-6">
+          <div className="flex items-center gap-3 mt-5 flex-wrap">
             {prevLessonId ? (
               <Link
                 href={`/cursos/${course.slug}/leccion/${prevLessonId}`}
@@ -203,7 +345,7 @@ export default function LessonPlayer({
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                 style={{ background: "var(--green)", color: "#000" }}
               >
-                Siguiente lección →
+                Siguiente →
               </Link>
             ) : (
               <div
@@ -217,188 +359,47 @@ export default function LessonPlayer({
         </div>
       </div>
 
-      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
+      {/* ── Desktop sidebar (inline, w-80) ─────────────────────────────── */}
       <aside
-        className={`shrink-0 flex flex-col border-l overflow-hidden transition-all duration-300 ${
-          sidebarOpen ? "w-80" : "w-0"
-        }`}
+        className={`
+          hidden md:flex flex-col border-l overflow-hidden transition-all duration-300
+          ${sidebarOpen ? "md:w-80" : "md:w-0"}
+        `}
         style={{ borderColor: "var(--border)", background: "var(--bg-sidebar)" }}
       >
-        {sidebarOpen && (
-          <>
-            {/* Sidebar header */}
-            <div className="px-4 py-3 border-b flex-shrink-0" style={{ borderColor: "var(--border)" }}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wide"
-                   style={{ color: "var(--text-muted)" }}>
-                  Contenido del curso
-                </p>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="text-xs hover:text-white transition-colors"
-                  style={{ color: "var(--text-muted)" }}
-                >✕</button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden"
-                     style={{ background: "var(--border)" }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${progress}%`, background: "var(--green)" }}
-                  />
-                </div>
-                <span className="text-xs font-medium" style={{ color: "var(--green)" }}>
-                  {progress}%
-                </span>
-              </div>
-            </div>
-
-            {/* Accordion */}
-            <div className="overflow-y-auto flex-1">
-              {groups.map((group) => {
-                const isOpen        = !!openMap[group.key];
-                const isActiveMod   = group.key === activeModuleKey;
-                const doneCnt       = group.lessons.filter((l) => !!completed[l.id]).length;
-
-                return (
-                  <div key={group.key}>
-
-                    {/* ── Module header ── */}
-                    <button
-                      onClick={() => toggleModule(group.key)}
-                      className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors"
-                      style={{
-                        background:   isActiveMod ? "rgba(0,209,102,0.07)" : "transparent",
-                        borderBottom: "1px solid var(--border)",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = isActiveMod
-                          ? "rgba(0,209,102,0.12)"
-                          : "rgba(255,255,255,0.04)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = isActiveMod
-                          ? "rgba(0,209,102,0.07)"
-                          : "transparent")
-                      }
-                    >
-                      <span style={{ fontSize: 15 }}>{group.icon}</span>
-
-                      <div className="flex-1 min-w-0 text-left">
-                        <p
-                          className="text-xs font-semibold leading-snug"
-                          style={{ color: isActiveMod ? "var(--green)" : "var(--text)" }}
-                        >
-                          {group.label}
-                        </p>
-                        <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                          {doneCnt}/{group.lessons.length} clases
-                        </p>
-                      </div>
-
-                      <span
-                        style={{
-                          color:     "var(--text-muted)",
-                          fontSize:  10,
-                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                          transition: "transform 0.2s",
-                          display:   "inline-block",
-                          flexShrink: 0,
-                        }}
-                      >▼</span>
-                    </button>
-
-                    {/* ── Lesson list (only when open) ── */}
-                    {isOpen && (
-                      <div>
-                        {group.lessons.map((l) => {
-                          const isActive = l.id === lesson.id;
-                          const isDone   = !!completed[l.id];
-
-                          return (
-                            <Link
-                              key={l.id}
-                              href={`/cursos/${course.slug}/leccion/${l.id}`}
-                              className="flex items-start gap-3 py-2.5 pr-4 transition-colors"
-                              style={{
-                                paddingLeft:  "2.5rem",
-                                background:   isActive ? "rgba(0,209,102,0.09)" : "transparent",
-                                borderLeft:   isActive ? "3px solid var(--green)" : "3px solid transparent",
-                                borderBottom: "1px solid var(--border)",
-                                display:      "flex",
-                              }}
-                            >
-                              {/* Status dot */}
-                              <span
-                                style={{
-                                  width:        14,
-                                  height:       14,
-                                  borderRadius: "50%",
-                                  flexShrink:   0,
-                                  marginTop:    2,
-                                  display:      "flex",
-                                  alignItems:   "center",
-                                  justifyContent: "center",
-                                  fontSize:     8,
-                                  fontWeight:   700,
-                                  background:   isDone
-                                    ? "var(--green)"
-                                    : isActive
-                                    ? "rgba(0,209,102,0.3)"
-                                    : "var(--bg-card)",
-                                  color:        isDone ? "#000" : "var(--green)",
-                                  border:       isDone || isActive
-                                    ? "none"
-                                    : "1px solid var(--border)",
-                                }}
-                              >
-                                {isDone ? "✓" : ""}
-                              </span>
-
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p
-                                  style={{
-                                    fontSize:    12,
-                                    fontWeight:  isActive ? 600 : 400,
-                                    lineHeight:  1.35,
-                                    color:       isActive
-                                      ? "var(--green)"
-                                      : isDone
-                                      ? "var(--text-secondary)"
-                                      : "var(--text)",
-                                    display:     "-webkit-box",
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: "vertical",
-                                    overflow:    "hidden",
-                                  }}
-                                >
-                                  {l.title}
-                                </p>
-                                <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
-                                  ▶ {fmtSec(l.durationSec)}
-                                </p>
-                              </div>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+        {sidebarOpen && SidebarContent}
       </aside>
 
-      {/* Sidebar toggle (when closed) */}
-      {!sidebarOpen && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="fixed right-0 top-1/2 -translate-y-1/2 px-1.5 py-4 rounded-l-lg text-xs font-medium z-10"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
-          title="Abrir contenido"
-        >☰</button>
+      {/* ── Mobile sidebar (full-screen overlay drawer) ─────────────────── */}
+      {sidebarOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/60"
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* Drawer */}
+          <div
+            className="md:hidden fixed top-0 right-0 bottom-0 z-50 flex flex-col w-[85vw] max-w-sm"
+            style={{ background: "var(--bg-sidebar)", borderLeft: "1px solid var(--border)" }}
+          >
+            {/* Drawer handle / top bar */}
+            <div
+              className="flex items-center justify-between px-4 py-3 border-b"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <span className="text-sm font-semibold">Temario del curso</span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="text-xl leading-none p-1 hover:text-white transition-colors"
+                style={{ color: "var(--text-muted)" }}
+              >✕</button>
+            </div>
+            <div className="flex flex-col flex-1 overflow-hidden">
+              {SidebarContent}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
