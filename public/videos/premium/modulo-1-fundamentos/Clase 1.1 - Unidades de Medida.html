@@ -708,6 +708,282 @@ function SceneCierre() {
   );
 }
 
+/* ─── SCENE 9: TEST INTERACTIVO ─────────────────────────────────────────────── */
+const TEST_QUESTIONS = [
+  {
+    q: "¿Cuál es la unidad SI oficial para medir presión?",
+    opts: ["Bar", "Pascal (Pa)", "PSI", "Atmósfera (atm)"],
+    ans: 1,
+    exp: "El Pascal (Pa) es la unidad SI de presión: 1 Pa = 1 N/m². El bar, psi y atm son unidades no-SI muy usadas en campo."
+  },
+  {
+    q: "¿Cuántos metros equivalen exactamente a 1 pulgada (1 in)?",
+    opts: ["0.254 m", "2.54 m", "0.0254 m", "0.00254 m"],
+    ans: 2,
+    exp: "1 in = 25.4 mm = 0.0254 m exactamente. Es la conversión más usada al trabajar con tuberías y válvulas en planos americanos."
+  },
+  {
+    q: "La unidad SI de corriente eléctrica es el:",
+    opts: ["Voltio (V)", "Ohm (Ω)", "Watt (W)", "Amperio (A)"],
+    ans: 3,
+    exp: "El Amperio (A) es una de las 7 unidades base del SI. El Voltio, Ohm y Watt son unidades derivadas."
+  },
+  {
+    q: "100 °C convertido a Kelvin es igual a:",
+    opts: ["−173.15 K", "373.15 K", "212 K", "311.15 K"],
+    ans: 1,
+    exp: "T(K) = T(°C) + 273.15. Por lo tanto: 100 + 273.15 = 373.15 K. El cero absoluto es 0 K = −273.15 °C."
+  },
+  {
+    q: "1 bar equivale a cuántos Pascales (Pa)?",
+    opts: ["1 000 Pa", "10 000 Pa", "100 000 Pa", "1 000 000 Pa"],
+    ans: 2,
+    exp: "1 bar = 100 000 Pa = 100 kPa. La presión atmosférica estándar es 1.01325 bar ≈ 101 325 Pa."
+  },
+  {
+    q: "En el sistema Imperial, la unidad de presión más común en campo (EE.UU.) es:",
+    opts: ["kPa", "mmHg", "atm", "psi (lb/in²)"],
+    ans: 3,
+    exp: "El psi (libras por pulgada cuadrada) es el estándar en instrumentación americana. 1 psi = 6 894.76 Pa ≈ 6.895 kPa."
+  },
+  {
+    q: "¿Qué mide la unidad 'candela' (cd)?",
+    opts: ["Temperatura", "Cantidad de sustancia", "Intensidad luminosa", "Corriente eléctrica"],
+    ans: 2,
+    exp: "La candela (cd) es la unidad SI de intensidad luminosa. Es una de las 7 unidades base del Sistema Internacional."
+  },
+  {
+    q: "Para convertir 68 °F a Celsius se usa la fórmula:",
+    opts: ["(°F − 32) ÷ 1.8", "(°F + 32) × 1.8", "°F × 1.8 + 32", "(°F − 32) × 1.8"],
+    ans: 0,
+    exp: "T(°C) = (T(°F) − 32) ÷ 1.8. Entonces: (68 − 32) ÷ 1.8 = 36 ÷ 1.8 = 20 °C."
+  },
+  {
+    q: "¿Cuántos psi equivale aproximadamente 1 atm (presión atmosférica)?",
+    opts: ["1 psi", "6.895 psi", "14.696 psi", "29.92 psi"],
+    ans: 2,
+    exp: "1 atm = 101 325 Pa = 14.696 psi ≈ 14.7 psi. Este valor es crucial al trabajar con manómetros en escala relativa (psig) vs. absoluta (psia)."
+  },
+  {
+    q: "El 'mol' es la unidad SI de:",
+    opts: ["Masa molecular", "Cantidad de sustancia", "Energía química", "Concentración"],
+    ans: 1,
+    exp: "El mol (mol) es la unidad SI de cantidad de sustancia. 1 mol contiene exactamente 6.022 × 10²³ entidades elementales (número de Avogadro)."
+  },
+];
+
+function SceneTest() {
+  const [current, setCurrent]   = useState(0);
+  const [selected, setSelected] = useState(null);   // índice opción elegida
+  const [confirmed, setConfirmed] = useState(false); // si ya confirmó respuesta
+  const [answers, setAnswers]   = useState([]);      // {qi, chosen, correct}
+  const [finished, setFinished] = useState(false);
+
+  const q = TEST_QUESTIONS[current];
+  const isCorrect = selected === q.ans;
+  const score = answers.filter(a => a.correct).length;
+
+  function confirm() {
+    if (selected === null) return;
+    setConfirmed(true);
+    setAnswers(prev => [...prev, { qi: current, chosen: selected, correct: selected === q.ans }]);
+  }
+
+  function next() {
+    if (current < TEST_QUESTIONS.length - 1) {
+      setCurrent(c => c + 1);
+      setSelected(null);
+      setConfirmed(false);
+    } else {
+      setFinished(true);
+    }
+  }
+
+  function retry() {
+    setCurrent(0);
+    setSelected(null);
+    setConfirmed(false);
+    setAnswers([]);
+    setFinished(false);
+  }
+
+  // ── Result screen ──
+  if (finished) {
+    const pct = Math.round((score / TEST_QUESTIONS.length) * 100);
+    const [badge, color, msg] =
+      pct >= 90 ? ["🏆 Experto", "#f59e0b", "¡Dominas completamente las unidades de medida!"] :
+      pct >= 70 ? ["✅ Aprobado", "#4ade80", "Buen manejo del tema. Repasa los errores para consolidar."] :
+      pct >= 50 ? ["📘 En proceso", "#22d3ee", "Vas por buen camino. Vuelve a revisar las conversiones."] :
+                  ["🔄 Repasar", "#f87171", "Te recomendamos revisar la clase antes de continuar."];
+
+    return (
+      <div className="grid-bg" style={{ minHeight:'100%', display:'flex', flexDirection:'column',
+        alignItems:'center', justifyContent:'center', padding:'32px 24px' }}>
+        <div className="fade card" style={{ maxWidth:520, width:'100%', textAlign:'center', padding:'32px 28px' }}>
+          <div style={{ fontSize:56, marginBottom:12 }}>
+            {pct >= 90 ? '🏆' : pct >= 70 ? '🎯' : pct >= 50 ? '📖' : '🔄'}
+          </div>
+          <div style={{ fontSize:22, fontWeight:800, color, marginBottom:8 }}>{badge}</div>
+          <div style={{ fontSize:48, fontWeight:900, color:'#f59e0b', lineHeight:1, marginBottom:4 }}>
+            {score}<span style={{ fontSize:24, color:'rgba(255,255,255,.4)' }}>/{TEST_QUESTIONS.length}</span>
+          </div>
+          <div style={{ fontSize:13, color:'rgba(255,255,255,.5)', marginBottom:16 }}>{pct}% correctas</div>
+
+          {/* Progress bar */}
+          <div className="prog-track" style={{ height:8, marginBottom:20 }}>
+            <div className="prog-fill" style={{ width:`${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}aa)` }} />
+          </div>
+
+          <p style={{ fontSize:14, color:'rgba(255,255,255,.7)', lineHeight:1.6, marginBottom:24 }}>{msg}</p>
+
+          {/* Per-question review */}
+          <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:24, textAlign:'left' }}>
+            {answers.map((a, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'8px 12px',
+                borderRadius:8, background: a.correct ? 'rgba(74,222,128,.08)' : 'rgba(248,113,113,.08)',
+                border: `1px solid ${a.correct ? 'rgba(74,222,128,.25)' : 'rgba(248,113,113,.25)'}` }}>
+                <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{a.correct ? '✅' : '❌'}</span>
+                <div>
+                  <p style={{ fontSize:12, color:'rgba(255,255,255,.7)', lineHeight:1.4 }}>
+                    <strong style={{ color: a.correct ? '#4ade80' : '#f87171' }}>P{i+1}.</strong>{' '}
+                    {TEST_QUESTIONS[a.qi].q}
+                  </p>
+                  {!a.correct && (
+                    <p style={{ fontSize:11, color:'rgba(255,255,255,.45)', marginTop:3 }}>
+                      Respuesta correcta: <span style={{ color:'#4ade80' }}>{TEST_QUESTIONS[a.qi].opts[TEST_QUESTIONS[a.qi].ans]}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={retry}
+            style={{ background:'rgba(245,158,11,.15)', border:'1px solid rgba(245,158,11,.4)',
+              color:'#f59e0b', borderRadius:10, padding:'10px 28px', fontSize:14,
+              fontWeight:700, cursor:'pointer', transition:'all .2s' }}>
+            🔁 Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Question screen ──
+  const progress = ((current) / TEST_QUESTIONS.length) * 100;
+
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', padding:'28px 20px' }}>
+
+      {/* Header */}
+      <div className="fade" style={{ width:'100%', maxWidth:560, marginBottom:20 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+          <span className="badge">Test · Pregunta {current + 1} de {TEST_QUESTIONS.length}</span>
+          <span style={{ fontSize:12, color:'rgba(255,255,255,.4)' }}>
+            ✅ {score} correctas
+          </span>
+        </div>
+        <div className="prog-track" style={{ height:5 }}>
+          <div className="prog-fill" style={{ width:`${progress}%` }} />
+        </div>
+      </div>
+
+      {/* Question card */}
+      <div className="fade card" style={{ maxWidth:560, width:'100%', padding:'24px 24px 20px' }}>
+        <p style={{ fontSize:'clamp(14px,2.2vw,17px)', fontWeight:700, lineHeight:1.5,
+          color:'#fff', marginBottom:20 }}>
+          {q.q}
+        </p>
+
+        {/* Options */}
+        <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
+          {q.opts.map((opt, i) => {
+            let bg = 'rgba(255,255,255,.04)';
+            let border = '1px solid rgba(255,255,255,.12)';
+            let color = 'rgba(255,255,255,.8)';
+            let icon = null;
+
+            if (!confirmed && selected === i) {
+              bg = 'rgba(245,158,11,.12)';
+              border = '1px solid rgba(245,158,11,.6)';
+              color = '#f59e0b';
+            }
+            if (confirmed) {
+              if (i === q.ans) {
+                bg = 'rgba(74,222,128,.12)';
+                border = '1px solid rgba(74,222,128,.5)';
+                color = '#4ade80';
+                icon = '✅';
+              } else if (selected === i) {
+                bg = 'rgba(248,113,113,.12)';
+                border = '1px solid rgba(248,113,113,.5)';
+                color = '#f87171';
+                icon = '❌';
+              }
+            }
+
+            return (
+              <button key={i} onClick={() => !confirmed && setSelected(i)}
+                style={{ display:'flex', alignItems:'center', gap:12, textAlign:'left',
+                  background:bg, border, borderRadius:10, padding:'12px 16px',
+                  cursor: confirmed ? 'default' : 'pointer', transition:'all .18s',
+                  color, fontSize:14, fontWeight: selected===i||confirmed?600:400,
+                  width:'100%' }}>
+                <span style={{ flexShrink:0, width:24, height:24, borderRadius:'50%',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  background: confirmed && i===q.ans ? 'rgba(74,222,128,.2)'
+                    : confirmed && selected===i ? 'rgba(248,113,113,.2)'
+                    : selected===i ? 'rgba(245,158,11,.2)' : 'rgba(255,255,255,.08)',
+                  border: `1px solid ${confirmed && i===q.ans ? 'rgba(74,222,128,.4)'
+                    : confirmed && selected===i ? 'rgba(248,113,113,.4)'
+                    : selected===i ? 'rgba(245,158,11,.4)' : 'rgba(255,255,255,.15)'}`,
+                  fontSize:11, fontWeight:700, color:'inherit' }}>
+                  {icon || String.fromCharCode(65+i)}
+                </span>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Feedback */}
+        {confirmed && (
+          <div className="fade" style={{ padding:'12px 14px', borderRadius:10, marginBottom:16,
+            background: isCorrect ? 'rgba(74,222,128,.08)' : 'rgba(248,113,113,.08)',
+            border: `1px solid ${isCorrect ? 'rgba(74,222,128,.25)' : 'rgba(248,113,113,.25)'}` }}>
+            <p style={{ fontSize:13, fontWeight:700, color: isCorrect ? '#4ade80' : '#f87171', marginBottom:4 }}>
+              {isCorrect ? '¡Correcto! 🎉' : 'Incorrecto'}
+            </p>
+            <p style={{ fontSize:12, color:'rgba(255,255,255,.6)', lineHeight:1.55 }}>{q.exp}</p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+          {!confirmed ? (
+            <button onClick={confirm} disabled={selected === null}
+              style={{ background: selected!==null ? 'rgba(245,158,11,.15)' : 'rgba(255,255,255,.04)',
+                border: `1px solid ${selected!==null ? 'rgba(245,158,11,.5)' : 'rgba(255,255,255,.12)'}`,
+                color: selected!==null ? '#f59e0b' : 'rgba(255,255,255,.3)',
+                borderRadius:10, padding:'9px 22px', fontSize:13, fontWeight:700,
+                cursor: selected!==null ? 'pointer' : 'not-allowed', transition:'all .2s' }}>
+              Confirmar respuesta
+            </button>
+          ) : (
+            <button onClick={next}
+              style={{ background:'rgba(245,158,11,.2)', border:'1px solid rgba(245,158,11,.5)',
+                color:'#f59e0b', borderRadius:10, padding:'9px 22px', fontSize:13,
+                fontWeight:700, cursor:'pointer', transition:'all .2s' }}>
+              {current < TEST_QUESTIONS.length - 1 ? 'Siguiente →' : 'Ver resultados →'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN APP ────────────────────────────────────────────────────────────────── */
 const SCENES = [
   { id:'intro',     label:'Introducción',   Component: SceneIntro       },
@@ -719,6 +995,7 @@ const SCENES = [
   { id:'temp',      label:'Conversiones: Temperatura', Component: SceneConvTemp  },
   { id:'resumen',   label:'Tabla Maestra',  Component: SceneResumen     },
   { id:'cierre',    label:'Cierre',         Component: SceneCierre      },
+  { id:'test',      label:'Test de Evaluación', Component: SceneTest    },
 ];
 
 function App() {
