@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clase 1.1 PRO — Unidades de Medida en Instrumentación Industrial</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #080c18; color: #f0f0f0; }
+
+    @keyframes fadeIn   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    @keyframes slideR   { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+    @keyframes slideL   { from { opacity: 0; transform: translateX(24px);  } to { opacity: 1; transform: none; } }
+    @keyframes pop      { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+    @keyframes pulse    { 0%,100%{opacity:1;} 50%{opacity:.5;} }
+    @keyframes shimmer  { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+    @keyframes scanline { 0%{top:-10%;} 100%{top:110%;} }
+    @keyframes countUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+    @keyframes arrowAnim{ 0%,100%{transform:translateX(0)} 50%{transform:translateX(6px)} }
+
+    .fade    { animation: fadeIn .55s ease both; }
+    .slideR  { animation: slideR .5s ease both; }
+    .slideL  { animation: slideL .5s ease both; }
+    .pop     { animation: pop .4s cubic-bezier(.34,1.56,.64,1) both; }
+
+    .gold  { color: #f59e0b; }
+    .cyan  { color: #22d3ee; }
+    .green { color: #4ade80; }
+    .red   { color: #f87171; }
+
+    /* Grid lines background */
+    .grid-bg {
+      background-color: #080c18;
+      background-image:
+        linear-gradient(rgba(245,158,11,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245,158,11,.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Card */
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(245,158,11,.2);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+
+    /* Tag badge */
+    .badge {
+      display: inline-block;
+      background: rgba(245,158,11,.15);
+      border: 1px solid rgba(245,158,11,.4);
+      color: #f59e0b;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border-radius: 20px;
+      padding: 3px 12px;
+    }
+
+    /* Progress bar */
+    .prog-track { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+    .prog-fill  { height: 100%; background: linear-gradient(90deg,#f59e0b,#fbbf24); border-radius: 2px; transition: width .4s ease; }
+
+    /* Conversion arrow */
+    .arr { animation: arrowAnim 1.2s ease-in-out infinite; display: inline-block; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: rgba(245,158,11,.15); color: #f59e0b; font-size: 11px; letter-spacing:.05em; text-transform:uppercase; padding:8px 12px; text-align:left; }
+    td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+    .td-val { color: #fbbf24; font-weight: 600; font-family: monospace; font-size: 13px; }
+
+    /* Gauge animation */
+    @keyframes gaugeAnim { from{stroke-dashoffset:251} to{stroke-dashoffset:var(--end)} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─── DATA ─────────────────────────────────────────────────────────────────── */
+const SI_BASE = [
+  { sym:"m",   name:"Metro",    qty:"Longitud",           color:"#22d3ee", icon:"📏" },
+  { sym:"kg",  name:"Kilogramo",qty:"Masa",               color:"#4ade80", icon:"⚖️" },
+  { sym:"s",   name:"Segundo",  qty:"Tiempo",             color:"#a78bfa", icon:"⏱" },
+  { sym:"A",   name:"Amperio",  qty:"Corriente eléctrica",color:"#f59e0b", icon:"⚡" },
+  { sym:"K",   name:"Kelvin",   qty:"Temperatura",        color:"#f87171", icon:"🌡" },
+  { sym:"mol", name:"Mol",      qty:"Cantidad de sustancia",color:"#34d399",icon:"🧪" },
+  { sym:"cd",  name:"Candela",  qty:"Intensidad luminosa",color:"#fbbf24", icon:"💡" },
+];
+
+const SI_DERIVED = [
+  { sym:"Pa",  name:"Pascal",   qty:"Presión",      base:"kg/(m·s²)",  key:true  },
+  { sym:"N",   name:"Newton",   qty:"Fuerza",       base:"kg·m/s²",    key:true  },
+  { sym:"J",   name:"Joule",    qty:"Energía",      base:"N·m",        key:false },
+  { sym:"W",   name:"Watt",     qty:"Potencia",     base:"J/s",        key:false },
+  { sym:"V",   name:"Voltio",   qty:"Tensión",      base:"W/A",        key:true  },
+  { sym:"Hz",  name:"Hertz",    qty:"Frecuencia",   base:"1/s",        key:false },
+  { sym:"Ω",   name:"Ohm",      qty:"Resistencia",  base:"V/A",        key:false },
+];
+
+const IMPERIAL = [
+  { sym:"in",  name:"Pulgada",     qty:"Longitud",    note:"Std. en tuberías y válvulas" },
+  { sym:"ft",  name:"Pie",         qty:"Longitud",    note:"1 ft = 12 in" },
+  { sym:"lb",  name:"Libra-masa",  qty:"Masa",        note:"Fuerza y masa comparten nombre" },
+  { sym:"psi", name:"Lb/in²",      qty:"Presión",     note:"La más común en campo (EE.UU.)" },
+  { sym:"HP",  name:"Caballo fuerza",qty:"Potencia",  note:"Motores y compresores" },
+  { sym:"°F",  name:"Fahrenheit",  qty:"Temperatura", note:"Procesos y catálogos americanos" },
+  { sym:"BTU", name:"Brit. Thermal Unit",qty:"Energía",note:"Hornos, calderas, HVAC" },
+];
+
+const CONV_LENGTH = [
+  { from:"1 in",   to:"25.4 mm",      to2:"0.0254 m"   },
+  { from:"1 ft",   to:"304.8 mm",     to2:"0.3048 m"   },
+  { from:"1 m",    to:"39.37 in",     to2:"3.2808 ft"  },
+];
+
+const CONV_PRESSURE = [
+  { unit:"1 bar",  pa:"100 000 Pa",  psi:"14.504 psi", atm:"0.9869 atm", kPa:"100 kPa"  },
+  { unit:"1 psi",  pa:"6 894.76 Pa", psi:"—",          atm:"0.068 atm",  kPa:"6.895 kPa"},
+  { unit:"1 atm",  pa:"101 325 Pa",  psi:"14.696 psi", atm:"—",          kPa:"101.3 kPa"},
+  { unit:"1 kPa",  pa:"1 000 Pa",    psi:"0.145 psi",  atm:"0.0099 atm", kPa:"—"        },
+];
+
+/* ─── PLAYBACK BAR ─────────────────────────────────────────────────────────── */
+function PlayBar({ scene, total, onPrev, onNext, onGo }) {
+  return (
+    <div style={{
+      position:'absolute', bottom:0, left:0, right:0,
+      background:'rgba(8,12,24,.92)', borderTop:'1px solid rgba(245,158,11,.2)',
+      padding:'8px 16px', display:'flex', alignItems:'center', gap:12, zIndex:99
+    }}>
+      <button onClick={onPrev} disabled={scene===0}
+        style={{ background:'none', border:'1px solid rgba(245,158,11,.4)', color:'#f59e0b',
+          borderRadius:8, padding:'4px 12px', cursor:scene===0?'not-allowed':'pointer',
+          opacity:scene===0?.4:1, fontSize:16, transition:'all .2s' }}>‹</button>
+
+      <div style={{ flex:1 }}>
+        <div className="prog-track">
+          <div className="prog-fill" style={{ width:`${((scene+1)/total)*100}%` }} />
+        </div>
+      </div>
+
+      <span style={{ fontSize:12, color:'rgba(255,255,255,.5)', minWidth:50, textAlign:'center' }}>
+        {scene+1} / {total}
+      </span>
+
+      <div style={{ display:'flex', gap:6 }}>
+        {Array.from({length:total},(_,i)=>(
+          <button key={i} onClick={()=>onGo(i)}
+            style={{ width:8, height:8, borderRadius:'50%', border:'none', cursor:'pointer',
+              background: i===scene ? '#f59e0b' : 'rgba(255,255,255,.2)',
+              transition:'all .2s', transform: i===scene?'scale(1.3)':'none' }} />
+        ))}
+      </div>
+
+      <button onClick={onNext} disabled={scene===total-1}
+        style={{ background: scene===total-1?'none':'rgba(245,158,11,.15)',
+          border:'1px solid rgba(245,158,11,.4)', color:'#f59e0b',
+          borderRadius:8, padding:'4px 12px', cursor:scene===total-1?'not-allowed':'pointer',
+          opacity:scene===total-1?.4:1, fontSize:16, transition:'all .2s' }}>›</button>
+    </div>
+  );
+}
+
+/* ─── SCENE 0: INTRO ────────────────────────────────────────────────────────── */
+function SceneIntro() {
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', padding:32, position:'relative' }}>
+
+      {/* Corner accent */}
+      <div style={{ position:'absolute', top:0, left:0, width:120, height:120,
+        background:'radial-gradient(circle at top left, rgba(245,158,11,.2), transparent 70%)' }}/>
+      <div style={{ position:'absolute', bottom:60, right:0, width:200, height:200,
+        background:'radial-gradient(circle at bottom right, rgba(34,211,238,.1), transparent 70%)' }}/>
+
+      <div className="fade" style={{ textAlign:'center', maxWidth:600 }}>
+        <div className="badge" style={{ marginBottom:16 }}>Módulo 1 · Clase 1.1 PRO</div>
+        <h1 style={{ fontSize:'clamp(22px,4vw,36px)', fontWeight:800, lineHeight:1.2, marginBottom:16 }}>
+          Unidades de Medida en<br/>
+          <span className="gold">Instrumentación Industrial</span>
+        </h1>
+        <p style={{ color:'rgba(255,255,255,.65)', fontSize:15, lineHeight:1.7, marginBottom:28 }}>
+          Un error en la interpretación de una unidad de medida puede detener una planta o causar un accidente.
+          Esta clase te convierte en un instrumentista <strong style={{color:'#fbbf24'}}>"bilingüe"</strong> en sistemas de unidades.
+        </p>
+
+        {/* Stat chips */}
+        <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
+          {[
+            { n:"3", label:"Sistemas de unidades" },
+            { n:"20+", label:"Conversiones clave" },
+            { n:"100%", label:"Aplicación en campo" },
+          ].map(s=>(
+            <div key={s.label} className="card pop" style={{ padding:'12px 20px', textAlign:'center', animationDelay:'.1s' }}>
+              <div style={{ fontSize:22, fontWeight:800, color:'#f59e0b' }}>{s.n}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginTop:2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Real-world hook */}
+      <div className="fade" style={{ marginTop:24, background:'rgba(248,113,113,.08)',
+        border:'1px solid rgba(248,113,113,.3)', borderRadius:12, padding:'12px 20px',
+        maxWidth:520, animationDelay:'.3s' }}>
+        <p style={{ fontSize:13, color:'#fca5a5', lineHeight:1.6 }}>
+          <strong>⚠ Caso real:</strong> En 1999, la NASA perdió el Mars Climate Orbiter (125 M USD)
+          porque un equipo usó libras-fuerza y otro newtons. El error fue de unidades.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 1: SI BASE UNITS ────────────────────────────────────────────────── */
+function SceneSIBase() {
+  const [visible, setVisible] = useState(0);
+  useEffect(()=>{
+    if (visible < SI_BASE.length) {
+      const t = setTimeout(()=>setVisible(v=>v+1), 180);
+      return ()=>clearTimeout(t);
+    }
+  },[visible]);
+
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column', padding:'24px 24px 60px' }}>
+      <div className="fade" style={{ marginBottom:16 }}>
+        <div className="badge" style={{ marginBottom:8 }}>Sistema Internacional · SI</div>
+        <h2 style={{ fontSize:'clamp(18px,3vw,26px)', fontWeight:700 }}>
+          Las <span className="gold">7 Unidades Base</span> del SI
+        </h2>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.55)', marginTop:4 }}>
+          Definidas por la CGPM (Conferencia General de Pesas y Medidas) · Vigente desde 2019
+        </p>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))', gap:10, flex:1 }}>
+        {SI_BASE.map((u,i)=>(
+          <div key={u.sym} className="card"
+            style={{ opacity: i<visible?1:0, transform: i<visible?'none':'translateY(12px)',
+              transition:'all .35s ease', borderColor:`${u.color}44`,
+              background: `linear-gradient(135deg, rgba(255,255,255,.03), ${u.color}08)` }}>
+            <div style={{ fontSize:28 }}>{u.icon}</div>
+            <div style={{ fontSize:28, fontWeight:900, color:u.color, fontFamily:'monospace', marginTop:4 }}>{u.sym}</div>
+            <div style={{ fontSize:14, fontWeight:600, marginTop:2 }}>{u.name}</div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,.45)', marginTop:4 }}>{u.qty}</div>
+            {(u.sym==='m'||u.sym==='kg'||u.sym==='s'||u.sym==='A') && (
+              <div style={{ marginTop:8, background:'rgba(245,158,11,.15)', borderRadius:6, padding:'2px 8px',
+                fontSize:10, color:'#f59e0b', fontWeight:700, display:'inline-block' }}>★ CLAVE EN CAMPO</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="fade" style={{ marginTop:10, background:'rgba(34,211,238,.08)',
+        border:'1px solid rgba(34,211,238,.2)', borderRadius:10, padding:'10px 16px', animationDelay:'.5s' }}>
+        <p style={{ fontSize:12, color:'#67e8f9' }}>
+          💡 En instrumentación, las 4 más usadas son: <strong>m · kg · s · A</strong>.
+          Todas las demás unidades del proceso se derivan de ellas.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 2: SI DERIVED UNITS ─────────────────────────────────────────────── */
+function SceneSIDerived() {
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column', padding:'24px 24px 60px' }}>
+      <div className="fade" style={{ marginBottom:14 }}>
+        <div className="badge" style={{ marginBottom:8 }}>Sistema Internacional · SI</div>
+        <h2 style={{ fontSize:'clamp(18px,3vw,26px)', fontWeight:700 }}>
+          Unidades <span className="gold">Derivadas</span> Esenciales
+        </h2>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.55)', marginTop:4 }}>
+          Se obtienen combinando las unidades base. Son las que encontrarás en cada instrumento.
+        </p>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Símbolo</th><th>Nombre</th><th>Magnitud</th><th>Expresión en base</th><th>Uso</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SI_DERIVED.map((u,i)=>(
+              <tr key={u.sym} className="slideR" style={{ animationDelay:`${i*.08}s` }}>
+                <td><span style={{ fontSize:18, fontWeight:800, color: u.key?'#f59e0b':'#a78bfa', fontFamily:'monospace' }}>{u.sym}</span></td>
+                <td style={{ fontWeight:600 }}>{u.name}</td>
+                <td style={{ color:'rgba(255,255,255,.65)' }}>{u.qty}</td>
+                <td><code style={{ background:'rgba(255,255,255,.06)', padding:'2px 8px', borderRadius:4, fontSize:12, color:'#94a3b8' }}>{u.base}</code></td>
+                <td>
+                  {u.key && <span style={{ background:'rgba(245,158,11,.15)', color:'#f59e0b',
+                    fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10 }}>CAMPO</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pa breakdown */}
+      <div className="fade" style={{ marginTop:12, background:'rgba(245,158,11,.07)',
+        border:'1px solid rgba(245,158,11,.25)', borderRadius:10, padding:'12px 16px', animationDelay:'.4s' }}>
+        <p style={{ fontSize:13, marginBottom:6 }}>
+          <span className="gold" style={{ fontWeight:700 }}>Pascal — la unidad estrella de presión:</span>
+        </p>
+        <div style={{ display:'flex', gap:24, flexWrap:'wrap', fontSize:12, color:'rgba(255,255,255,.7)' }}>
+          <span><span className="gold">1 Pa</span> = 1 N/m²</span>
+          <span><span className="gold">1 kPa</span> = 1 000 Pa</span>
+          <span><span className="gold">1 MPa</span> = 1 000 000 Pa</span>
+          <span><span className="gold">1 bar</span> ≈ 100 000 Pa</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 3: IMPERIAL SYSTEM ───────────────────────────────────────────────── */
+function SceneImperial() {
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column', padding:'24px 24px 60px' }}>
+      <div className="fade" style={{ marginBottom:14 }}>
+        <div style={{ display:'inline-block', background:'rgba(148,163,184,.1)', border:'1px solid rgba(148,163,184,.3)',
+          color:'#94a3b8', fontSize:11, fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase',
+          borderRadius:20, padding:'3px 12px', marginBottom:8 }}>Sistema Imperial · Inglés</div>
+        <h2 style={{ fontSize:'clamp(18px,3vw,26px)', fontWeight:700 }}>
+          El Sistema <span style={{ color:'#94a3b8' }}>Imperial / Inglés</span>
+        </h2>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.55)', marginTop:4 }}>
+          Predomina en EE.UU. y en equipos heredados. Todo instrumentista debe conocerlo.
+        </p>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Símbolo</th><th>Nombre</th><th>Magnitud</th><th>Dónde lo verás en planta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {IMPERIAL.map((u,i)=>(
+              <tr key={u.sym} className="slideR" style={{ animationDelay:`${i*.08}s` }}>
+                <td><span style={{ fontSize:18, fontWeight:800, color:'#94a3b8', fontFamily:'monospace' }}>{u.sym}</span></td>
+                <td style={{ fontWeight:600 }}>{u.name}</td>
+                <td style={{ color:'rgba(255,255,255,.65)' }}>{u.qty}</td>
+                <td style={{ fontSize:12, color:'rgba(255,255,255,.5)' }}>{u.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="fade" style={{ marginTop:12, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, animationDelay:'.5s' }}>
+        <div style={{ background:'rgba(248,113,113,.08)', border:'1px solid rgba(248,113,113,.25)',
+          borderRadius:10, padding:'10px 14px' }}>
+          <p style={{ fontSize:12, color:'#fca5a5' }}>
+            ⚠ <strong>Confusión lb:</strong> En inglés, "lb" puede ser libra-fuerza (lbf) o libra-masa (lbm).
+            En presión siempre es lbf/in² = psi.
+          </p>
+        </div>
+        <div style={{ background:'rgba(34,211,238,.06)', border:'1px solid rgba(34,211,238,.2)',
+          borderRadius:10, padding:'10px 14px' }}>
+          <p style={{ fontSize:12, color:'#67e8f9' }}>
+            💡 La mayoría de válvulas, tuberías y transmisores americanos
+            expresan el tamaño en <strong>pulgadas (in)</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 4: CONVERSIONES LONGITUD + MASA ─────────────────────────────────── */
+function SceneConvLengthMass() {
+  const MASS = [
+    { from:'1 kg', to:'2.2046 lb', inv:'0.4536 kg' },
+    { from:'1 lb', to:'0.4536 kg', inv:'2.2046 lb' },
+    { from:'1 t (ton)',to:'1 000 kg',inv:'2 204.6 lb'},
+  ];
+
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column', padding:'24px 24px 60px' }}>
+      <div className="fade" style={{ marginBottom:14 }}>
+        <div className="badge" style={{ marginBottom:8 }}>Conversiones</div>
+        <h2 style={{ fontSize:'clamp(18px,3vw,26px)', fontWeight:700 }}>
+          Longitud y <span className="gold">Masa</span>
+        </h2>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, flex:1 }}>
+        {/* Longitud */}
+        <div>
+          <div style={{ fontSize:12, fontWeight:700, color:'#22d3ee', marginBottom:10, letterSpacing:'.06em', textTransform:'uppercase' }}>
+            📏 Longitud
+          </div>
+          {CONV_LENGTH.map((r,i)=>(
+            <div key={i} className="card slideR" style={{ marginBottom:8, animationDelay:`${i*.1}s` }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <span style={{ fontFamily:'monospace', fontSize:15, fontWeight:700, color:'#94a3b8' }}>{r.from}</span>
+                <span className="arr" style={{ color:'#f59e0b', fontSize:18 }}>→</span>
+                <div>
+                  <div className="td-val">{r.to}</div>
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,.4)', marginTop:1 }}>{r.to2}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="card" style={{ marginTop:4, background:'rgba(34,211,238,.06)', borderColor:'rgba(34,211,238,.25)' }}>
+            <p style={{ fontSize:12, color:'#67e8f9' }}>
+              <strong>Dato exacto:</strong> 1 in = <span style={{ color:'#fbbf24', fontFamily:'monospace' }}>25.4 mm</span> (por definición, sin redondeo)
+            </p>
+          </div>
+        </div>
+
+        {/* Masa */}
+        <div>
+          <div style={{ fontSize:12, fontWeight:700, color:'#4ade80', marginBottom:10, letterSpacing:'.06em', textTransform:'uppercase' }}>
+            ⚖️ Masa
+          </div>
+          {MASS.map((r,i)=>(
+            <div key={i} className="card slideL" style={{ marginBottom:8, animationDelay:`${i*.1}s` }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <span style={{ fontFamily:'monospace', fontSize:15, fontWeight:700, color:'#94a3b8' }}>{r.from}</span>
+                <span className="arr" style={{ color:'#f59e0b', fontSize:18 }}>→</span>
+                <div>
+                  <div className="td-val">{r.to}</div>
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,.4)', marginTop:1 }}>= {r.inv}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="card" style={{ marginTop:4, background:'rgba(248,113,113,.06)', borderColor:'rgba(248,113,113,.25)' }}>
+            <p style={{ fontSize:12, color:'#fca5a5' }}>
+              ⚠ Masa ≠ Fuerza. 1 kg-masa no es igual a 1 kg-fuerza.
+              En SI: <span style={{ fontFamily:'monospace', color:'#fbbf24' }}>F = m·a → 1 N = 1 kg·m/s²</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 5: PRESIÓN (la más importante) ───────────────────────────────────── */
+function SceneConvPressure() {
+  const gauges = [
+    { label:'bar',  val:1,    color:'#f59e0b', max:2   },
+    { label:'psi',  val:14.5, color:'#22d3ee', max:30  },
+    { label:'atm',  val:0.987,color:'#4ade80', max:2   },
+    { label:'kPa',  val:100,  color:'#a78bfa', max:200 },
+  ];
+
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column', padding:'24px 24px 60px' }}>
+      <div className="fade" style={{ marginBottom:12 }}>
+        <div className="badge" style={{ marginBottom:8 }}>Conversiones · La más crítica</div>
+        <h2 style={{ fontSize:'clamp(18px,3vw,26px)', fontWeight:700 }}>
+          <span className="gold">Presión</span> — La unidad que más confunde en campo
+        </h2>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.55)', marginTop:4 }}>
+          Referencia base: <strong style={{ color:'#fbbf24' }}>1 bar ≈ 1 atm ≈ 100 kPa ≈ 14.5 psi</strong>
+        </p>
+      </div>
+
+      {/* Visual gauges */}
+      <div style={{ display:'flex', gap:16, justifyContent:'center', marginBottom:14 }}>
+        {gauges.map((g,i)=>{
+          const pct = Math.min(g.val/g.max, 1);
+          const circumference = 2*Math.PI*36;
+          const dash = circumference * (1-pct);
+          return (
+            <div key={g.label} className="pop" style={{ textAlign:'center', animationDelay:`${i*.1}s` }}>
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="7"/>
+                <circle cx="40" cy="40" r="36" fill="none" stroke={g.color} strokeWidth="7"
+                  strokeDasharray={circumference} strokeDashoffset={dash}
+                  strokeLinecap="round" transform="rotate(-90 40 40)"
+                  style={{ transition:'stroke-dashoffset 1s ease', transitionDelay:`${i*.15}s` }}/>
+                <text x="40" y="38" textAnchor="middle" fill={g.color} fontSize="13" fontWeight="700" fontFamily="monospace">{g.val}</text>
+                <text x="40" y="52" textAnchor="middle" fill="rgba(255,255,255,.5)" fontSize="10">{g.label}</text>
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Table */}
+      <div style={{ flex:1, overflowY:'auto' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Unidad</th><th>Pascales</th><th>PSI</th><th>ATM</th><th>kPa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CONV_PRESSURE.map((r,i)=>(
+              <tr key={i} className="slideR" style={{ animationDelay:`${i*.07}s` }}>
+                <td><span style={{ fontFamily:'monospace', fontWeight:700, color:'#f59e0b' }}>{r.unit}</span></td>
+                <td className="td-val">{r.pa}</td>
+                <td className="td-val">{r.psi}</td>
+                <td className="td-val">{r.atm}</td>
+                <td className="td-val">{r.kPa}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="fade" style={{ marginTop:10, background:'rgba(248,113,113,.08)',
+        border:'1px solid rgba(248,113,113,.3)', borderRadius:10, padding:'10px 16px', animationDelay:'.5s' }}>
+        <p style={{ fontSize:12, color:'#fca5a5' }}>
+          ⚠ <strong>Presión manométrica vs absoluta:</strong>
+          <span style={{ color:'#fbbf24', fontFamily:'monospace' }}> P_abs = P_man + 1 atm</span>.
+          Siempre verifica si el instrumento mide gauge (g) o absoluta (a): <strong>barg, bara, psig, psia</strong>.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 6: TEMPERATURA ───────────────────────────────────────────────────── */
+function SceneConvTemp() {
+  const [val, setVal] = useState(100);
+
+  const C = val;
+  const F = (C * 1.8 + 32).toFixed(1);
+  const K = (C + 273.15).toFixed(2);
+  const R = ((C + 273.15) * 1.8).toFixed(2);
+
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column', padding:'24px 24px 60px' }}>
+      <div className="fade" style={{ marginBottom:14 }}>
+        <div className="badge" style={{ marginBottom:8 }}>Conversiones</div>
+        <h2 style={{ fontSize:'clamp(18px,3vw,26px)', fontWeight:700 }}>
+          <span className="gold">Temperatura</span> — 4 escalas en la industria
+        </h2>
+      </div>
+
+      {/* Fórmulas */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+        {[
+          { label:'°C → °F', f:'°F = (°C × 1.8) + 32',     color:'#f59e0b' },
+          { label:'°F → °C', f:'°C = (°F − 32) / 1.8',     color:'#22d3ee' },
+          { label:'°C → K',  f:'K = °C + 273.15',           color:'#4ade80' },
+          { label:'K → °C',  f:'°C = K − 273.15',           color:'#a78bfa' },
+        ].map((r,i)=>(
+          <div key={i} className="card pop" style={{ animationDelay:`${i*.1}s`, borderColor:`${r.color}44` }}>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginBottom:4 }}>{r.label}</div>
+            <div style={{ fontFamily:'monospace', fontSize:14, fontWeight:700, color:r.color }}>{r.f}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Interactive converter */}
+      <div className="card fade" style={{ animationDelay:'.4s', borderColor:'rgba(245,158,11,.4)',
+        background:'rgba(245,158,11,.05)' }}>
+        <div style={{ fontSize:13, fontWeight:700, color:'#f59e0b', marginBottom:12 }}>
+          🌡 Convertidor interactivo
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, flexWrap:'wrap' }}>
+          <label style={{ fontSize:13, color:'rgba(255,255,255,.7)' }}>
+            Ingresar °C:&nbsp;
+            <input type="range" min="-200" max="600" value={val}
+              onChange={e=>setVal(Number(e.target.value))}
+              style={{ accentColor:'#f59e0b', width:140 }}/>
+          </label>
+          <span style={{ fontFamily:'monospace', fontSize:20, fontWeight:800, color:'#fbbf24' }}>{val} °C</span>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, textAlign:'center' }}>
+          {[
+            { sym:'°C', v:val,  color:'#fbbf24' },
+            { sym:'°F', v:F,    color:'#f59e0b' },
+            { sym:'K',  v:K,    color:'#4ade80' },
+            { sym:'°R', v:R,    color:'#a78bfa' },
+          ].map(r=>(
+            <div key={r.sym} style={{ background:'rgba(255,255,255,.04)', borderRadius:10, padding:'10px 6px' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:r.color, fontFamily:'monospace', transition:'color .2s' }}>
+                {r.v}
+              </div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginTop:3 }}>{r.sym}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="fade" style={{ marginTop:10, fontSize:12, color:'rgba(255,255,255,.45)', animationDelay:'.6s' }}>
+        💡 Rankine (°R) se usa en termodinámica americana · 0 K = −273.15 °C = cero absoluto
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 7: TABLA RESUMEN ─────────────────────────────────────────────────── */
+function SceneResumen() {
+  const rows = [
+    { mag:'Longitud',    si:'m',   imp:'in / ft',  conv:'1 in = 25.4 mm · 1 ft = 0.3048 m' },
+    { mag:'Masa',        si:'kg',  imp:'lb',        conv:'1 kg = 2.2046 lb' },
+    { mag:'Fuerza',      si:'N',   imp:'lbf',       conv:'1 lbf = 4.4482 N' },
+    { mag:'Presión',     si:'Pa',  imp:'psi',       conv:'1 bar = 14.504 psi = 100 kPa' },
+    { mag:'Temperatura', si:'°C/K',imp:'°F',        conv:'°F = °C × 1.8 + 32' },
+    { mag:'Potencia',    si:'W',   imp:'HP',        conv:'1 HP = 745.7 W' },
+    { mag:'Energía',     si:'J',   imp:'BTU',       conv:'1 BTU = 1 055.06 J' },
+    { mag:'Caudal volum.',si:'m³/s',imp:'GPM',      conv:'1 GPM = 0.0000631 m³/s' },
+    { mag:'Caudal másico',si:'kg/s',imp:'lb/h',     conv:'1 lb/h = 0.000126 kg/s' },
+    { mag:'Tensión',     si:'V',   imp:'V',         conv:'Universal (el mismo)' },
+    { mag:'Corriente',   si:'A',   imp:'A / mA',    conv:'4–20 mA: señal estándar de campo' },
+  ];
+
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column', padding:'24px 24px 60px' }}>
+      <div className="fade" style={{ marginBottom:14 }}>
+        <div className="badge" style={{ marginBottom:8 }}>Referencia Rápida</div>
+        <h2 style={{ fontSize:'clamp(18px,3vw,26px)', fontWeight:700 }}>
+          Tabla Maestra de <span className="gold">Conversiones</span>
+        </h2>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.55)', marginTop:4 }}>
+          Guarda esta pantalla · Es tu chuleta de campo
+        </p>
+      </div>
+
+      <div style={{ flex:1, overflowY:'auto', borderRadius:10, overflow:'hidden', border:'1px solid rgba(245,158,11,.2)' }}>
+        <table style={{ fontSize:12 }}>
+          <thead>
+            <tr><th>Magnitud</th><th>SI</th><th>Imperial</th><th>Conversión clave</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((r,i)=>(
+              <tr key={i} className="slideR" style={{ animationDelay:`${i*.05}s` }}>
+                <td style={{ fontWeight:600 }}>{r.mag}</td>
+                <td><span style={{ color:'#f59e0b', fontFamily:'monospace', fontWeight:700 }}>{r.si}</span></td>
+                <td><span style={{ color:'#94a3b8', fontFamily:'monospace' }}>{r.imp}</span></td>
+                <td style={{ color:'rgba(255,255,255,.6)', fontSize:11, fontFamily:'monospace' }}>{r.conv}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 8: CIERRE ────────────────────────────────────────────────────────── */
+function SceneCierre() {
+  const checklist = [
+    'Identifiqué las 7 unidades base del SI',
+    'Conozco las unidades derivadas clave: Pa, N, V, W',
+    'Entiendo las unidades del sistema Imperial/Inglés',
+    'Domino las conversiones de longitud, masa, presión y temperatura',
+    'Sé distinguir presión manométrica de absoluta',
+  ];
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', padding:'32px 24px 60px' }}>
+
+      <div style={{ position:'absolute', top:0, right:0, width:200, height:200,
+        background:'radial-gradient(circle at top right, rgba(245,158,11,.15), transparent 70%)' }}/>
+
+      <div className="fade" style={{ textAlign:'center', marginBottom:24, maxWidth:500 }}>
+        <div style={{ fontSize:48, marginBottom:12 }}>🏆</div>
+        <div className="badge" style={{ marginBottom:10 }}>Clase completada</div>
+        <h2 style={{ fontSize:'clamp(20px,3.5vw,30px)', fontWeight:800, marginBottom:8 }}>
+          Ahora eres <span className="gold">bilingüe</span> en unidades
+        </h2>
+        <p style={{ fontSize:14, color:'rgba(255,255,255,.6)', lineHeight:1.7 }}>
+          Calibrar instrumentos, interpretar datasheets y comunicarte con ingenieros de todo el mundo
+          ya no será un problema.
+        </p>
+      </div>
+
+      {/* Checklist */}
+      <div style={{ width:'100%', maxWidth:480, marginBottom:24 }}>
+        {checklist.map((item,i)=>(
+          <div key={i} className="slideR" style={{ display:'flex', alignItems:'flex-start', gap:10,
+            marginBottom:10, animationDelay:`${i*.1}s` }}>
+            <span style={{ color:'#4ade80', fontSize:16, marginTop:1, flexShrink:0 }}>✓</span>
+            <span style={{ fontSize:13, color:'rgba(255,255,255,.75)' }}>{item}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="fade" style={{ background:'rgba(245,158,11,.08)',
+        border:'1px solid rgba(245,158,11,.3)', borderRadius:14, padding:'16px 24px',
+        maxWidth:480, textAlign:'center', animationDelay:'.6s' }}>
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.7)', marginBottom:6 }}>Próxima clase:</p>
+        <p style={{ fontSize:16, fontWeight:700, color:'#f59e0b' }}>
+          Clase 1.2 PRO — Magnitudes Físicas y Señales de Proceso
+        </p>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.45)', marginTop:4 }}>
+          Presión · Temperatura · Caudal · Nivel · Análisis
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN APP ────────────────────────────────────────────────────────────────── */
+const SCENES = [
+  { id:'intro',     label:'Introducción',   Component: SceneIntro       },
+  { id:'si-base',   label:'SI · Unidades Base', Component: SceneSIBase  },
+  { id:'si-der',    label:'SI · Derivadas', Component: SceneSIDerived   },
+  { id:'imperial',  label:'Sistema Imperial', Component: SceneImperial  },
+  { id:'longitud',  label:'Conversiones: Longitud y Masa', Component: SceneConvLengthMass },
+  { id:'presion',   label:'Conversiones: Presión',  Component: SceneConvPressure  },
+  { id:'temp',      label:'Conversiones: Temperatura', Component: SceneConvTemp  },
+  { id:'resumen',   label:'Tabla Maestra',  Component: SceneResumen     },
+  { id:'cierre',    label:'Cierre',         Component: SceneCierre      },
+];
+
+function App() {
+  const [scene, setScene] = useState(0);
+  const [key,   setKey]   = useState(0);
+
+  function goTo(i) {
+    setScene(i);
+    setKey(k=>k+1);
+  }
+  function prev() { if(scene>0) goTo(scene-1); }
+  function next() { if(scene<SCENES.length-1) goTo(scene+1); }
+
+  useEffect(()=>{
+    const h = (e)=>{
+      if(e.key==='ArrowRight'||e.key==='ArrowDown') next();
+      if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   prev();
+    };
+    window.addEventListener('keydown',h);
+    return ()=>window.removeEventListener('keydown',h);
+  },[scene]);
+
+  const { Component } = SCENES[scene];
+
+  return (
+    <div style={{ position:'relative', width:'100%', height:'100vh', overflow:'hidden' }}>
+      {/* PRO badge */}
+      <div style={{ position:'absolute', top:10, left:10, zIndex:100,
+        background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'#000',
+        fontSize:10, fontWeight:900, letterSpacing:'.1em',
+        padding:'3px 10px', borderRadius:20 }}>PRO</div>
+
+      {/* Scene label */}
+      <div style={{ position:'absolute', top:10, right:10, zIndex:100,
+        background:'rgba(0,0,0,.5)', color:'rgba(255,255,255,.6)',
+        fontSize:11, padding:'3px 10px', borderRadius:10 }}>
+        {SCENES[scene].label}
+      </div>
+
+      {/* Scene */}
+      <div key={key} style={{ height:'calc(100% - 48px)', overflowY:'auto' }}>
+        <Component />
+      </div>
+
+      <PlayBar scene={scene} total={SCENES.length}
+        onPrev={prev} onNext={next} onGo={goTo} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -755,6 +755,23 @@ const lessons = [
 const totalSec = lessons.reduce((s, l) => s + l.durationSec, 0);
 const totalMinutes = Math.round(totalSec / 60);
 
+const BASE_PRO = "/videos/premium";
+
+const lessonsPro = [
+  // ── MÓDULO 1 — Fundamentos ──────────────────────────────────────────
+  {
+    order: 1,
+    title: "Unidades de Medida — SI, Imperial y Conversiones",
+    description:
+      "Domina el Sistema Internacional (7 unidades base), unidades derivadas clave (Pa, N, J, W, Hz), el sistema Imperial con sus trampas y las conversiones críticas de longitud, masa, presión y temperatura. Incluye convertidor interactivo de temperatura.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.1 - Unidades de Medida.html`,
+  },
+];
+
+const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
+const totalMinutesPro = Math.round(totalSecPro / 60);
+
 async function main() {
   await prisma.lesson.deleteMany();
   await prisma.course.deleteMany();
@@ -774,7 +791,22 @@ async function main() {
     },
   });
 
-  console.log(`✅ Seed completado: ${lessons.length} lecciones, ${totalMinutes} minutos`);
+  await prisma.course.create({
+    data: {
+      slug: "instrumentacion-pro",
+      title: "Instrumentación Industrial PRO",
+      description:
+        "Versión premium del curso de instrumentación. Clases más profundas y completas, con mayor cobertura teórica, tablas de referencia, ejercicios interactivos y contenido basado en libros técnicos de referencia internacional.",
+      instructor: "Instrumex",
+      level: "Intermedio",
+      category: "Ingeniería Industrial",
+      totalMinutes: totalMinutesPro,
+      lessonCount: lessonsPro.length,
+      lessons: { create: lessonsPro },
+    },
+  });
+
+  console.log(`✅ Seed completado: ${lessons.length} lecciones gratis (${totalMinutes} min) + ${lessonsPro.length} lecciones PRO (${totalMinutesPro} min)`);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
