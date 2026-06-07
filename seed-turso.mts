@@ -783,6 +783,14 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.3 - Clasificacion e Identificacion ISA.html`,
   },
+  {
+    order: 4,
+    title: "Transmisores y Señales de Proceso — 4-20 mA, HART y Fieldbus",
+    description:
+      "Domina las señales industriales: neumática 3-15 psi, electrónica 4-20 mA (por qué no 0-20 mA), cálculo de conversión paso a paso, protocolo HART (FSK 1200/2200 Hz), transmisores inteligentes con autodiagnóstico y buses de campo Foundation Fieldbus, Profibus PA y WirelessHART.",
+    durationSec: 960,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.4 - Transmisores y Senales de Proceso.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);

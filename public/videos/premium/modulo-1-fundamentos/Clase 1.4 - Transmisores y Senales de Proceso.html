@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 1.4 — Transmisores y Señales de Proceso</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0}
+  #root{width:1280px;height:720px;position:relative}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+/* ─── PALETTE ───────────────────────────────────────────────── */
+const BG='#080c18', NAVY='#0d1428', CARD='#111827', BORDER='#1e3a5f';
+const GOLD='#f59e0b', GOLD2='#fbbf24', BLUE='#3b82f6', CYAN='#22d3ee';
+const GREEN='#4ade80', RED='#f87171', VIOLET='#a78bfa', ORANGE='#fb923c';
+
+/* ─── QUIZ ───────────────────────────────────────────────────── */
+const QUIZ=[
+  {q:'¿Cuál es el rango de la señal neumática estándar?',
+   opts:['0-20 psi','3-15 psi','6-30 psi','0-100 kPa'],correct:1},
+  {q:'¿Por qué la señal 4-20 mA comienza en 4 mA y no en 0 mA?',
+   opts:['Por convención histórica','Para detectar fallo de cable cortado','Para ahorrar energía','Por limitaciones del hardware'],correct:1},
+  {q:'¿Qué valor de corriente representa el 50% de la variable medida en una señal 4-20 mA?',
+   opts:['8 mA','10 mA','12 mA','16 mA'],correct:2},
+  {q:'¿Qué significa HART en instrumentación?',
+   opts:['Highway Addressable Remote Transducer','High Accuracy Real Time','Hybrid Analog Remote Terminal','High Addressable Radio Transmitter'],correct:0},
+  {q:'¿Cuántos mA corresponden a un fallo de lazo (cable roto) en la señal 4-20 mA?',
+   opts:['0 mA','4 mA','20 mA','3 mA'],correct:0},
+  {q:'¿Cuál es la frecuencia utilizada por el protocolo HART para superponer datos digitales?',
+   opts:['1200 / 2200 Hz','300 / 600 Hz','4800 / 9600 Hz','50 / 60 Hz'],correct:0},
+  {q:'En un transmisor de temperatura con rango 0-200 °C y señal 4-20 mA, ¿qué corriente emite si mide 100 °C?',
+   opts:['8 mA','10 mA','12 mA','14 mA'],correct:2},
+  {q:'¿Qué ventaja ofrece Foundation Fieldbus sobre la señal 4-20 mA?',
+   opts:['Mayor velocidad de señal neumática','Comunicación digital bidireccional multi-dispositivo','Menor costo de instalación siempre','Mayor rango de señal'],correct:1},
+  {q:'¿Qué es un transmisor inteligente (smart)?',
+   opts:['Un transmisor con pantalla LCD','Un transmisor con microprocesador que permite configuración y diagnóstico remoto','Un transmisor inalámbrico','Un transmisor de alta precisión sin electrónica'],correct:1},
+  {q:'¿Cuál es el rango de voltaje equivalente para la señal 4-20 mA sobre una resistencia de carga de 250 Ω?',
+   opts:['0-5 V','1-5 V','0-10 V','2-10 V'],correct:1},
+];
+
+/* ─── HELPERS ────────────────────────────────────────────────── */
+const lerp=(v,iMin,iMax,oMin,oMax)=>oMin+(v-iMin)/(iMax-iMin)*(oMax-oMin);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fmt2=(n)=>n.toFixed(2);
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 1 — INTRO
+═══════════════════════════════════════════════════════════════ */
+function SceneIntro(){
+  const [tick,setTick]=useState(0);
+  useEffect(()=>{const id=setInterval(()=>setTick(t=>t+1),800);return()=>clearInterval(id);},[]);
+  const pulse=tick%2===0;
+
+  const blocks=[
+    {label:'PROCESO',sub:'Variable física',color:CYAN,x:60,y:280,w:180,h:80},
+    {label:'SENSOR',sub:'Elemento primario',color:GREEN,x:310,y:280,w:180,h:80},
+    {label:'TRANSMISOR',sub:'4-20 mA / HART',color:GOLD,x:560,y:280,w:200,h:80},
+    {label:'SISTEMA',sub:'DCS / PLC / SCADA',color:VIOLET,x:830,y:280,w:200,h:80},
+  ];
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'relative'}}>
+      {/* title */}
+      <div style={{position:'absolute',top:48,textAlign:'center'}}>
+        <div style={{fontSize:13,letterSpacing:4,color:GOLD,textTransform:'uppercase',marginBottom:8}}>Módulo 1 · Clase 1.4</div>
+        <div style={{fontSize:48,fontWeight:800,color:'#fff',lineHeight:1.1}}>Transmisores y Señales</div>
+        <div style={{fontSize:48,fontWeight:800,color:GOLD,lineHeight:1.1}}>de Proceso</div>
+        <div style={{fontSize:16,color:'#94a3b8',marginTop:12}}>De la variable física al sistema de control — el camino de la señal</div>
+      </div>
+
+      {/* block diagram */}
+      <svg width={1100} height={220} style={{position:'absolute',top:280}}>
+        {/* arrows between blocks */}
+        {[{x1:240,x2:310},{x1:490,x2:560},{x1:760,x2:830}].map((a,i)=>(
+          <g key={i}>
+            <line x1={a.x1} y1={80} x2={a.x2} y2={80} stroke={GOLD} strokeWidth={2.5} strokeDasharray={i===2?'6,3':'0'}/>
+            <polygon points={`${a.x2},75 ${a.x2+12},80 ${a.x2},85`} fill={GOLD}/>
+          </g>
+        ))}
+        {/* label over arrows */}
+        <text x={275} y={65} fill='#94a3b8' fontSize={11} textAnchor='middle'>Presión/Temp</text>
+        <text x={525} y={65} fill='#94a3b8' fontSize={11} textAnchor='middle'>mV / Ω</text>
+        <text x={795} y={65} fill={GOLD} fontSize={11} fontWeight='bold' textAnchor='middle'>4-20 mA</text>
+        {/* blocks */}
+        {blocks.map((b,i)=>(
+          <g key={i}>
+            <rect x={b.x-60} y={40} width={b.w} height={b.h} rx={10} fill={CARD} stroke={b.color} strokeWidth={2.5}/>
+            <text x={b.x+30} y={70} fill={b.color} fontSize={15} fontWeight='bold' textAnchor='middle'>{b.label}</text>
+            <text x={b.x+30} y={90} fill='#94a3b8' fontSize={11} textAnchor='middle'>{b.sub}</text>
+          </g>
+        ))}
+        {/* pulse dot on wire */}
+        <circle cx={pulse?795:800} cy={80} r={6} fill={GOLD} opacity={pulse?1:0.3}>
+          <animate attributeName='cx' values='760;830;760' dur='1.6s' repeatCount='indefinite'/>
+        </circle>
+      </svg>
+
+      {/* bottom tags */}
+      <div style={{position:'absolute',bottom:48,display:'flex',gap:24}}>
+        {[
+          {icon:'📡',label:'Señal Neumática',sub:'3-15 psi',c:CYAN},
+          {icon:'⚡',label:'Señal Electrónica',sub:'4-20 mA',c:GOLD},
+          {icon:'🔗',label:'Protocolo HART',sub:'Digital + Analógico',c:GREEN},
+          {icon:'🌐',label:'Bus de Campo',sub:'Foundation Fieldbus',c:VIOLET},
+          {icon:'🧠',label:'Transmisores Smart',sub:'Diagnóstico remoto',c:ORANGE},
+        ].map((t,i)=>(
+          <div key={i} style={{background:CARD,border:`1px solid ${t.c}33`,borderRadius:10,padding:'10px 18px',textAlign:'center',minWidth:160}}>
+            <div style={{fontSize:22}}>{t.icon}</div>
+            <div style={{fontSize:12,fontWeight:700,color:t.c,marginTop:4}}>{t.label}</div>
+            <div style={{fontSize:11,color:'#64748b'}}>{t.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 2 — SEÑAL NEUMÁTICA 3-15 PSI
+═══════════════════════════════════════════════════════════════ */
+function SceneNeumatica(){
+  const [pct,setPct]=useState(50);
+  const psi=3+(pct/100)*12;
+  const kPa=psi*6.8948;
+  const barH=pct*2.4; // max 240px
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'relative',padding:'0 80px'}}>
+      <SectionTitle icon='📡' color={CYAN} title='Señal Neumática' sub='Estándar 3-15 psi — el primer estándar de proceso'/>
+
+      <div style={{display:'flex',gap:60,alignItems:'flex-start',marginTop:32}}>
+        {/* left: explanation */}
+        <div style={{flex:1}}>
+          <InfoBox color={CYAN} title='¿Por qué neumática?'>
+            Antes de la electrónica industrial, los lazos de control usaban <b>aire comprimido</b> como medio de señal. Seguro en zonas con riesgo de explosión, robusto en ambientes hostiles.
+          </InfoBox>
+          <div style={{marginTop:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            {[
+              {v:'3 psi',l:'0 % — Señal viva mínima',c:CYAN},
+              {v:'15 psi',l:'100 % — Señal máxima',c:GOLD},
+              {v:'0 psi',l:'Cable/tubo roto → alarma',c:RED},
+              {v:'20-100 kPa',l:'Equivalencia SI',c:GREEN},
+            ].map((r,i)=>(
+              <div key={i} style={{background:CARD,border:`1px solid ${r.c}44`,borderRadius:8,padding:'10px 14px'}}>
+                <div style={{fontSize:18,fontWeight:800,color:r.c}}>{r.v}</div>
+                <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{r.l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:16,background:'#0a1628',border:`1px solid ${CYAN}33`,borderRadius:8,padding:'12px 16px'}}>
+            <div style={{fontSize:12,color:CYAN,fontWeight:700,marginBottom:6}}>FÓRMULA DE CONVERSIÓN</div>
+            <div style={{fontFamily:'monospace',fontSize:15,color:'#e2e8f0'}}>
+              psi = 3 + (% / 100) × 12
+            </div>
+            <div style={{fontFamily:'monospace',fontSize:15,color:'#94a3b8',marginTop:4}}>
+              kPa = psi × 6.8948
+            </div>
+          </div>
+        </div>
+
+        {/* right: interactive gauge */}
+        <div style={{width:340,display:'flex',flexDirection:'column',alignItems:'center',gap:20}}>
+          {/* gauge visual */}
+          <div style={{position:'relative',width:200,height:280}}>
+            {/* tube */}
+            <div style={{position:'absolute',left:85,bottom:0,width:30,height:280,background:'#1e3a5f',borderRadius:15,border:`2px solid ${CYAN}33`}}/>
+            {/* fill */}
+            <div style={{position:'absolute',left:85,bottom:0,width:30,height:barH,background:`linear-gradient(to top,${CYAN},${CYAN}88)`,borderRadius:15,transition:'height 0.1s'}}/>
+            {/* markers */}
+            {[0,25,50,75,100].map(p=>(
+              <div key={p} style={{position:'absolute',left:120,bottom:p*2.4,display:'flex',alignItems:'center',gap:6}}>
+                <div style={{width:8,height:1,background:'#334155'}}/>
+                <span style={{fontSize:10,color:'#64748b'}}>{p}%</span>
+              </div>
+            ))}
+            {/* current marker */}
+            <div style={{position:'absolute',left:72,bottom:barH-8,transition:'bottom 0.1s'}}>
+              <div style={{width:0,height:0,borderTop:'8px solid transparent',borderBottom:'8px solid transparent',borderLeft:`14px solid ${CYAN}`}}/>
+            </div>
+          </div>
+
+          {/* readouts */}
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:44,fontWeight:800,color:CYAN}}>{fmt2(psi)}</div>
+            <div style={{fontSize:14,color:'#94a3b8'}}>psi</div>
+            <div style={{fontSize:20,fontWeight:700,color:GOLD,marginTop:8}}>{fmt2(kPa)} kPa</div>
+            <div style={{fontSize:28,fontWeight:800,color:'#fff',marginTop:4}}>{pct} %</div>
+          </div>
+
+          {/* slider */}
+          <input type='range' min={0} max={100} value={pct}
+            onChange={e=>setPct(+e.target.value)}
+            style={{width:220,accentColor:CYAN}}/>
+          <div style={{fontSize:12,color:'#64748b'}}>Mueve para simular la variable</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 3 — SEÑAL 4-20 mA
+═══════════════════════════════════════════════════════════════ */
+function Scene420mA(){
+  const [pct,setPct]=useState(50);
+  const mA=4+(pct/100)*16;
+  const V250=mA*250/1000;
+  const status=mA<3.9?'FALLO':mA<4.1?'MÍNIMO':mA>20.1?'SATURADO':'NORMAL';
+  const statusColor={FALLO:RED,MÍNIMO:CYAN,SATURADO:ORANGE,NORMAL:GREEN}[status];
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 80px'}}>
+      <SectionTitle icon='⚡' color={GOLD} title='Señal Electrónica 4-20 mA' sub='El estándar universal de la instrumentación industrial'/>
+
+      <div style={{display:'flex',gap:50,marginTop:28,width:'100%'}}>
+        {/* left info */}
+        <div style={{flex:1}}>
+          <InfoBox color={GOLD} title='¿Por qué 4 mA y no 0 mA?'>
+            Si el cable se rompe o hay fallo, la corriente cae a <b style={{color:RED}}>0 mA</b> — detectable como alarma. Con 0 mA como cero de señal, no habría forma de distinguir "variable en cero" de "cable roto".
+          </InfoBox>
+
+          <div style={{marginTop:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[
+              {v:'0 mA',l:'Cable roto → ALARMA',c:RED},
+              {v:'4 mA',l:'0 % · Señal viva mínima',c:CYAN},
+              {v:'12 mA',l:'50 % · Punto medio',c:GOLD},
+              {v:'20 mA',l:'100 % · Señal máxima',c:GREEN},
+              {v:'>20 mA',l:'Saturación / sobrealcance',c:ORANGE},
+              {v:'250 Ω',l:'Resistencia de carga estándar',c:VIOLET},
+            ].map((r,i)=>(
+              <div key={i} style={{background:CARD,border:`1px solid ${r.c}44`,borderRadius:8,padding:'8px 12px'}}>
+                <div style={{fontSize:16,fontWeight:800,color:r.c}}>{r.v}</div>
+                <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{r.l}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{marginTop:14,background:'#0a1628',border:`1px solid ${GOLD}33`,borderRadius:8,padding:'12px 16px'}}>
+            <div style={{fontSize:12,color:GOLD,fontWeight:700,marginBottom:6}}>FÓRMULA</div>
+            <div style={{fontFamily:'monospace',fontSize:14,color:'#e2e8f0'}}>
+              I (mA) = 4 + (PV − PVmin) / (PVmax − PVmin) × 16
+            </div>
+            <div style={{fontFamily:'monospace',fontSize:13,color:'#94a3b8',marginTop:4}}>
+              V (sobre 250Ω) = I × 0.250 → rango 1-5 V
+            </div>
+          </div>
+        </div>
+
+        {/* right: live wire viz + calculator */}
+        <div style={{width:400,display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
+          {/* wire animation */}
+          <WireAnimation mA={mA} pct={pct}/>
+
+          {/* readouts */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,width:'100%'}}>
+            {[
+              {label:'Corriente',value:`${fmt2(mA)} mA`,color:GOLD},
+              {label:'Voltaje (250Ω)',value:`${fmt2(V250)} V`,color:CYAN},
+              {label:'Variable',value:`${pct.toFixed(0)} %`,color:GREEN},
+              {label:'Estado',value:status,color:statusColor},
+            ].map((r,i)=>(
+              <div key={i} style={{background:CARD,border:`1px solid ${r.color}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
+                <div style={{fontSize:10,color:'#64748b',textTransform:'uppercase',letterSpacing:1}}>{r.label}</div>
+                <div style={{fontSize:20,fontWeight:800,color:r.color,marginTop:4}}>{r.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* slider */}
+          <input type='range' min={0} max={100} value={pct}
+            onChange={e=>setPct(+e.target.value)}
+            style={{width:'100%',accentColor:GOLD}}/>
+          <div style={{fontSize:12,color:'#64748b'}}>Arrastra para simular la variable de proceso</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WireAnimation({mA,pct}){
+  const particles=Array.from({length:6},(_,i)=>i);
+  const speed=mA/20; // 0-1
+  return(
+    <div style={{width:'100%',height:80,position:'relative',background:CARD,borderRadius:12,border:`1px solid #1e3a5f`,overflow:'hidden'}}>
+      {/* wire */}
+      <div style={{position:'absolute',top:38,left:20,right:20,height:4,background:'#1e3a5f',borderRadius:2}}/>
+      {/* supply */}
+      <div style={{position:'absolute',left:10,top:24,fontSize:10,color:'#64748b'}}>24V DC</div>
+      {/* load */}
+      <div style={{position:'absolute',right:10,top:24,fontSize:10,color:'#64748b'}}>250Ω</div>
+      {/* particles */}
+      {particles.map(i=>(
+        <div key={i} style={{
+          position:'absolute',
+          top:34,width:12,height:12,
+          background:GOLD,borderRadius:'50%',
+          opacity:0.8,
+          animation:`slide${i} ${3/speed}s linear infinite`,
+          left:`${(i/6)*80+10}%`
+        }}/>
+      ))}
+      {/* mA label */}
+      <div style={{position:'absolute',bottom:8,left:'50%',transform:'translateX(-50%)',fontSize:14,fontWeight:800,color:GOLD}}>
+        {mA.toFixed(1)} mA →
+      </div>
+      <style>{`
+        @keyframes slideParticle{from{left:10%}to{left:95%}}
+        ${particles.map(i=>`@keyframes slide${i}{0%{left:${(i/6*80+10)}%}100%{left:${((i+1)/6*80+10)}%}}`).join('\n')}
+      `}</style>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 4 — CALCULADORA DE CONVERSIÓN
+═══════════════════════════════════════════════════════════════ */
+function SceneCalc(){
+  const [pvMin,setPvMin]=useState(0);
+  const [pvMax,setPvMax]=useState(200);
+  const [pv,setPv]=useState(100);
+  const [unit,setUnit]=useState('°C');
+
+  const pvClamped=clamp(pv,pvMin,pvMax);
+  const mA=pvMin===pvMax?4:4+(pvClamped-pvMin)/(pvMax-pvMin)*16;
+  const pct=pvMin===pvMax?0:(pvClamped-pvMin)/(pvMax-pvMin)*100;
+  const V250=mA*0.25;
+
+  const steps=[
+    {n:1,text:`% = (PV − PVmin) / (PVmax − PVmin) × 100`,val:`= (${pvClamped} − ${pvMin}) / (${pvMax} − ${pvMin}) × 100 = ${pct.toFixed(1)} %`},
+    {n:2,text:`I = 4 + (% / 100) × 16`,val:`= 4 + (${pct.toFixed(1)} / 100) × 16 = ${mA.toFixed(2)} mA`},
+    {n:3,text:`V₂₅₀ = I × 0.250`,val:`= ${mA.toFixed(2)} × 0.250 = ${V250.toFixed(3)} V`},
+  ];
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 80px'}}>
+      <SectionTitle icon='🧮' color={CYAN} title='Calculadora de Conversión' sub='Transforma cualquier variable de proceso a señal 4-20 mA paso a paso'/>
+
+      <div style={{display:'flex',gap:40,marginTop:28,width:'100%'}}>
+        {/* inputs */}
+        <div style={{flex:1}}>
+          <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:24}}>
+            <div style={{fontSize:14,color:GOLD,fontWeight:700,marginBottom:16,textTransform:'uppercase',letterSpacing:1}}>Configurar Transmisor</div>
+            {[
+              {label:'PV mínimo (0 %)',val:pvMin,set:setPvMin},
+              {label:'PV máximo (100 %)',val:pvMax,set:setPvMax},
+              {label:'Valor actual de PV',val:pv,set:setPv},
+            ].map((f,i)=>(
+              <div key={i} style={{marginBottom:16}}>
+                <div style={{fontSize:12,color:'#94a3b8',marginBottom:4}}>{f.label}</div>
+                <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                  <input type='number' value={f.val}
+                    onChange={e=>f.set(parseFloat(e.target.value)||0)}
+                    style={{flex:1,background:'#0a1628',border:`1px solid ${BORDER}`,borderRadius:6,padding:'8px 12px',color:'#e2e8f0',fontSize:16}}/>
+                  {i===2&&(
+                    <select value={unit} onChange={e=>setUnit(e.target.value)}
+                      style={{background:'#0a1628',border:`1px solid ${BORDER}`,borderRadius:6,padding:'8px 10px',color:'#94a3b8',fontSize:13}}>
+                      {['°C','°F','bar','psi','m','%','m³/h','kg/h'].map(u=><option key={u}>{u}</option>)}
+                    </select>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* slider PV */}
+          <div style={{marginTop:16,background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:16}}>
+            <div style={{fontSize:12,color:'#94a3b8',marginBottom:8}}>Desliza la variable de proceso</div>
+            <input type='range' min={pvMin} max={pvMax} value={pvClamped}
+              onChange={e=>setPv(+e.target.value)}
+              style={{width:'100%',accentColor:CYAN}}/>
+            <div style={{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:11,color:'#64748b'}}>
+              <span>{pvMin} {unit}</span><span>{pvMax} {unit}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* steps + result */}
+        <div style={{flex:1.2}}>
+          {/* step by step */}
+          <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:20,marginBottom:16}}>
+            <div style={{fontSize:14,color:GOLD,fontWeight:700,marginBottom:14,textTransform:'uppercase',letterSpacing:1}}>Pasos de Cálculo</div>
+            {steps.map((s,i)=>(
+              <div key={i} style={{display:'flex',gap:12,marginBottom:14,alignItems:'flex-start'}}>
+                <div style={{width:28,height:28,borderRadius:'50%',background:GOLD,color:BG,fontWeight:800,fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{s.n}</div>
+                <div>
+                  <div style={{fontFamily:'monospace',fontSize:13,color:'#94a3b8'}}>{s.text}</div>
+                  <div style={{fontFamily:'monospace',fontSize:14,color:CYAN,marginTop:2}}>{s.val}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* results */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
+            {[
+              {label:'Variable',value:`${pvClamped.toFixed(1)} ${unit}`,color:CYAN,big:true},
+              {label:'Porcentaje',value:`${pct.toFixed(1)} %`,color:GREEN,big:true},
+              {label:'Corriente',value:`${mA.toFixed(2)} mA`,color:GOLD,big:true},
+              {label:'V sobre 250Ω',value:`${V250.toFixed(3)} V`,color:VIOLET},
+              {label:'Rango señal',value:'4 → 20 mA',color:'#94a3b8'},
+              {label:'Equivalente %',value:`${pct.toFixed(1)} → 100%`,color:'#94a3b8'},
+            ].map((r,i)=>(
+              <div key={i} style={{background:'#0a1628',border:`1px solid ${r.color}33`,borderRadius:8,padding:'12px',textAlign:'center'}}>
+                <div style={{fontSize:10,color:'#64748b',textTransform:'uppercase',letterSpacing:1}}>{r.label}</div>
+                <div style={{fontSize:r.big?20:14,fontWeight:800,color:r.color,marginTop:4}}>{r.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 5 — PROTOCOLO HART
+═══════════════════════════════════════════════════════════════ */
+function SceneHART(){
+  const [tick,setTick]=useState(0);
+  useEffect(()=>{const id=setInterval(()=>setTick(t=>t+1),60);return()=>clearInterval(id);},[]);
+
+  const points=Array.from({length:200},(_,i)=>{
+    const x=i/199;
+    const analog=12; // 12 mA = 50%
+    const fsk=Math.sin(x*Math.PI*20)*(i%2===0?1.5:1.2); // FSK superimposed
+    return{x,y:analog+fsk};
+  });
+
+  const svgPoints=points.map(p=>`${p.x*600+20},${180-(p.y-4)/16*120}`).join(' ');
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 80px'}}>
+      <SectionTitle icon='🔗' color={GREEN} title='Protocolo HART' sub='Highway Addressable Remote Transducer — digital sobre analógico'/>
+
+      <div style={{display:'flex',gap:50,marginTop:28,width:'100%'}}>
+        <div style={{flex:1}}>
+          <InfoBox color={GREEN} title='¿Qué es HART?'>
+            HART superpone una señal digital de <b style={{color:GREEN}}>frecuencia modulada (FSK)</b> sobre el lazo 4-20 mA existente. <b>1200 Hz = bit 1</b>, <b>2200 Hz = bit 0</b>. La señal analógica no se interrumpe.
+          </InfoBox>
+
+          <div style={{marginTop:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[
+              {icon:'🔁',label:'Bidireccional',sub:'Leer y escribir al transmisor'},
+              {icon:'📏',label:'Multivariable',sub:'Hasta 4 variables por dispositivo'},
+              {icon:'🔧',label:'Configuración remota',sub:'Range, tag, unidades desde sala'},
+              {icon:'🩺',label:'Diagnóstico',sub:'Alertas de fallo integradas'},
+              {icon:'🔢',label:'Dirección única',sub:'Cada instrumento tiene dirección'},
+              {icon:'🔌',label:'Sin rewiring',sub:'Usa el cable 4-20 mA existente'},
+            ].map((f,i)=>(
+              <div key={i} style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:8,padding:'10px 12px',display:'flex',gap:10,alignItems:'center'}}>
+                <span style={{fontSize:20}}>{f.icon}</span>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:GREEN}}>{f.label}</div>
+                  <div style={{fontSize:10,color:'#64748b'}}>{f.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{flex:1}}>
+          {/* waveform */}
+          <div style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:12,padding:16,marginBottom:16}}>
+            <div style={{fontSize:12,color:GREEN,fontWeight:700,marginBottom:8}}>SEÑAL EN EL CABLE</div>
+            <svg width={640} height={200}>
+              {/* grid */}
+              {[4,8,12,16,20].map(mA=>(
+                <line key={mA} x1={20} y1={180-(mA-4)/16*120} x2={620} y2={180-(mA-4)/16*120}
+                  stroke='#1e3a5f' strokeWidth={1} strokeDasharray='4,4'/>
+              ))}
+              {[4,8,12,16,20].map(mA=>(
+                <text key={mA} x={14} y={184-(mA-4)/16*120} fill='#475569' fontSize={10} textAnchor='end'>{mA}</text>
+              ))}
+              {/* analog baseline */}
+              <line x1={20} y1={180-(12-4)/16*120} x2={620} y2={180-(12-4)/16*120}
+                stroke={GOLD} strokeWidth={2} strokeDasharray='8,4' opacity={0.5}/>
+              {/* FSK signal */}
+              <polyline points={svgPoints} fill='none' stroke={GREEN} strokeWidth={1.5}/>
+              {/* labels */}
+              <text x={300} y={195} fill={GOLD} fontSize={11} textAnchor='middle'>── Analógica 12 mA (50%)</text>
+              <text x={500} y={30} fill={GREEN} fontSize={11} textAnchor='middle'>~~~ HART FSK (1200/2200 Hz)</text>
+            </svg>
+          </div>
+
+          {/* FSK table */}
+          <div style={{background:'#0a1628',border:`1px solid ${GREEN}22`,borderRadius:8,padding:'12px 16px'}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center'}}>
+              {[
+                {h:'Parámetro',v1:'Bit 1',v2:'Bit 0'},
+                {h:'Frecuencia',v1:'1200 Hz',v2:'2200 Hz'},
+                {h:'Amplitud',v1:'±0.5 mA',v2:'±0.5 mA'},
+                {h:'Velocidad',v1:'1200 bps',v2:'1200 bps'},
+              ].map((r,i)=>(
+                <React.Fragment key={i}>
+                  <div style={{fontSize:11,color:'#64748b',padding:'4px 0'}}>{r.h}</div>
+                  <div style={{fontSize:12,color:GREEN,fontWeight:700}}>{r.v1}</div>
+                  <div style={{fontSize:12,color:CYAN,fontWeight:700}}>{r.v2}</div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 6 — TRANSMISORES INTELIGENTES (SMART)
+═══════════════════════════════════════════════════════════════ */
+function SceneSmart(){
+  const [sel,setSel]=useState(null);
+  const features=[
+    {id:0,icon:'🧠',label:'Microprocesador',pos:{x:340,y:240},
+     desc:'CPU integrado que ejecuta algoritmos de compensación de temperatura, presión estática y linealización de sensor.'},
+    {id:1,icon:'📏',label:'Multi-variable',pos:{x:500,y:160},
+     desc:'Un solo instrumento puede medir y transmitir hasta 4 variables simultáneas (ej: presión diferencial + presión estática + temperatura).'},
+    {id:2,icon:'🔧',label:'Configuración remota',pos:{x:660,y:240},
+     desc:'Permite ajustar rango, tag, unidades, amortiguación y alarmas desde la sala de control sin ir al campo.'},
+    {id:3,icon:'🩺',label:'Autodiagnóstico',pos:{x:340,y:340},
+     desc:'Detecta fallos internos, sensor fuera de rango, temperatura extrema y fallo de memoria. Genera alertas NAMUR NE 107.'},
+    {id:4,icon:'📊',label:'Mayor exactitud',pos:{x:500,y:420},
+     desc:'Compensación de temperatura ambiente y no-linealidad del sensor logran exactitudes de ±0.04% a ±0.1% del span.'},
+    {id:5,icon:'📡',label:'HART / Fieldbus',pos:{x:660,y:340},
+     desc:'Comunicación digital HART 5/6/7, Foundation Fieldbus o Profibus PA sobre el mismo cable del lazo.'},
+  ];
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 60px'}}>
+      <SectionTitle icon='🧠' color={VIOLET} title='Transmisores Inteligentes' sub='Smart transmitters — microprocesador + comunicación digital'/>
+
+      <div style={{display:'flex',gap:40,marginTop:24,width:'100%',alignItems:'flex-start'}}>
+        {/* interactive diagram */}
+        <div style={{flex:1,position:'relative',height:320}}>
+          <svg width='100%' height={320} style={{position:'absolute',top:0,left:0}}>
+            {/* center body */}
+            <rect x='35%' y={110} width={180} height={100} rx={12}
+              fill={CARD} stroke={VIOLET} strokeWidth={2}/>
+            <text x='44%' y={168} fill={VIOLET} fontSize={14} fontWeight='bold'>TRANSMISOR</text>
+            <text x='44%' y={185} fill='#64748b' fontSize={11}>INTELIGENTE</text>
+            {/* lines to features */}
+            {features.map(f=>(
+              <line key={f.id}
+                x1='50%' y1={160}
+                x2={f.pos.x} y2={f.pos.y}
+                stroke={`${VIOLET}55`} strokeWidth={1.5} strokeDasharray='4,3'/>
+            ))}
+          </svg>
+          {/* feature nodes */}
+          {features.map(f=>(
+            <div key={f.id}
+              onClick={()=>setSel(sel===f.id?null:f.id)}
+              style={{
+                position:'absolute',
+                left:f.pos.x-36,top:f.pos.y-24,
+                width:72,height:48,
+                background:sel===f.id?VIOLET:CARD,
+                border:`2px solid ${VIOLET}`,
+                borderRadius:8,
+                display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+                cursor:'pointer',
+                transition:'all 0.2s',
+                zIndex:2,
+              }}>
+              <span style={{fontSize:16}}>{f.icon}</span>
+              <span style={{fontSize:9,color:sel===f.id?BG:'#94a3b8',textAlign:'center',lineHeight:1.2,marginTop:2}}>{f.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* right: detail + comparison */}
+        <div style={{width:480}}>
+          {sel!==null?(
+            <div style={{background:CARD,border:`2px solid ${VIOLET}`,borderRadius:12,padding:20,marginBottom:16,animation:'fadeIn 0.2s'}}>
+              <div style={{fontSize:24,marginBottom:8}}>{features[sel].icon}</div>
+              <div style={{fontSize:15,fontWeight:700,color:VIOLET,marginBottom:8}}>{features[sel].label}</div>
+              <div style={{fontSize:13,color:'#cbd5e1',lineHeight:1.7}}>{features[sel].desc}</div>
+            </div>
+          ):(
+            <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,padding:20,marginBottom:16}}>
+              <div style={{fontSize:13,color:'#64748b'}}>👆 Haz clic en cualquier bloque para ver el detalle de esa función</div>
+            </div>
+          )}
+
+          <div style={{background:'#0a1628',border:`1px solid ${VIOLET}22`,borderRadius:10,padding:16}}>
+            <div style={{fontSize:12,color:VIOLET,fontWeight:700,marginBottom:10,textTransform:'uppercase',letterSpacing:1}}>Convencional vs Inteligente</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,fontSize:11}}>
+              {[
+                {h:'Característica',c:'Convencional',s:'Inteligente'},
+                {h:'Exactitud',c:'±0.5 %',s:'±0.04 %'},
+                {h:'Ajuste',c:'Potenciómetros',s:'HART/software'},
+                {h:'Diagnóstico',c:'Ninguno',s:'NAMUR NE 107'},
+                {h:'Variables',c:'1',s:'Hasta 4'},
+                {h:'Compensación T°',c:'Manual',s:'Automática'},
+              ].map((r,i)=>(
+                <React.Fragment key={i}>
+                  <div style={{color:'#64748b',padding:'3px 0',borderBottom:'1px solid #1e3a5f'}}>{r.h}</div>
+                  <div style={{color:RED,padding:'3px 0',borderBottom:'1px solid #1e3a5f',textAlign:'center'}}>{r.c}</div>
+                  <div style={{color:GREEN,padding:'3px 0',borderBottom:'1px solid #1e3a5f',textAlign:'center'}}>{r.s}</div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}`}</style>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 7 — BUS DE CAMPO (FIELDBUS)
+═══════════════════════════════════════════════════════════════ */
+function SceneFieldbus(){
+  const [active,setActive]=useState(0);
+  const buses=[
+    {name:'Foundation Fieldbus H1',short:'FF H1',color:CYAN,speed:'31.25 kbps',cable:'Par trenzado',power:'Bus-powered',dist:'1900 m',nodes:32,app:'Proceso continuo (petróleo, química)',
+     pros:['Control distribuido en campo','Bloques de función IEC 61804','Interoperabilidad certificada'],
+     cons:['Mayor costo inicial','Configuración compleja']},
+    {name:'Profibus PA',short:'PA',color:VIOLET,speed:'31.25 kbps',cable:'Par trenzado',power:'Bus-powered',dist:'1900 m',nodes:32,app:'Proceso + manufactura (Siemens)',
+     pros:['Compatible con Profibus DP','Amplia base instalada','GSD estándar'],
+     cons:['Propiedad de Siemens histórica','Competencia de PROFINET']},
+    {name:'WirelessHART',short:'WL-HART',color:GREEN,speed:'250 kbps',cable:'Sin cable',power:'Batería / energy harvest',dist:'Malla 100m/salto',nodes:250,app:'Monitoreo remoto, difícil acceso',
+     pros:['Sin tendido de cable','Fácil instalación','Redundancia en malla'],
+     cons:['Latencia variable','Batería limitante','Seguridad cibernética']},
+  ];
+  const b=buses[active];
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'40px 80px'}}>
+      <SectionTitle icon='🌐' color={ORANGE} title='Buses de Campo Digitales' sub='Más allá del 4-20 mA — comunicación digital multi-dispositivo'/>
+
+      {/* tabs */}
+      <div style={{display:'flex',gap:8,marginTop:20}}>
+        {buses.map((bs,i)=>(
+          <button key={i} onClick={()=>setActive(i)}
+            style={{padding:'8px 20px',borderRadius:20,border:`2px solid ${bs.color}`,
+              background:active===i?bs.color:'transparent',
+              color:active===i?BG:bs.color,
+              fontWeight:700,fontSize:13,cursor:'pointer',transition:'all 0.2s'}}>
+            {bs.short}
+          </button>
+        ))}
+      </div>
+
+      <div style={{display:'flex',gap:32,marginTop:24,width:'100%',flex:1}}>
+        {/* specs */}
+        <div style={{width:280}}>
+          <div style={{background:CARD,border:`2px solid ${b.color}`,borderRadius:12,padding:20}}>
+            <div style={{fontSize:15,fontWeight:800,color:b.color,marginBottom:12}}>{b.name}</div>
+            {[
+              {k:'Velocidad',v:b.speed},
+              {k:'Medio físico',v:b.cable},
+              {k:'Alimentación',v:b.power},
+              {k:'Distancia máx.',v:b.dist},
+              {k:'Nodos máx.',v:String(b.nodes)},
+              {k:'Aplicación',v:b.app},
+            ].map((r,i)=>(
+              <div key={i} style={{borderBottom:'1px solid #1e3a5f',padding:'6px 0',display:'flex',justifyContent:'space-between'}}>
+                <span style={{fontSize:11,color:'#64748b'}}>{r.k}</span>
+                <span style={{fontSize:11,color:'#e2e8f0',fontWeight:600,maxWidth:130,textAlign:'right'}}>{r.v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* network diagram */}
+        <div style={{flex:1}}>
+          <FieldbusNetwork bus={b}/>
+        </div>
+
+        {/* pros/cons */}
+        <div style={{width:280}}>
+          <div style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:10,padding:16,marginBottom:12}}>
+            <div style={{fontSize:12,color:GREEN,fontWeight:700,marginBottom:8}}>✅ VENTAJAS</div>
+            {b.pros.map((p,i)=><div key={i} style={{fontSize:12,color:'#cbd5e1',marginBottom:6,paddingLeft:8,borderLeft:`2px solid ${GREEN}`}}>{p}</div>)}
+          </div>
+          <div style={{background:CARD,border:`1px solid ${RED}33`,borderRadius:10,padding:16}}>
+            <div style={{fontSize:12,color:RED,fontWeight:700,marginBottom:8}}>⚠️ DESVENTAJAS</div>
+            {b.cons.map((c,i)=><div key={i} style={{fontSize:12,color:'#cbd5e1',marginBottom:6,paddingLeft:8,borderLeft:`2px solid ${RED}`}}>{c}</div>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FieldbusNetwork({bus}){
+  const devices=[
+    {label:'DCS/PLC',x:360,y:40,color:bus.color,icon:'🖥️'},
+    {label:'FT-101',x:120,y:200,color:bus.color,icon:'📊'},
+    {label:'PT-102',x:240,y:220,color:bus.color,icon:'📊'},
+    {label:'TT-103',x:360,y:200,color:bus.color,icon:'🌡️'},
+    {label:'LT-104',x:480,y:220,color:bus.color,icon:'📊'},
+    {label:'FV-105',x:600,y:200,color:bus.color,icon:'🔧'},
+  ];
+  return(
+    <div style={{background:CARD,border:`1px solid ${BORDER}`,borderRadius:12,height:280,position:'relative',overflow:'hidden'}}>
+      <svg width='100%' height={280}>
+        {/* bus line */}
+        <line x1={60} y1={220} x2={650} y2={220} stroke={bus.color} strokeWidth={3}/>
+        {/* drops to bus */}
+        {devices.slice(1).map((d,i)=>(
+          <line key={i} x1={d.x} y1={d.y+20} x2={d.x} y2={220} stroke={bus.color} strokeWidth={1.5} strokeDasharray='4,3'/>
+        ))}
+        {/* line to DCS */}
+        <line x1={360} y1={60} x2={360} y2={100} stroke={bus.color} strokeWidth={2}/>
+        {/* segment coupler box */}
+        <rect x={310} y={95} width={100} height={30} rx={4} fill={CARD} stroke={bus.color} strokeWidth={1.5}/>
+        <text x={360} y={114} fill={bus.color} fontSize={10} textAnchor='middle'>Coupler / Trunk</text>
+        <line x1={360} y1={125} x2={360} y2={220} stroke={bus.color} strokeWidth={2}/>
+        {/* devices */}
+        {devices.map((d,i)=>(
+          <g key={i}>
+            <rect x={d.x-30} y={d.y} width={60} height={40} rx={6}
+              fill='#0a1628' stroke={d.color} strokeWidth={1.5}/>
+            <text x={d.x} y={d.y+16} fontSize={14} textAnchor='middle'>{d.icon}</text>
+            <text x={d.x} y={d.y+32} fontSize={9} fill='#94a3b8' textAnchor='middle'>{d.label}</text>
+          </g>
+        ))}
+        <text x={360} y={270} fill='#475569' fontSize={11} textAnchor='middle'>Bus de campo — señal digital compartida</text>
+      </svg>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 8 — TABLA COMPARATIVA
+═══════════════════════════════════════════════════════════════ */
+function SceneComparativa(){
+  const cols=[
+    {h:'Señal',w:140},
+    {h:'Rango',w:130},
+    {h:'Tipo',w:100},
+    {h:'Detección fallo',w:130},
+    {h:'Digital',w:80},
+    {h:'Multi-var.',w:90},
+    {h:'Velocidad',w:110},
+    {h:'Aplicación típica',w:180},
+  ];
+  const rows=[
+    {s:'Neumática',v:'3-15 psi',t:'Analógico',f:'< 3 psi',d:'No',m:'No',sp:'Lenta',a:'Zona EX clásica',c:CYAN},
+    {s:'4-20 mA',v:'4-20 mA',t:'Analógico',f:'< 3.8 mA',d:'No',m:'No',sp:'Continua',a:'Universal proceso',c:GOLD},
+    {s:'4-20 mA + HART',v:'4-20 mA + FSK',t:'Analógico + Digital',f:'< 3.8 mA',d:'Sí',m:'Sí',sp:'1200 bps',a:'Retrofit + diagnóstico',c:GREEN},
+    {s:'Foundation FF',v:'Digital',t:'Digital',f:'Mensaje estado',d:'Sí',m:'Sí',sp:'31.25 kbps',a:'Proceso continuo',c:VIOLET},
+    {s:'Profibus PA',v:'Digital',t:'Digital',f:'Mensaje estado',d:'Sí',m:'Sí',sp:'31.25 kbps',a:'Industria Siemens',c:ORANGE},
+    {s:'WirelessHART',v:'Digital',t:'Radio 2.4 GHz',f:'Mensaje estado',d:'Sí',m:'Sí',sp:'250 kbps',a:'Monitoreo remoto',c:RED},
+  ];
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'40px 60px'}}>
+      <SectionTitle icon='📊' color={GOLD} title='Comparativa de Señales' sub='Selección de estándar según aplicación'/>
+
+      <div style={{marginTop:24,width:'100%',overflowX:'auto'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr>
+              {cols.map((c,i)=>(
+                <th key={i} style={{background:'#0a1628',padding:'10px 8px',textAlign:'left',
+                  color:GOLD,fontWeight:700,fontSize:11,textTransform:'uppercase',letterSpacing:0.8,
+                  borderBottom:`2px solid ${GOLD}44`,width:c.w}}>
+                  {c.h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r,i)=>(
+              <tr key={i} style={{background:i%2===0?CARD:'#0a1628'}}>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`}}>
+                  <span style={{color:r.c,fontWeight:700,fontSize:13}}>{r.s}</span>
+                </td>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`,fontFamily:'monospace',color:'#e2e8f0'}}>{r.v}</td>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`,color:'#94a3b8'}}>{r.t}</td>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`,fontFamily:'monospace',fontSize:11,color:RED}}>{r.f}</td>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`,textAlign:'center',color:r.d==='Sí'?GREEN:RED,fontWeight:700}}>{r.d}</td>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`,textAlign:'center',color:r.m==='Sí'?GREEN:RED,fontWeight:700}}>{r.m}</td>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`,color:'#94a3b8',fontSize:11}}>{r.sp}</td>
+                <td style={{padding:'10px 8px',borderBottom:`1px solid ${BORDER}`,color:'#cbd5e1',fontSize:11}}>{r.a}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* tips */}
+      <div style={{display:'flex',gap:16,marginTop:20,width:'100%'}}>
+        {[
+          {icon:'💡',c:GOLD,text:'4-20 mA es el estándar más instalado en el mundo — aprende a calcular conversiones de memoria.'},
+          {icon:'🔑',c:GREEN,text:'HART permite diagnóstico remoto sin detener el proceso — ideal para mantenimiento predictivo.'},
+          {icon:'🚀',c:VIOLET,text:'Foundation Fieldbus habilita control en campo — el lazo PID corre en el transmisor, no en el DCS.'},
+        ].map((t,i)=>(
+          <div key={i} style={{flex:1,background:CARD,border:`1px solid ${t.c}33`,borderRadius:8,padding:'10px 14px',display:'flex',gap:10,alignItems:'flex-start'}}>
+            <span style={{fontSize:18}}>{t.icon}</span>
+            <div style={{fontSize:12,color:'#cbd5e1',lineHeight:1.6}}>{t.text}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 9 — TEST
+═══════════════════════════════════════════════════════════════ */
+function SceneTest(){
+  const [idx,setIdx]=useState(0);
+  const [chosen,setChosen]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=QUIZ[idx];
+
+  const pick=(i)=>{
+    if(chosen!==null)return;
+    setChosen(i);
+    if(i===q.correct)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(idx+1<QUIZ.length){setIdx(i=>i+1);setChosen(null);}
+      else setDone(true);
+    },1400);
+  };
+
+  if(done){
+    const pct=Math.round(score/QUIZ.length*100);
+    const medal=pct>=90?'🥇':pct>=70?'🥈':pct>=50?'🥉':'📚';
+    const msg=pct>=90?'¡Excelente dominio de señales!':pct>=70?'¡Muy bien! Repasa los detalles.':pct>=50?'Buen intento — estudia más la teoría.':'Revisa la clase y vuelve a intentarlo.';
+    return(
+      <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20}}>
+        <div style={{fontSize:72}}>{medal}</div>
+        <div style={{fontSize:42,fontWeight:800,color:'#fff'}}>{score} / {QUIZ.length}</div>
+        <div style={{fontSize:22,color:GOLD}}>{pct}% correcto</div>
+        <div style={{fontSize:16,color:'#94a3b8'}}>{msg}</div>
+        <button onClick={()=>{setIdx(0);setChosen(null);setScore(0);setDone(false);}}
+          style={{marginTop:16,padding:'12px 32px',borderRadius:24,background:GOLD,color:BG,fontWeight:800,fontSize:15,border:'none',cursor:'pointer'}}>
+          Repetir Test
+        </button>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 120px',gap:24}}>
+      <div style={{fontSize:13,color:GOLD,letterSpacing:3,textTransform:'uppercase'}}>Evaluación · Clase 1.4</div>
+      {/* progress */}
+      <div style={{width:'100%',height:6,background:'#1e3a5f',borderRadius:3}}>
+        <div style={{height:6,borderRadius:3,background:GOLD,width:`${(idx/QUIZ.length)*100}%`,transition:'width 0.4s'}}/>
+      </div>
+      <div style={{fontSize:11,color:'#475569',alignSelf:'flex-end'}}>{idx+1} / {QUIZ.length}</div>
+      <div style={{fontSize:22,fontWeight:700,color:'#fff',textAlign:'center',lineHeight:1.5,maxWidth:820}}>{q.q}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,width:'100%',maxWidth:820}}>
+        {q.opts.map((o,i)=>{
+          const isCorrect=i===q.correct;
+          const isChosen=i===chosen;
+          let bg=CARD,border=BORDER,color='#cbd5e1';
+          if(chosen!==null){
+            if(isCorrect){bg='#14532d';border=GREEN;color=GREEN;}
+            else if(isChosen){bg='#450a0a';border=RED;color=RED;}
+          }
+          return(
+            <div key={i} onClick={()=>pick(i)}
+              style={{background:bg,border:`2px solid ${border}`,borderRadius:10,
+                padding:'16px 20px',cursor:chosen===null?'pointer':'default',
+                color,fontSize:14,fontWeight:500,transition:'all 0.2s',lineHeight:1.5}}>
+              <span style={{color:GOLD,fontWeight:800,marginRight:10}}>{['A','B','C','D'][i]}.</span>{o}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{fontSize:13,color:'#475569'}}>Puntuación: {score} pts</div>
+    </div>
+  );
+}
+
+/* ─── SHARED COMPONENTS ──────────────────────────────────────── */
+function SectionTitle({icon,color,title,sub}){
+  return(
+    <div style={{textAlign:'center',marginBottom:4}}>
+      <div style={{fontSize:32,marginBottom:4}}>{icon}</div>
+      <div style={{fontSize:32,fontWeight:800,color:'#fff'}}>{title}</div>
+      <div style={{fontSize:14,color:'#64748b',marginTop:4}}>{sub}</div>
+      <div style={{width:60,height:3,background:color,borderRadius:2,margin:'10px auto 0'}}/>
+    </div>
+  );
+}
+function InfoBox({color,title,children}){
+  return(
+    <div style={{background:'#0a1628',border:`1px solid ${color}44`,borderRadius:10,padding:'14px 18px'}}>
+      <div style={{fontSize:12,color,fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>{title}</div>
+      <div style={{fontSize:13,color:'#cbd5e1',lineHeight:1.7}}>{children}</div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAV + APP
+═══════════════════════════════════════════════════════════════ */
+const SCENES=[
+  {label:'Intro',comp:SceneIntro},
+  {label:'Neumática 3-15 psi',comp:SceneNeumatica},
+  {label:'4-20 mA',comp:Scene420mA},
+  {label:'Calculadora',comp:SceneCalc},
+  {label:'HART',comp:SceneHART},
+  {label:'Smart',comp:SceneSmart},
+  {label:'Fieldbus',comp:SceneFieldbus},
+  {label:'Comparativa',comp:SceneComparativa},
+  {label:'Test',comp:SceneTest},
+];
+
+function App(){
+  const [scene,setScene]=useState(0);
+  const Comp=SCENES[scene].comp;
+  return(
+    <div style={{width:1280,height:720,background:BG,position:'relative',overflow:'hidden'}}>
+      <Comp/>
+      {/* nav */}
+      <div style={{position:'absolute',bottom:0,left:0,right:0,
+        background:'rgba(8,12,24,0.95)',borderTop:`1px solid ${BORDER}`,
+        display:'flex',alignItems:'center',justifyContent:'center',gap:4,padding:'6px 16px',
+        backdropFilter:'blur(8px)'}}>
+        <button onClick={()=>setScene(s=>Math.max(0,s-1))}
+          disabled={scene===0}
+          style={{padding:'5px 14px',borderRadius:6,background:scene===0?'#1e3a5f':GOLD,
+            color:scene===0?'#475569':BG,border:'none',cursor:scene===0?'default':'pointer',fontWeight:700,fontSize:12}}>
+          ← Anterior
+        </button>
+        <div style={{display:'flex',gap:4,flex:1,justifyContent:'center',flexWrap:'wrap'}}>
+          {SCENES.map((s,i)=>(
+            <button key={i} onClick={()=>setScene(i)}
+              style={{padding:'4px 10px',borderRadius:6,fontSize:10,
+                background:scene===i?GOLD:'transparent',
+                color:scene===i?BG:'#64748b',
+                border:`1px solid ${scene===i?GOLD:BORDER}`,
+                cursor:'pointer',fontWeight:scene===i?700:400,whiteSpace:'nowrap'}}>
+              {i+1}. {s.label}
+            </button>
+          ))}
+        </div>
+        <button onClick={()=>setScene(s=>Math.min(SCENES.length-1,s+1))}
+          disabled={scene===SCENES.length-1}
+          style={{padding:'5px 14px',borderRadius:6,
+            background:scene===SCENES.length-1?'#1e3a5f':GOLD,
+            color:scene===SCENES.length-1?'#475569':BG,
+            border:'none',cursor:scene===SCENES.length-1?'default':'pointer',fontWeight:700,fontSize:12}}>
+          Siguiente →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
