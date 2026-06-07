@@ -73,6 +73,7 @@ export default function LessonPlayer({
   const [openMap,        setOpenMap]        = useState<Record<string, boolean>>({});
   const [videoExpanded,  setVideoExpanded]  = useState(false);
   const [mobileLandscape, setMobileLandscape] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
   const iframeRef    = useRef<HTMLIFrameElement>(null);
   const videoWrapRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +84,18 @@ export default function LessonPlayer({
   // On desktop, default sidebar to open
   useEffect(() => {
     if (window.innerWidth >= 768) setSidebarOpen(true);
+  }, []);
+
+  // Track video container width for CSS-scale trick (keeps iframe at 1280px
+  // internally so Stage renders at full resolution; CSS shrinks the output)
+  useEffect(() => {
+    const el = videoWrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   // Detect mobile landscape orientation
@@ -116,6 +129,14 @@ export default function LessonPlayer({
   }, []);
 
   const showExpanded = videoExpanded || mobileLandscape;
+
+  // CSS-scale values: iframe always renders at 1280×720 internally;
+  // we scale it down via transform so Stage sees full resolution (scale≈1)
+  // and text stays crisp at any viewport size.
+  const DESIGN_W = 1280;
+  const DESIGN_H = 720;
+  const iframeScale  = containerWidth > 0 ? containerWidth / DESIGN_W : 1;
+  const scaledHeight = Math.round(DESIGN_H * iframeScale);
 
   // Lock body scroll when video is expanded
   useEffect(() => {
@@ -336,17 +357,29 @@ export default function LessonPlayer({
         {/* Video */}
         <div
           ref={videoWrapRef}
-          className={showExpanded ? "fixed inset-0 z-[200] bg-black" : "relative bg-black w-full"}
-          style={showExpanded ? {} : { paddingBottom: "56.25%" }}
+          className={showExpanded ? "fixed inset-0 z-[200] bg-black" : "relative bg-black w-full overflow-hidden"}
+          style={showExpanded ? {} : { height: containerWidth > 0 ? scaledHeight : undefined, paddingBottom: containerWidth > 0 ? 0 : "56.25%" }}
         >
           <iframe
             ref={iframeRef}
             key={lesson.id}
             src={lesson.videoPath}
-            className={showExpanded ? "w-full h-full border-0" : "absolute inset-0 w-full h-full border-0"}
             allowFullScreen
             title={lesson.title}
             sandbox="allow-scripts allow-same-origin"
+            className="border-0"
+            style={showExpanded
+              /* expanded / landscape: fill screen naturally */
+              ? { position: "absolute", inset: 0, width: "100%", height: "100%" }
+              /* normal: render at full design resolution, CSS-scale to fit */
+              : containerWidth > 0
+                ? { position: "absolute", top: 0, left: 0,
+                    width: `${DESIGN_W}px`, height: `${DESIGN_H}px`,
+                    transform: `scale(${iframeScale})`,
+                    transformOrigin: "top left" }
+                /* SSR / before measurement: fallback to % layout */
+                : { position: "absolute", inset: 0, width: "100%", height: "100%" }
+            }
           />
 
           {/* Expand button — visible on mobile/tablet when not expanded */}
