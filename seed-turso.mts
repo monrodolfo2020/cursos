@@ -791,6 +791,14 @@ const lessonsPro = [
     durationSec: 960,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.4 - Transmisores y Senales de Proceso.html`,
   },
+  {
+    order: 5,
+    title: "Medición de Presión — Bourdon, Diafragma, Fuelle y Transmisores DP",
+    description:
+      "Domina los 4 tipos de presión (absoluta, manométrica, diferencial y vacío), convertidor interactivo de unidades (Pa, bar, psi, atm, mmHg…), manómetro Bourdon animado, diafragma y fuelle con simulación de deformación, transmisor DP con configuración LRV/URV, matriz de selección y procedimiento de calibración ISO/IEC 17025.",
+    durationSec: 960,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.1 - Medicion de Presion.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
