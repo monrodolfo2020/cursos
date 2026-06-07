@@ -107,7 +107,7 @@ function SceneIntro() {
         <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
           {[
             { n:'12', label:'Términos ISA', icon:'📖' },
-            { n:'Creus', label:'Capítulo 1', icon:'📚' },
+            { n:'ISA', label:'Capítulo 1', icon:'📚' },
             { n:'ANSI', label:'Normativa', icon:'📋' },
           ].map(s=>(
             <div key={s.label} className="pop card" style={{ minWidth:90, textAlign:'center', padding:'10px 14px' }}>
@@ -118,7 +118,7 @@ function SceneIntro() {
           ))}
         </div>
         <p style={{ marginTop:20, fontSize:12, color:'rgba(255,255,255,.35)' }}>
-          Fuente: Creus, A. — Instrumentación Industrial, 8ª ed., Cap. 1
+          Normativa ANSI/ISA-S51.1-1979 (R 1993)
         </p>
       </div>
     </div>
@@ -471,7 +471,7 @@ function SceneHysteresis() {
           {/* Explanation */}
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             <div className="card">
-              <p style={{ fontSize:11, fontWeight:700, color:'#f59e0b', marginBottom:6 }}>Ejemplo de Creus</p>
+              <p style={{ fontSize:11, fontWeight:700, color:'#f59e0b', marginBottom:6 }}>Ejemplo práctico</p>
               <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.55 }}>
                 Termómetro 0-100°C. A <strong style={{color:'#fbbf24'}}>40°C</strong>:<br/>
                 · Subida: indica <span className="green">39.9°C</span><br/>
@@ -616,7 +616,7 @@ function SceneResumen() {
   return (
     <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
       <div className="fade" style={{ width:'100%', maxWidth:580 }}>
-        <div className="badge" style={{ marginBottom:12 }}>Resumen · Creus Cap. 1</div>
+        <div className="badge" style={{ marginBottom:12 }}>Resumen · ISA-S51.1</div>
         <h2 style={{ fontSize:'clamp(15px,2.5vw,20px)', fontWeight:700, marginBottom:14 }}>
           Tabla Maestra — 12 Definiciones ISA
         </h2>
@@ -645,13 +645,13 @@ function SceneResumen() {
 const QUIZ = [
   { q:'Un termómetro 0-300°C mide 150°C pero el valor real es 148°C. ¿Cuál es el error absoluto?', opts:['-2°C','±0.67%','+2°C','0°C'], ans:2, exp:'Error absoluto = Valor leído – Valor verdadero = 150 – 148 = +2°C. El signo indica que el instrumento sobrelee.' },
   { q:'¿Cuál es el alcance (span) de un transmisor de presión con campo de medida 2 – 12 bar?', opts:['12 bar','10 bar','6 bar','14 bar'], ans:1, exp:'Alcance (span) = valor superior – valor inferior = 12 – 2 = 10 bar. No confundir con el valor máximo (range).' },
-  { q:'Un manómetro siempre lee 2 bar de más, pero sus lecturas varían en ±0.002 bar. ¿Cómo se describe?', opts:['Alta exactitud, alta precisión','Baja exactitud, alta precisión','Alta exactitud, baja precisión','Baja exactitud, baja precisión'], ans:1, exp:'Error sistemático de 2 bar → baja exactitud. Dispersión mínima de ±0.002 bar → alta precisión. Este es el ejemplo clásico de Creus.' },
+  { q:'Un manómetro siempre lee 2 bar de más, pero sus lecturas varían en ±0.002 bar. ¿Cómo se describe?', opts:['Alta exactitud, alta precisión','Baja exactitud, alta precisión','Alta exactitud, baja precisión','Baja exactitud, baja precisión'], ans:1, exp:'Error sistemático de 2 bar → baja exactitud. Dispersión mínima de ±0.002 bar → alta precisión. Este es el ejemplo clásico de exactitud vs precisión en instrumentación.' },
   { q:'La zona muerta de ±0.1% de alcance en un instrumento 0-500°C equivale a:', opts:['±0.1°C','±5°C','±0.5°C','±1°C'], ans:2, exp:'Zona muerta = 0.1% × 500°C = ±0.5°C. Dentro de este rango, el instrumento no responde a cambios de la variable.' },
   { q:'¿Cuál de las siguientes es la mejor definición de histéresis?', opts:['Error cuando la variable cambia rápido','Diferencia máxima en lectura al recorrer la escala en sentido ascendente vs descendente','Zona donde el instrumento no responde','Deriva del instrumento con el tiempo'], ans:1, exp:'Histéresis = diferencia entre el valor indicado cuando la variable sube vs cuando baja, para el mismo punto de la escala. La zona muerta está contenida dentro de la histéresis.' },
   { q:'La incertidumbre tipo A se evalúa mediante:', opts:['Especificaciones del fabricante','Análisis estadístico de mediciones repetidas','Trazabilidad al patrón nacional','Experiencia del operador'], ans:1, exp:'La incertidumbre tipo A se evalúa estadísticamente: desviación estándar / √n. La tipo B usa información disponible (fabricante, certificados, experiencia).' },
   { q:'En calibración de sensores de presión (ISA S37.3), el patrón debe ser exacto en relación 4:1 respecto al instrumento. Si el transmisor tiene ±0.5%, el patrón debe ser al menos:', opts:['±0.5%','±1%','±0.25%','±0.125%'], ans:3, exp:'Relación 4:1 → exactitud patrón = exactitud instrumento ÷ 4 = 0.5% ÷ 4 = ±0.125%. Esto garantiza que el error del patrón no afecta significativamente la calibración.' },
   { q:'La trazabilidad de un instrumento significa que:', opts:['El instrumento tiene certificado de garantía','Sus medidas son referenciables a patrones nacionales o internacionales mediante cadena ininterrumpida','El instrumento no tiene deriva','Funciona sin mantenimiento'], ans:1, exp:'Trazabilidad (ISA/ISO): cadena ininterrumpida de comparaciones desde el instrumento hasta patrones nacionales o internacionales, con todas las incertidumbres determinadas.' },
-  { q:'La sensibilidad de un transmisor 0-10 bar es 0.5 mA/bar (normalizado). Si la presión cambia en 2 bar, ¿cuánto cambia la señal 4-20 mA?', opts:['1 mA','0.5 mA','2 mA','0.8 mA'], ans:3, exp:'ΔI = sensibilidad × ΔP × span_mA = 0.5 × 2 × (16mA/10bar) = 1.6 mA... En términos simples: ΔI proporcional. 2 bar sobre 10 = 20% → 20% × 16mA = 3.2mA de cambio. Pero con la sensibilidad normalizada de Creus: ΔI = 0.5 × 16mA/bar × 2bar ÷ 10 = 1.6 mA (la opción más cercana es la que implica el cálculo directo).' },
+  { q:'La sensibilidad de un transmisor 0-10 bar es 0.5 mA/bar (normalizado). Si la presión cambia en 2 bar, ¿cuánto cambia la señal 4-20 mA?', opts:['1 mA','0.5 mA','2 mA','0.8 mA'], ans:3, exp:'ΔI = sensibilidad × ΔP × span_mA = 0.5 × 2 × (16mA/10bar) = 1.6 mA... En términos simples: ΔI proporcional. 2 bar sobre 10 = 20% → 20% × 16mA = 3.2mA de cambio. Calculando directamente: ΔI = 0.5 × 16mA/bar × 2bar ÷ 10 = 1.6 mA (la opción más cercana es la que implica el cálculo directo).' },
   { q:'La "deriva de cero" en un instrumento es:', opts:['El error en el punto cero de la escala','Una variación de la salida en el tiempo con variable y condiciones constantes','La zona muerta alrededor del cero','La histéresis en el valor cero'], ans:1, exp:'Deriva (drift) de cero: variación de la señal de salida para el valor cero de la medida, atribuible a causas internas, durante un período de tiempo con condiciones ambientales constantes.' },
 ];
 
@@ -680,7 +680,7 @@ function SceneTest() {
     const [badge,col,msg] =
       pct>=90 ? ['🏆 Experto','#f59e0b','¡Dominas las definiciones de instrumentación!'] :
       pct>=70 ? ['✅ Aprobado','#4ade80','Buen nivel. Repasa los términos marcados en rojo.'] :
-      pct>=50 ? ['📘 En proceso','#22d3ee','Revisa Creus Cap. 1 y vuelve a intentarlo.'] :
+      pct>=50 ? ['📘 En proceso','#22d3ee','Revisa las escenas anteriores y vuelve a intentarlo.'] :
                ['🔄 Repasar','#f87171','Te recomendamos releer las escenas anteriores.'];
     return (
       <div className="grid-bg" style={{ minHeight:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px' }}>
