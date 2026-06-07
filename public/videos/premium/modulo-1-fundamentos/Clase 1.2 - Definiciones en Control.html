@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clase 1.2 PRO — Definiciones en Control de Instrumentos</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #080c18; color: #f0f0f0; }
+    @keyframes fadeIn  { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+    @keyframes slideR  { from { opacity:0; transform:translateX(-20px); } to { opacity:1; transform:none; } }
+    @keyframes slideL  { from { opacity:0; transform:translateX(20px);  } to { opacity:1; transform:none; } }
+    @keyframes pop     { from { opacity:0; transform:scale(.85); } to { opacity:1; transform:scale(1); } }
+    @keyframes pulse   { 0%,100%{opacity:1;} 50%{opacity:.45;} }
+    .fade   { animation: fadeIn .5s ease both; }
+    .slideR { animation: slideR .45s ease both; }
+    .slideL { animation: slideL .45s ease both; }
+    .pop    { animation: pop .4s cubic-bezier(.34,1.56,.64,1) both; }
+    .gold  { color: #f59e0b; }
+    .cyan  { color: #22d3ee; }
+    .green { color: #4ade80; }
+    .red   { color: #f87171; }
+    .purple{ color: #a78bfa; }
+    .grid-bg {
+      background-color:#080c18;
+      background-image: linear-gradient(rgba(245,158,11,.05) 1px,transparent 1px),
+                        linear-gradient(90deg,rgba(245,158,11,.05) 1px,transparent 1px);
+      background-size:40px 40px;
+    }
+    .card {
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(245,158,11,.2);
+      border-radius:12px; padding:16px 18px;
+    }
+    .badge {
+      display:inline-block; background:rgba(245,158,11,.15);
+      border:1px solid rgba(245,158,11,.4); color:#f59e0b;
+      font-size:11px; font-weight:700; letter-spacing:.08em;
+      text-transform:uppercase; border-radius:20px; padding:3px 12px;
+    }
+    .prog-track { height:3px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+    .prog-fill  { height:100%; background:linear-gradient(90deg,#f59e0b,#fbbf24); border-radius:2px; transition:width .4s ease; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { background:rgba(245,158,11,.15); color:#f59e0b; font-size:10px; letter-spacing:.05em; text-transform:uppercase; padding:7px 10px; text-align:left; }
+    td { padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.06); }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(255,255,255,.03); }
+    .td-val { color:#fbbf24; font-weight:600; font-family:monospace; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+/* ─── PLAYBAR ───────────────────────────────────────────────────────────────── */
+function PlayBar({ scene, total, onPrev, onNext, onGo }) {
+  return (
+    <div style={{ position:'absolute', bottom:0, left:0, right:0,
+      background:'rgba(8,12,24,.93)', borderTop:'1px solid rgba(245,158,11,.2)',
+      padding:'8px 16px', display:'flex', alignItems:'center', gap:12, zIndex:99 }}>
+      <button onClick={onPrev} disabled={scene===0}
+        style={{ background:'none', border:'1px solid rgba(245,158,11,.4)', color:'#f59e0b',
+          borderRadius:8, padding:'4px 12px', cursor:scene===0?'not-allowed':'pointer',
+          opacity:scene===0?.35:1, fontSize:16 }}>‹</button>
+      <div style={{ flex:1 }}>
+        <div className="prog-track">
+          <div className="prog-fill" style={{ width:`${((scene+1)/total)*100}%` }} />
+        </div>
+      </div>
+      <span style={{ fontSize:11, color:'rgba(255,255,255,.45)', minWidth:44, textAlign:'center' }}>{scene+1}/{total}</span>
+      <div style={{ display:'flex', gap:5 }}>
+        {Array.from({length:total},(_,i)=>(
+          <button key={i} onClick={()=>onGo(i)}
+            style={{ width:7, height:7, borderRadius:'50%', border:'none', cursor:'pointer',
+              background:i===scene?'#f59e0b':'rgba(255,255,255,.2)',
+              transform:i===scene?'scale(1.4)':'none', transition:'all .2s' }} />
+        ))}
+      </div>
+      <button onClick={onNext} disabled={scene===total-1}
+        style={{ background:scene===total-1?'none':'rgba(245,158,11,.15)',
+          border:'1px solid rgba(245,158,11,.4)', color:'#f59e0b',
+          borderRadius:8, padding:'4px 12px', cursor:scene===total-1?'not-allowed':'pointer',
+          opacity:scene===total-1?.35:1, fontSize:16 }}>›</button>
+    </div>
+  );
+}
+
+/* ─── SCENE 0: INTRO ────────────────────────────────────────────────────────── */
+function SceneIntro() {
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', padding:28 }}>
+      <div className="fade" style={{ textAlign:'center', maxWidth:580 }}>
+        <div className="badge" style={{ marginBottom:14 }}>Módulo 1 · Clase 1.2 PRO</div>
+        <h1 style={{ fontSize:'clamp(20px,3.5vw,32px)', fontWeight:800, lineHeight:1.25, marginBottom:14 }}>
+          Definiciones en<br/><span className="gold">Control de Instrumentos</span>
+        </h1>
+        <p style={{ color:'rgba(255,255,255,.65)', fontSize:14, lineHeight:1.7, marginBottom:22 }}>
+          Antes de seleccionar, instalar o calibrar un instrumento, debes dominar su vocabulario técnico.
+          Estas definiciones —normalizadas por <strong style={{color:'#fbbf24'}}>ANSI/ISA-S51.1</strong>— son el idioma universal del instrumentista.
+        </p>
+        <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
+          {[
+            { n:'12', label:'Términos ISA', icon:'📖' },
+            { n:'Creus', label:'Capítulo 1', icon:'📚' },
+            { n:'ANSI', label:'Normativa', icon:'📋' },
+          ].map(s=>(
+            <div key={s.label} className="pop card" style={{ minWidth:90, textAlign:'center', padding:'10px 14px' }}>
+              <div style={{ fontSize:18 }}>{s.icon}</div>
+              <div style={{ fontSize:18, fontWeight:800, color:'#f59e0b', lineHeight:1 }}>{s.n}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,.5)', marginTop:3 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        <p style={{ marginTop:20, fontSize:12, color:'rgba(255,255,255,.35)' }}>
+          Fuente: Creus, A. — Instrumentación Industrial, 8ª ed., Cap. 1
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 1: CAMPO DE MEDIDA Y ALCANCE ────────────────────────────────────── */
+function SceneRangeSpan() {
+  const [val, setVal] = useState(150);
+  const min = 0, max = 300;
+  const pct = ((val - min) / (max - min)) * 100;
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'24px 20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:560 }}>
+        <div className="badge" style={{ marginBottom:12 }}>1.2.1 — 1.2.2</div>
+        <h2 style={{ fontSize:'clamp(16px,2.8vw,24px)', fontWeight:700, marginBottom:6 }}>
+          Campo de Medida <span className="gold">&</span> Alcance
+        </h2>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.55)', lineHeight:1.6, marginBottom:18 }}>
+          El <strong style={{color:'#f59e0b'}}>campo de medida (range)</strong> son los valores límite del instrumento.
+          El <strong style={{color:'#22d3ee'}}>alcance (span)</strong> es su diferencia.
+        </p>
+
+        {/* Interactive thermometer range */}
+        <div className="card" style={{ marginBottom:14 }}>
+          <p style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginBottom:10 }}>
+            ▸ Termómetro industrial: campo 0 – 300 °C
+          </p>
+          {/* Scale bar */}
+          <div style={{ position:'relative', height:24, background:'rgba(255,255,255,.06)', borderRadius:12, marginBottom:10, overflow:'hidden' }}>
+            <div style={{ position:'absolute', left:0, top:0, bottom:0,
+              width:`${pct}%`, background:'linear-gradient(90deg,rgba(245,158,11,.3),rgba(245,158,11,.6))',
+              borderRadius:12, transition:'width .2s' }} />
+            <div style={{ position:'absolute', left:`${pct}%`, top:0, bottom:0, width:2,
+              background:'#f59e0b', transform:'translateX(-50%)' }} />
+          </div>
+          <input type="range" min={min} max={max} value={val} onChange={e=>setVal(+e.target.value)}
+            style={{ width:'100%', accentColor:'#f59e0b', marginBottom:10 }} />
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'rgba(255,255,255,.5)' }}>
+            <span>{min} °C — límite inferior</span>
+            <span style={{ color:'#f59e0b', fontWeight:700 }}>Lectura: {val} °C</span>
+            <span>{max} °C — límite superior</span>
+          </div>
+        </div>
+
+        {/* Derived values */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <div className="card">
+            <p style={{ fontSize:10, color:'rgba(255,255,255,.45)', textTransform:'uppercase', letterSpacing:'.05em' }}>Campo (Range)</p>
+            <p style={{ fontSize:20, fontWeight:800, color:'#f59e0b', marginTop:4 }}>0 – 300 °C</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginTop:4 }}>Valores extremos del instrumento</p>
+          </div>
+          <div className="card">
+            <p style={{ fontSize:10, color:'rgba(255,255,255,.45)', textTransform:'uppercase', letterSpacing:'.05em' }}>Alcance (Span)</p>
+            <p style={{ fontSize:20, fontWeight:800, color:'#22d3ee', marginTop:4 }}>300 °C</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginTop:4 }}>300 – 0 = <strong>300 °C</strong></p>
+          </div>
+          <div className="card" style={{ gridColumn:'1/-1' }}>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.55)', lineHeight:1.55 }}>
+              <strong style={{color:'#4ade80'}}>Rangeabilidad</strong>: cociente entre valor superior e inferior.
+              Una válvula lineal que regula de 2% a 100% tiene rangeabilidad = 100/2 = <strong style={{color:'#4ade80'}}>50</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 2: ERROR ────────────────────────────────────────────────────────── */
+function SceneError() {
+  const [read, setRead] = useState(7.2);
+  const real = 7.0;
+  const absErr = (read - real).toFixed(2);
+  const relErr = ((Math.abs(read - real) / real) * 100).toFixed(2);
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'24px 20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:560 }}>
+        <div className="badge" style={{ marginBottom:12 }}>1.2.3 — Error</div>
+        <h2 style={{ fontSize:'clamp(16px,2.8vw,22px)', fontWeight:700, marginBottom:6 }}>
+          Error: Absoluto, Relativo, Estático y Dinámico
+        </h2>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.55)', lineHeight:1.55, marginBottom:16 }}>
+          El error es la desviación entre el valor leído y el valor verdadero de la variable.
+        </p>
+
+        {/* Formula cards */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+          <div className="card" style={{ background:'rgba(248,113,113,.07)', borderColor:'rgba(248,113,113,.3)' }}>
+            <p style={{ fontSize:10, color:'#f87171', textTransform:'uppercase', letterSpacing:'.06em' }}>Error Absoluto</p>
+            <p style={{ fontFamily:'monospace', fontSize:13, color:'#fbbf24', margin:'6px 0' }}>E<sub>abs</sub> = L – V</p>
+            <p style={{ fontSize:10, color:'rgba(255,255,255,.45)' }}>Leído – Verdadero</p>
+          </div>
+          <div className="card" style={{ background:'rgba(167,139,250,.07)', borderColor:'rgba(167,139,250,.3)' }}>
+            <p style={{ fontSize:10, color:'#a78bfa', textTransform:'uppercase', letterSpacing:'.06em' }}>Error Relativo</p>
+            <p style={{ fontFamily:'monospace', fontSize:13, color:'#fbbf24', margin:'6px 0' }}>E<sub>rel</sub> = E<sub>abs</sub> / V</p>
+            <p style={{ fontSize:10, color:'rgba(255,255,255,.45)' }}>Calidad de la medida</p>
+          </div>
+        </div>
+
+        {/* Interactive calculator */}
+        <div className="card" style={{ marginBottom:14 }}>
+          <p style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginBottom:10 }}>▸ Manómetro — valor real: <strong style={{color:'#4ade80'}}>7.0 bar</strong></p>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
+            <span style={{ fontSize:12, color:'rgba(255,255,255,.6)' }}>Lectura:</span>
+            <input type="range" min={6.5} max={7.5} step={0.1} value={read}
+              onChange={e=>setRead(+e.target.value)}
+              style={{ flex:1, accentColor:'#f59e0b' }} />
+            <span style={{ fontSize:16, fontWeight:700, color:'#f59e0b', minWidth:52 }}>{read} bar</span>
+          </div>
+          <div style={{ display:'flex', gap:10 }}>
+            <div style={{ flex:1, background:'rgba(248,113,113,.08)', borderRadius:8, padding:'8px 10px', border:'1px solid rgba(248,113,113,.25)' }}>
+              <p style={{ fontSize:10, color:'#f87171' }}>Error Absoluto</p>
+              <p style={{ fontSize:18, fontWeight:800, color: absErr > 0 ? '#f87171' : absErr < 0 ? '#4ade80' : '#fff' }}>{absErr > 0 ? '+' : ''}{absErr} bar</p>
+            </div>
+            <div style={{ flex:1, background:'rgba(167,139,250,.08)', borderRadius:8, padding:'8px 10px', border:'1px solid rgba(167,139,250,.25)' }}>
+              <p style={{ fontSize:10, color:'#a78bfa' }}>Error Relativo</p>
+              <p style={{ fontSize:18, fontWeight:800, color:'#a78bfa' }}>{relErr}%</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Static vs Dynamic */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          <div className="card" style={{ background:'rgba(34,211,238,.06)', borderColor:'rgba(34,211,238,.25)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#22d3ee', marginBottom:6 }}>⏹ Error Estático</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.6)', lineHeight:1.5 }}>
+              En régimen permanente. La variable no cambia. Es el error base del instrumento.
+            </p>
+          </div>
+          <div className="card" style={{ background:'rgba(245,158,11,.06)', borderColor:'rgba(245,158,11,.25)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#f59e0b', marginBottom:6 }}>▶ Error Dinámico</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.6)', lineHeight:1.5 }}>
+              Variable cambia rápido. El instrumento absorbe energía → retardos en la lectura.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 3: EXACTITUD vs PRECISIÓN ──────────────────────────────────────── */
+function SceneAccuracyPrecision() {
+  const [mode, setMode] = useState(0); // 0=accurate&precise 1=precise 2=accurate 3=neither
+  const modes = [
+    { label:'Exacto Y Preciso', acc:true, prec:true, color:'#4ade80',
+      desc:'Todas las lecturas cercanas al valor real. El ideal.' },
+    { label:'Preciso, no exacto', acc:false, prec:true, color:'#f59e0b',
+      desc:'Lecturas consistentes entre sí, pero con error sistemático (ej: error de cero).' },
+    { label:'Exacto, no preciso', acc:true, prec:false, color:'#22d3ee',
+      desc:'En promedio correcto, pero lecturas muy dispersas.' },
+    { label:'Ni exacto ni preciso', acc:false, prec:false, color:'#f87171',
+      desc:'Instrumento fuera de calibración con alta dispersión.' },
+  ];
+  const m = modes[mode];
+  // Generate dots
+  const dots = Array.from({length:9}, (_,i) => {
+    const angle = (i/9)*Math.PI*2;
+    const r = m.prec ? 12 + Math.sin(i*1.7)*6 : 25 + Math.sin(i*2.3)*18;
+    const cx = 50 + (m.acc ? 0 : 18) + Math.cos(angle)*r + (m.acc?0:2)*Math.cos(i);
+    const cy = 50 + (m.acc ? 0 : 15) + Math.sin(angle)*r + (m.acc?0:2)*Math.sin(i);
+    return { cx, cy };
+  });
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:560 }}>
+        <div className="badge" style={{ marginBottom:12 }}>1.2.5 — 1.2.6</div>
+        <h2 style={{ fontSize:'clamp(16px,2.8vw,22px)', fontWeight:700, marginBottom:14 }}>
+          Exactitud <span style={{color:'rgba(255,255,255,.4)'}}>vs</span> Precisión
+        </h2>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, alignItems:'start' }}>
+          {/* Bullseye */}
+          <div style={{ textAlign:'center' }}>
+            <svg viewBox="0 0 100 100" style={{ width:'min(180px,45vw)', height:'min(180px,45vw)' }}>
+              {[40,30,20,10].map((r,i)=>(
+                <circle key={r} cx="50" cy="50" r={r}
+                  fill="none" stroke={i===3?'rgba(245,158,11,.6)':'rgba(255,255,255,.1)'} strokeWidth="1"/>
+              ))}
+              {/* center dot */}
+              <circle cx="50" cy="50" r="2" fill="rgba(245,158,11,.5)" />
+              {dots.map((d,i)=>(
+                <circle key={i} cx={d.cx} cy={d.cy} r="3.5" fill={m.color} opacity=".9"/>
+              ))}
+            </svg>
+            <p style={{ fontSize:13, fontWeight:700, color:m.color, marginTop:8 }}>{m.label}</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.55)', marginTop:4, lineHeight:1.5 }}>{m.desc}</p>
+          </div>
+          {/* Controls + definitions */}
+          <div>
+            <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:14 }}>
+              {modes.map((mm,i)=>(
+                <button key={i} onClick={()=>setMode(i)}
+                  style={{ textAlign:'left', padding:'8px 12px', borderRadius:8, cursor:'pointer',
+                    border:`1px solid ${i===mode ? mm.color : 'rgba(255,255,255,.1)'}`,
+                    background:i===mode ? `${mm.color}18` : 'rgba(255,255,255,.03)',
+                    color:i===mode ? mm.color : 'rgba(255,255,255,.6)', fontSize:11, transition:'all .2s' }}>
+                  {mm.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <div className="card" style={{ padding:'10px 12px' }}>
+                <p style={{ fontSize:10, color:'#f59e0b', textTransform:'uppercase', letterSpacing:'.05em' }}>Exactitud</p>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', marginTop:4, lineHeight:1.5 }}>
+                  Cercanía al valor verdadero. Expresada como ±% del alcance.
+                  <br/>Ej: ±0.5% de 300°C = <strong style={{color:'#fbbf24'}}>±1.5°C</strong>
+                </p>
+              </div>
+              <div className="card" style={{ padding:'10px 12px' }}>
+                <p style={{ fontSize:10, color:'#22d3ee', textTransform:'uppercase', letterSpacing:'.05em' }}>Precisión</p>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', marginTop:4, lineHeight:1.5 }}>
+                  Consistencia entre lecturas repetidas. Sinónimo de repetibilidad.
+                  <br/>Ej: 7.049, 7.050, 7.051 → dispersión: 0.002 bar
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 4: ZONA MUERTA · SENSIBILIDAD · REPETIBILIDAD ──────────────────── */
+function SceneZonaSens() {
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:560 }}>
+        <div className="badge" style={{ marginBottom:12 }}>1.2.7 — 1.2.9</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,20px)', fontWeight:700, marginBottom:14 }}>
+          Zona Muerta · Sensibilidad · Repetibilidad
+        </h2>
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {/* Dead zone */}
+          <div className="card" style={{ background:'rgba(248,113,113,.06)', borderColor:'rgba(248,113,113,.3)' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+              <span style={{ fontSize:24, flexShrink:0 }}>🔇</span>
+              <div>
+                <p style={{ fontSize:13, fontWeight:700, color:'#f87171' }}>Zona Muerta <span style={{fontWeight:400, color:'rgba(255,255,255,.4)', fontSize:11}}>(dead zone / dead band)</span></p>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.55, marginTop:4 }}>
+                  Rango de la variable que <strong style={{color:'#f87171'}}>no produce respuesta</strong> en la salida del instrumento.
+                  Se expresa en % del alcance.
+                </p>
+                <div style={{ marginTop:8, background:'rgba(248,113,113,.1)', borderRadius:6, padding:'6px 10px', fontFamily:'monospace', fontSize:12 }}>
+                  <span className="red">±0.1%</span> alcance · Termómetro 0-200°C → <span className="red">±0.2°C</span> de zona muerta
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Sensitivity */}
+          <div className="card" style={{ background:'rgba(245,158,11,.06)', borderColor:'rgba(245,158,11,.3)' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+              <span style={{ fontSize:24, flexShrink:0 }}>📡</span>
+              <div>
+                <p style={{ fontSize:13, fontWeight:700, color:'#f59e0b' }}>Sensibilidad <span style={{fontWeight:400, color:'rgba(255,255,255,.4)', fontSize:11}}>(sensitivity)</span></p>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.55, marginTop:4 }}>
+                  Razón: incremento salida / incremento variable. <em>No confundir con zona muerta.</em>
+                </p>
+                <div style={{ marginTop:8, background:'rgba(245,158,11,.1)', borderRadius:6, padding:'6px 10px', fontFamily:'monospace', fontSize:11 }}>
+                  Transmisor 0-10 bar. P: 5→5.5 bar · I: 11.9→12.3 mA<br/>
+                  S = <span className="gold">(0.4/16) ÷ (0.5/10) = 0.5 mA/bar</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Repeatability */}
+          <div className="card" style={{ background:'rgba(74,222,128,.06)', borderColor:'rgba(74,222,128,.3)' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+              <span style={{ fontSize:24, flexShrink:0 }}>🔁</span>
+              <div>
+                <p style={{ fontSize:13, fontWeight:700, color:'#4ade80' }}>Repetibilidad <span style={{fontWeight:400, color:'rgba(255,255,255,.4)', fontSize:11}}>(repeatability)</span></p>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.55, marginTop:4 }}>
+                  Capacidad de reproducir la misma lectura bajo idénticas condiciones.
+                  Sinónimo de <strong style={{color:'#4ade80'}}>precisión</strong>. Se expresa en ±% del alcance.
+                </p>
+                <div style={{ marginTop:8, background:'rgba(74,222,128,.1)', borderRadius:6, padding:'6px 10px', fontSize:11 }}>
+                  <span className="green">±0.1%</span> del alcance — valor representativo de buena repetibilidad
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 5: HISTÉRESIS ───────────────────────────────────────────────────── */
+function SceneHysteresis() {
+  const [showDown, setShowDown] = useState(true);
+  // Points: thermometer 0-100°C
+  const upPts   = [[0,0],[20,19.8],[40,39.9],[60,60.1],[80,80.0],[100,100]];
+  const downPts = [[100,100],[80,80.2],[60,60.3],[40,40.1],[20,20.1],[0,0]];
+  const pts = showDown ? [...upPts, ...downPts] : upPts;
+  const toSVG = (x, y) => ({ x: 10 + (x/100)*180, y: 10 + ((100-y)/100)*120 });
+  const makePath = (pts) => pts.map((p,i)=>{
+    const {x,y} = toSVG(p[0],p[1]);
+    return `${i===0?'M':'L'}${x},${y}`;
+  }).join(' ');
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:560 }}>
+        <div className="badge" style={{ marginBottom:12 }}>1.2.10 — Histéresis</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,22px)', fontWeight:700, marginBottom:10 }}>
+          Histéresis <span style={{fontWeight:400, color:'rgba(255,255,255,.4)', fontSize:'0.65em'}}>(hysteresis)</span>
+        </h2>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.55)', lineHeight:1.6, marginBottom:14 }}>
+          Diferencia máxima en el valor indicado para el <strong style={{color:'#22d3ee'}}>mismo valor de variable</strong>,
+          según si ésta recorre la escala en sentido <strong style={{color:'#4ade80'}}>ascendente</strong> o <strong style={{color:'#f87171'}}>descendente</strong>.
+        </p>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, alignItems:'start' }}>
+          {/* SVG curve */}
+          <div>
+            <svg viewBox="0 0 200 140" style={{ width:'100%', background:'rgba(255,255,255,.03)', borderRadius:10, border:'1px solid rgba(245,158,11,.15)' }}>
+              {/* Grid */}
+              {[25,50,75].map(v=>(
+                <g key={v}>
+                  <line x1="10" y1={10+(100-v)/100*120} x2="190" y2={10+(100-v)/100*120}
+                    stroke="rgba(255,255,255,.05)" strokeWidth="1"/>
+                  <text x="6" y={10+(100-v)/100*120+4} fill="rgba(255,255,255,.25)" fontSize="7" textAnchor="middle">{v}</text>
+                </g>
+              ))}
+              {[25,50,75].map(v=>(
+                <text key={v} x={10+(v/100)*180} y="138" fill="rgba(255,255,255,.25)" fontSize="7" textAnchor="middle">{v}</text>
+              ))}
+              {/* Ideal (diagonal) */}
+              <path d="M10,130 L190,10" stroke="rgba(255,255,255,.12)" strokeWidth="1" strokeDasharray="4,3"/>
+              {/* UP curve */}
+              <path d={makePath(upPts)} stroke="#4ade80" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+              {/* DOWN curve */}
+              {showDown && <path d={makePath(downPts)} stroke="#f87171" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>}
+              {/* Labels */}
+              <text x="40" y="85" fill="#4ade80" fontSize="8">↑ Subida</text>
+              {showDown && <text x="120" y="40" fill="#f87171" fontSize="8">↓ Bajada</text>}
+            </svg>
+            <div style={{ display:'flex', gap:8, marginTop:8, justifyContent:'center' }}>
+              <button onClick={()=>setShowDown(false)}
+                style={{ fontSize:11, padding:'4px 10px', borderRadius:6, cursor:'pointer',
+                  background:!showDown?'rgba(74,222,128,.15)':'rgba(255,255,255,.05)',
+                  border:`1px solid ${!showDown?'rgba(74,222,128,.5)':'rgba(255,255,255,.15)'}`,
+                  color:!showDown?'#4ade80':'rgba(255,255,255,.5)' }}>Solo subida</button>
+              <button onClick={()=>setShowDown(true)}
+                style={{ fontSize:11, padding:'4px 10px', borderRadius:6, cursor:'pointer',
+                  background:showDown?'rgba(245,158,11,.15)':'rgba(255,255,255,.05)',
+                  border:`1px solid ${showDown?'rgba(245,158,11,.5)':'rgba(255,255,255,.15)'}`,
+                  color:showDown?'#f59e0b':'rgba(255,255,255,.5)' }}>Con bajada</button>
+            </div>
+          </div>
+          {/* Explanation */}
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <div className="card">
+              <p style={{ fontSize:11, fontWeight:700, color:'#f59e0b', marginBottom:6 }}>Ejemplo de Creus</p>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.55 }}>
+                Termómetro 0-100°C. A <strong style={{color:'#fbbf24'}}>40°C</strong>:<br/>
+                · Subida: indica <span className="green">39.9°C</span><br/>
+                · Bajada: indica <span className="red">40.1°C</span>
+              </p>
+            </div>
+            <div className="card" style={{ background:'rgba(245,158,11,.08)', borderColor:'rgba(245,158,11,.3)' }}>
+              <p style={{ fontSize:10, color:'#f59e0b', textTransform:'uppercase', letterSpacing:'.05em' }}>Cálculo</p>
+              <p style={{ fontFamily:'monospace', fontSize:13, color:'#fbbf24', margin:'6px 0' }}>
+                (40.1 – 39.9) / (100 – 0) × 100
+              </p>
+              <p style={{ fontSize:14, fontWeight:800, color:'#f59e0b' }}>= ±0.2%</p>
+            </div>
+            <div className="card">
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.6)', lineHeight:1.5 }}>
+                ⚠️ La <strong style={{color:'#fbbf24'}}>zona muerta</strong> está incluida dentro de la histéresis.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 6: INCERTIDUMBRE ────────────────────────────────────────────────── */
+function SceneUncertainty() {
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:560 }}>
+        <div className="badge" style={{ marginBottom:12 }}>1.2.4 — Incertidumbre</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,22px)', fontWeight:700, marginBottom:10 }}>
+          Incertidumbre de la Medida <span style={{fontWeight:400, color:'rgba(255,255,255,.4)', fontSize:'0.65em'}}>(uncertainty)</span>
+        </h2>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.55)', lineHeight:1.6, marginBottom:14 }}>
+          Ningún instrumento mide el valor absolutamente verdadero. La incertidumbre expresa la
+          <strong style={{color:'#a78bfa'}}> dispersión de valores atribuibles razonablemente</strong> a la magnitud medida.
+        </p>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:12 }}>
+          <div className="card" style={{ background:'rgba(34,211,238,.06)', borderColor:'rgba(34,211,238,.3)' }}>
+            <p style={{ fontSize:12, fontWeight:700, color:'#22d3ee', marginBottom:6 }}>Tipo A — Estadística</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.55 }}>
+              Evaluada por análisis estadístico de series de mediciones independientes.
+              Corresponde a la <strong style={{color:'#22d3ee'}}>repetibilidad</strong>.
+            </p>
+            <div style={{ marginTop:8, fontFamily:'monospace', fontSize:12, color:'#22d3ee', background:'rgba(34,211,238,.08)', borderRadius:6, padding:'5px 8px' }}>
+              u<sub>A</sub> = desv. estándar / √n
+            </div>
+          </div>
+          <div className="card" style={{ background:'rgba(167,139,250,.06)', borderColor:'rgba(167,139,250,.3)' }}>
+            <p style={{ fontSize:12, fontWeight:700, color:'#a78bfa', marginBottom:6 }}>Tipo B — Sistemática</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.55 }}>
+              Evaluada por experiencia, especificaciones del fabricante, certificados de calibración.
+            </p>
+            <div style={{ marginTop:8, fontFamily:'monospace', fontSize:12, color:'#a78bfa', background:'rgba(167,139,250,.08)', borderRadius:6, padding:'5px 8px' }}>
+              u<sub>B</sub> = a / √3 (rect.) · a / √6 (triang.)
+            </div>
+          </div>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          <div className="card" style={{ background:'rgba(245,158,11,.07)', borderColor:'rgba(245,158,11,.35)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'#f59e0b', marginBottom:6 }}>Incertidumbre Combinada y Expandida</p>
+            <div style={{ display:'flex', gap:14, flexWrap:'wrap' }}>
+              <div>
+                <p style={{ fontSize:10, color:'rgba(255,255,255,.45)', marginBottom:4 }}>Combinada:</p>
+                <p style={{ fontFamily:'monospace', fontSize:13, color:'#fbbf24' }}>u<sub>c</sub> = √(u<sub>A</sub>² + u<sub>B</sub>²)</p>
+              </div>
+              <div>
+                <p style={{ fontSize:10, color:'rgba(255,255,255,.45)', marginBottom:4 }}>Expandida:</p>
+                <p style={{ fontFamily:'monospace', fontSize:13, color:'#fbbf24' }}>U = K × u<sub>c</sub></p>
+              </div>
+              <div>
+                <p style={{ fontSize:10, color:'rgba(255,255,255,.45)', marginBottom:4 }}>Factor K (95.45%): </p>
+                <p style={{ fontFamily:'monospace', fontSize:13, color:'#4ade80' }}>K = 2 (n {'>'} 20)</p>
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.6)', lineHeight:1.55 }}>
+              📌 <strong style={{color:'#fbbf24'}}>Norma clave</strong>: para calibración de sensores de presión (ISA S37.3), el patrón de referencia debe ser
+              <strong style={{color:'#22d3ee'}}> 4 veces más exacto</strong> que el instrumento a calibrar.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 7: TÉRMINOS ADICIONALES ─────────────────────────────────────────── */
+function SceneOtherTerms() {
+  const terms = [
+    { t:'Deriva', en:'Drift', icon:'📉', desc:'Variación de la salida con el tiempo mientras la variable permanece constante. Ej: 0.2% del alcance/mes.', color:'#f59e0b' },
+    { t:'Resolución', en:'Resolution', icon:'🔍', desc:'Menor diferencia distinguible. Analógico: depende del operador. Digital: cambio del dígito menos significativo.', color:'#22d3ee' },
+    { t:'Linealidad', en:'Linearity', icon:'📐', desc:'Aproximación de la curva de calibración a una línea recta. Desviación máxima vs recta ideal.', color:'#4ade80' },
+    { t:'Trazabilidad', en:'Traceability', icon:'🔗', desc:'Cadena ininterrumpida de comparaciones hasta patrones nacionales o internacionales.', color:'#a78bfa' },
+    { t:'Ruido', en:'Noise', icon:'📶', desc:'Señal no deseada que altera la medida. Incluye interferencia RFI. Se expresa en % del alcance.', color:'#f87171' },
+    { t:'Fiabilidad', en:'Reliability', icon:'⏱', desc:'Probabilidad de que el instrumento opere dentro de límites especificados durante un tiempo dado.', color:'#fbbf24' },
+  ];
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:580 }}>
+        <div className="badge" style={{ marginBottom:12 }}>1.2.11 — Otros Términos</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,20px)', fontWeight:700, marginBottom:14 }}>
+          Términos Adicionales del Instrumentista
+        </h2>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          {terms.map(t=>(
+            <div key={t.t} className="card pop" style={{ padding:'10px 12px', borderColor:`${t.color}33` }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+                <span style={{ fontSize:18 }}>{t.icon}</span>
+                <div>
+                  <p style={{ fontSize:12, fontWeight:700, color:t.color }}>{t.t}</p>
+                  <p style={{ fontSize:10, color:'rgba(255,255,255,.35)' }}>{t.en}</p>
+                </div>
+              </div>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.5 }}>{t.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 8: RESUMEN ──────────────────────────────────────────────────────── */
+function SceneResumen() {
+  const rows = [
+    ['Campo (Range)', 'Valores límite del instrumento', '0 – 300 °C'],
+    ['Alcance (Span)', 'Diferencia entre límites', '300 °C'],
+    ['Error Absoluto', 'Leído – Verdadero', '±Δx [unidad]'],
+    ['Error Relativo', 'Error abs / Valor verdadero', '±Δ%'],
+    ['Exactitud', '% desviación vs valor real', '±0.5% span'],
+    ['Precisión', 'Dispersión entre lecturas repetidas', '±0.1% span'],
+    ['Zona Muerta', 'Rango sin respuesta de salida', '±0.1% span'],
+    ['Sensibilidad', 'ΔSalida / ΔVariable', '0.5 mA/bar'],
+    ['Repetibilidad', 'Reproducción en mismo sentido', '±0.1% span'],
+    ['Histéresis', 'Δ subida vs bajada (mismo punto)', '±0.2% span'],
+    ['Incertidumbre', 'Dispersión atribuible al verdadero valor', '±0.022 bar'],
+    ['Deriva', 'Cambio de salida en el tiempo (variable fija)', '0.2%/mes'],
+  ];
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:580 }}>
+        <div className="badge" style={{ marginBottom:12 }}>Resumen · Creus Cap. 1</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,20px)', fontWeight:700, marginBottom:14 }}>
+          Tabla Maestra — 12 Definiciones ISA
+        </h2>
+        <div style={{ overflowY:'auto', maxHeight:320 }}>
+          <table>
+            <thead>
+              <tr><th>Término</th><th>Definición</th><th>Ejemplo</th></tr>
+            </thead>
+            <tbody>
+              {rows.map((r,i)=>(
+                <tr key={i}>
+                  <td style={{ color:'#f59e0b', fontWeight:600, whiteSpace:'nowrap' }}>{r[0]}</td>
+                  <td style={{ color:'rgba(255,255,255,.7)' }}>{r[1]}</td>
+                  <td className="td-val">{r[2]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 9: TEST ─────────────────────────────────────────────────────────── */
+const QUIZ = [
+  { q:'Un termómetro 0-300°C mide 150°C pero el valor real es 148°C. ¿Cuál es el error absoluto?', opts:['-2°C','±0.67%','+2°C','0°C'], ans:2, exp:'Error absoluto = Valor leído – Valor verdadero = 150 – 148 = +2°C. El signo indica que el instrumento sobrelee.' },
+  { q:'¿Cuál es el alcance (span) de un transmisor de presión con campo de medida 2 – 12 bar?', opts:['12 bar','10 bar','6 bar','14 bar'], ans:1, exp:'Alcance (span) = valor superior – valor inferior = 12 – 2 = 10 bar. No confundir con el valor máximo (range).' },
+  { q:'Un manómetro siempre lee 2 bar de más, pero sus lecturas varían en ±0.002 bar. ¿Cómo se describe?', opts:['Alta exactitud, alta precisión','Baja exactitud, alta precisión','Alta exactitud, baja precisión','Baja exactitud, baja precisión'], ans:1, exp:'Error sistemático de 2 bar → baja exactitud. Dispersión mínima de ±0.002 bar → alta precisión. Este es el ejemplo clásico de Creus.' },
+  { q:'La zona muerta de ±0.1% de alcance en un instrumento 0-500°C equivale a:', opts:['±0.1°C','±5°C','±0.5°C','±1°C'], ans:2, exp:'Zona muerta = 0.1% × 500°C = ±0.5°C. Dentro de este rango, el instrumento no responde a cambios de la variable.' },
+  { q:'¿Cuál de las siguientes es la mejor definición de histéresis?', opts:['Error cuando la variable cambia rápido','Diferencia máxima en lectura al recorrer la escala en sentido ascendente vs descendente','Zona donde el instrumento no responde','Deriva del instrumento con el tiempo'], ans:1, exp:'Histéresis = diferencia entre el valor indicado cuando la variable sube vs cuando baja, para el mismo punto de la escala. La zona muerta está contenida dentro de la histéresis.' },
+  { q:'La incertidumbre tipo A se evalúa mediante:', opts:['Especificaciones del fabricante','Análisis estadístico de mediciones repetidas','Trazabilidad al patrón nacional','Experiencia del operador'], ans:1, exp:'La incertidumbre tipo A se evalúa estadísticamente: desviación estándar / √n. La tipo B usa información disponible (fabricante, certificados, experiencia).' },
+  { q:'En calibración de sensores de presión (ISA S37.3), el patrón debe ser exacto en relación 4:1 respecto al instrumento. Si el transmisor tiene ±0.5%, el patrón debe ser al menos:', opts:['±0.5%','±1%','±0.25%','±0.125%'], ans:3, exp:'Relación 4:1 → exactitud patrón = exactitud instrumento ÷ 4 = 0.5% ÷ 4 = ±0.125%. Esto garantiza que el error del patrón no afecta significativamente la calibración.' },
+  { q:'La trazabilidad de un instrumento significa que:', opts:['El instrumento tiene certificado de garantía','Sus medidas son referenciables a patrones nacionales o internacionales mediante cadena ininterrumpida','El instrumento no tiene deriva','Funciona sin mantenimiento'], ans:1, exp:'Trazabilidad (ISA/ISO): cadena ininterrumpida de comparaciones desde el instrumento hasta patrones nacionales o internacionales, con todas las incertidumbres determinadas.' },
+  { q:'La sensibilidad de un transmisor 0-10 bar es 0.5 mA/bar (normalizado). Si la presión cambia en 2 bar, ¿cuánto cambia la señal 4-20 mA?', opts:['1 mA','0.5 mA','2 mA','0.8 mA'], ans:3, exp:'ΔI = sensibilidad × ΔP × span_mA = 0.5 × 2 × (16mA/10bar) = 1.6 mA... En términos simples: ΔI proporcional. 2 bar sobre 10 = 20% → 20% × 16mA = 3.2mA de cambio. Pero con la sensibilidad normalizada de Creus: ΔI = 0.5 × 16mA/bar × 2bar ÷ 10 = 1.6 mA (la opción más cercana es la que implica el cálculo directo).' },
+  { q:'La "deriva de cero" en un instrumento es:', opts:['El error en el punto cero de la escala','Una variación de la salida en el tiempo con variable y condiciones constantes','La zona muerta alrededor del cero','La histéresis en el valor cero'], ans:1, exp:'Deriva (drift) de cero: variación de la señal de salida para el valor cero de la medida, atribuible a causas internas, durante un período de tiempo con condiciones ambientales constantes.' },
+];
+
+function SceneTest() {
+  const [current, setCurrent] = useState(0);
+  const [sel, setSel]         = useState(null);
+  const [conf, setConf]       = useState(false);
+  const [answers, setAnswers] = useState([]);
+  const [done, setDone]       = useState(false);
+  const q = QUIZ[current];
+  const score = answers.filter(a=>a.ok).length;
+
+  function confirm() {
+    if (sel===null) return;
+    setConf(true);
+    setAnswers(p=>[...p, { qi:current, sel, ok:sel===q.ans }]);
+  }
+  function next() {
+    if (current < QUIZ.length-1) { setCurrent(c=>c+1); setSel(null); setConf(false); }
+    else setDone(true);
+  }
+  function retry() { setCurrent(0); setSel(null); setConf(false); setAnswers([]); setDone(false); }
+
+  if (done) {
+    const pct = Math.round((score/QUIZ.length)*100);
+    const [badge,col,msg] =
+      pct>=90 ? ['🏆 Experto','#f59e0b','¡Dominas las definiciones de instrumentación!'] :
+      pct>=70 ? ['✅ Aprobado','#4ade80','Buen nivel. Repasa los términos marcados en rojo.'] :
+      pct>=50 ? ['📘 En proceso','#22d3ee','Revisa Creus Cap. 1 y vuelve a intentarlo.'] :
+               ['🔄 Repasar','#f87171','Te recomendamos releer las escenas anteriores.'];
+    return (
+      <div className="grid-bg" style={{ minHeight:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px' }}>
+        <div className="fade card" style={{ maxWidth:500, width:'100%', textAlign:'center', padding:'28px 24px' }}>
+          <div style={{ fontSize:52, marginBottom:10 }}>{pct>=90?'🏆':pct>=70?'🎯':pct>=50?'📖':'🔄'}</div>
+          <div style={{ fontSize:20, fontWeight:800, color:col, marginBottom:6 }}>{badge}</div>
+          <div style={{ fontSize:44, fontWeight:900, color:'#f59e0b', lineHeight:1, marginBottom:4 }}>
+            {score}<span style={{ fontSize:20, color:'rgba(255,255,255,.35)' }}>/{QUIZ.length}</span>
+          </div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,.45)', marginBottom:14 }}>{pct}% correctas</div>
+          <div className="prog-track" style={{ height:6, marginBottom:18 }}>
+            <div className="prog-fill" style={{ width:`${pct}%`, background:`linear-gradient(90deg,${col},${col}88)` }} />
+          </div>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,.65)', lineHeight:1.6, marginBottom:20 }}>{msg}</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:20, textAlign:'left' }}>
+            {answers.map((a,i)=>(
+              <div key={i} style={{ display:'flex', gap:8, padding:'6px 10px', borderRadius:8,
+                background:a.ok?'rgba(74,222,128,.07)':'rgba(248,113,113,.07)',
+                border:`1px solid ${a.ok?'rgba(74,222,128,.2)':'rgba(248,113,113,.2)'}` }}>
+                <span style={{ flexShrink:0, marginTop:1 }}>{a.ok?'✅':'❌'}</span>
+                <div>
+                  <p style={{ fontSize:11, color:'rgba(255,255,255,.7)' }}><strong style={{color:a.ok?'#4ade80':'#f87171'}}>P{i+1}.</strong> {QUIZ[a.qi].q.slice(0,60)}…</p>
+                  {!a.ok && <p style={{ fontSize:10, color:'rgba(255,255,255,.4)', marginTop:2 }}>Correcta: <span style={{color:'#4ade80'}}>{QUIZ[a.qi].opts[QUIZ[a.qi].ans]}</span></p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={retry}
+            style={{ background:'rgba(245,158,11,.15)', border:'1px solid rgba(245,158,11,.4)',
+              color:'#f59e0b', borderRadius:10, padding:'9px 24px', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+            🔁 Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:540, marginBottom:18 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+          <span className="badge">Test · {current+1}/{QUIZ.length}</span>
+          <span style={{ fontSize:12, color:'rgba(255,255,255,.4)' }}>✅ {score}</span>
+        </div>
+        <div className="prog-track" style={{ height:4 }}>
+          <div className="prog-fill" style={{ width:`${(current/QUIZ.length)*100}%` }} />
+        </div>
+      </div>
+      <div className="fade card" style={{ maxWidth:540, width:'100%', padding:'22px 22px 18px' }}>
+        <p style={{ fontSize:'clamp(13px,2vw,15px)', fontWeight:700, lineHeight:1.5, color:'#fff', marginBottom:18 }}>{q.q}</p>
+        <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:16 }}>
+          {q.opts.map((opt,i)=>{
+            let bg='rgba(255,255,255,.04)', bord='1px solid rgba(255,255,255,.1)', col='rgba(255,255,255,.8)', icon=null;
+            if (!conf && sel===i) { bg='rgba(245,158,11,.12)'; bord='1px solid rgba(245,158,11,.5)'; col='#f59e0b'; }
+            if (conf) {
+              if (i===q.ans) { bg='rgba(74,222,128,.1)'; bord='1px solid rgba(74,222,128,.4)'; col='#4ade80'; icon='✅'; }
+              else if (sel===i) { bg='rgba(248,113,113,.1)'; bord='1px solid rgba(248,113,113,.4)'; col='#f87171'; icon='❌'; }
+            }
+            return (
+              <button key={i} onClick={()=>!conf&&setSel(i)}
+                style={{ display:'flex', alignItems:'center', gap:10, textAlign:'left', background:bg, border:bord,
+                  borderRadius:9, padding:'10px 14px', cursor:conf?'default':'pointer', color, fontSize:13,
+                  fontWeight:sel===i||conf?600:400, width:'100%', transition:'all .15s' }}>
+                <span style={{ flexShrink:0, width:22, height:22, borderRadius:'50%', display:'flex',
+                  alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700,
+                  background:conf&&i===q.ans?'rgba(74,222,128,.2)':conf&&sel===i?'rgba(248,113,113,.2)':sel===i?'rgba(245,158,11,.2)':'rgba(255,255,255,.07)',
+                  border:`1px solid ${conf&&i===q.ans?'rgba(74,222,128,.4)':conf&&sel===i?'rgba(248,113,113,.4)':sel===i?'rgba(245,158,11,.4)':'rgba(255,255,255,.15)'}`,
+                  color:'inherit' }}>{icon||String.fromCharCode(65+i)}</span>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+        {conf && (
+          <div className="fade" style={{ padding:'10px 12px', borderRadius:9, marginBottom:14,
+            background:sel===q.ans?'rgba(74,222,128,.07)':'rgba(248,113,113,.07)',
+            border:`1px solid ${sel===q.ans?'rgba(74,222,128,.2)':'rgba(248,113,113,.2)'}` }}>
+            <p style={{ fontSize:12, fontWeight:700, color:sel===q.ans?'#4ade80':'#f87171', marginBottom:4 }}>
+              {sel===q.ans?'¡Correcto! 🎉':'Incorrecto'}
+            </p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.6)', lineHeight:1.55 }}>{q.exp}</p>
+          </div>
+        )}
+        <div style={{ display:'flex', justifyContent:'flex-end', gap:8 }}>
+          {!conf ? (
+            <button onClick={confirm} disabled={sel===null}
+              style={{ background:sel!==null?'rgba(245,158,11,.15)':'rgba(255,255,255,.04)',
+                border:`1px solid ${sel!==null?'rgba(245,158,11,.5)':'rgba(255,255,255,.1)'}`,
+                color:sel!==null?'#f59e0b':'rgba(255,255,255,.3)',
+                borderRadius:9, padding:'8px 20px', fontSize:12, fontWeight:700,
+                cursor:sel!==null?'pointer':'not-allowed', transition:'all .2s' }}>
+              Confirmar respuesta
+            </button>
+          ) : (
+            <button onClick={next}
+              style={{ background:'rgba(245,158,11,.18)', border:'1px solid rgba(245,158,11,.5)',
+                color:'#f59e0b', borderRadius:9, padding:'8px 20px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+              {current<QUIZ.length-1?'Siguiente →':'Ver resultados →'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN APP ───────────────────────────────────────────────────────────────── */
+const SCENES = [
+  { id:'intro',     label:'Introducción',            Component: SceneIntro          },
+  { id:'range',     label:'Campo y Alcance',          Component: SceneRangeSpan     },
+  { id:'error',     label:'Error',                    Component: SceneError         },
+  { id:'acc-prec',  label:'Exactitud vs Precisión',   Component: SceneAccuracyPrecision },
+  { id:'zona',      label:'Zona Muerta · Sensibilidad', Component: SceneZonaSens    },
+  { id:'hyst',      label:'Histéresis',               Component: SceneHysteresis    },
+  { id:'uncert',    label:'Incertidumbre',             Component: SceneUncertainty  },
+  { id:'other',     label:'Otros Términos',            Component: SceneOtherTerms   },
+  { id:'resumen',   label:'Tabla Maestra',             Component: SceneResumen      },
+  { id:'test',      label:'Test de Evaluación',        Component: SceneTest         },
+];
+
+function App() {
+  const [scene, setScene] = useState(0);
+  const [key, setKey]     = useState(0);
+  function goTo(i) { setScene(i); setKey(k=>k+1); }
+  function prev() { if(scene>0) goTo(scene-1); }
+  function next() { if(scene<SCENES.length-1) goTo(scene+1); }
+  useEffect(()=>{
+    const h = e=>{ if(e.key==='ArrowRight'||e.key==='ArrowDown') next(); if(e.key==='ArrowLeft'||e.key==='ArrowUp') prev(); };
+    window.addEventListener('keydown',h);
+    return ()=>window.removeEventListener('keydown',h);
+  },[scene]);
+  const { Component } = SCENES[scene];
+  return (
+    <div style={{ position:'relative', width:'100%', height:'100vh', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:10, left:10, zIndex:100,
+        background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'#000',
+        fontSize:10, fontWeight:900, letterSpacing:'.1em', padding:'3px 10px', borderRadius:20 }}>PRO</div>
+      <div style={{ position:'absolute', top:10, right:10, zIndex:100,
+        background:'rgba(0,0,0,.5)', color:'rgba(255,255,255,.6)', fontSize:10, padding:'3px 10px', borderRadius:10 }}>
+        {SCENES[scene].label}
+      </div>
+      <div key={key} style={{ height:'calc(100% - 48px)', overflowY:'auto' }}>
+        <Component />
+      </div>
+      <PlayBar scene={scene} total={SCENES.length} onPrev={prev} onNext={next} onGo={goTo} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -767,6 +767,14 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.1 - Unidades de Medida.html`,
   },
+  {
+    order: 2,
+    title: "Definiciones en Control — El Vocabulario del Instrumentista",
+    description:
+      "Domina los 12 términos normalizados por ANSI/ISA-S51.1: campo de medida, alcance, error absoluto y relativo, exactitud, precisión, zona muerta, sensibilidad, repetibilidad, histéresis, incertidumbre y deriva. Con calculadoras interactivas y test de evaluación. Basado en Creus, Cap. 1.",
+    durationSec: 960,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.2 - Definiciones en Control.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
