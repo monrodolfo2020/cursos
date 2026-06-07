@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clase 1.3 PRO — Clasificación e Identificación ISA · P&IDs</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #080c18; color: #f0f0f0; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+    @keyframes pop    { from { opacity:0; transform:scale(.85); } to { opacity:1; transform:scale(1); } }
+    @keyframes pulse  { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+    @keyframes dash   { to { stroke-dashoffset: 0; } }
+    .fade { animation: fadeIn .5s ease both; }
+    .pop  { animation: pop .4s cubic-bezier(.34,1.56,.64,1) both; }
+    .gold   { color: #f59e0b; }
+    .cyan   { color: #22d3ee; }
+    .green  { color: #4ade80; }
+    .red    { color: #f87171; }
+    .purple { color: #a78bfa; }
+    .grid-bg {
+      background-color: #080c18;
+      background-image: linear-gradient(rgba(245,158,11,.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(245,158,11,.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(245,158,11,.2);
+      border-radius: 12px; padding: 14px 16px;
+    }
+    .badge {
+      display: inline-block; background: rgba(245,158,11,.15);
+      border: 1px solid rgba(245,158,11,.4); color: #f59e0b;
+      font-size: 11px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; border-radius: 20px; padding: 3px 12px;
+    }
+    .prog-track { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+    .prog-fill  { height: 100%; background: linear-gradient(90deg,#f59e0b,#fbbf24); border-radius: 2px; transition: width .4s ease; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: rgba(245,158,11,.13); color: #f59e0b; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 10px; text-align: left; }
+    td { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.05); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+/* ─── PLAYBAR ───────────────────────────────────────────────────────────────── */
+function PlayBar({ scene, total, onPrev, onNext, onGo }) {
+  return (
+    <div style={{ position:'absolute', bottom:0, left:0, right:0,
+      background:'rgba(8,12,24,.93)', borderTop:'1px solid rgba(245,158,11,.2)',
+      padding:'8px 16px', display:'flex', alignItems:'center', gap:12, zIndex:99 }}>
+      <button onClick={onPrev} disabled={scene===0}
+        style={{ background:'none', border:'1px solid rgba(245,158,11,.4)', color:'#f59e0b',
+          borderRadius:8, padding:'4px 12px', cursor:scene===0?'not-allowed':'pointer',
+          opacity:scene===0?.35:1, fontSize:16 }}>‹</button>
+      <div style={{ flex:1 }}>
+        <div className="prog-track">
+          <div className="prog-fill" style={{ width:`${((scene+1)/total)*100}%` }} />
+        </div>
+      </div>
+      <span style={{ fontSize:11, color:'rgba(255,255,255,.45)', minWidth:44, textAlign:'center' }}>{scene+1}/{total}</span>
+      <div style={{ display:'flex', gap:5 }}>
+        {Array.from({length:total},(_,i)=>(
+          <button key={i} onClick={()=>onGo(i)}
+            style={{ width:7, height:7, borderRadius:'50%', border:'none', cursor:'pointer',
+              background:i===scene?'#f59e0b':'rgba(255,255,255,.2)',
+              transform:i===scene?'scale(1.4)':'none', transition:'all .2s' }} />
+        ))}
+      </div>
+      <button onClick={onNext} disabled={scene===total-1}
+        style={{ background:scene===total-1?'none':'rgba(245,158,11,.15)',
+          border:'1px solid rgba(245,158,11,.4)', color:'#f59e0b',
+          borderRadius:8, padding:'4px 12px', cursor:scene===total-1?'not-allowed':'pointer',
+          opacity:scene===total-1?.35:1, fontSize:16 }}>›</button>
+    </div>
+  );
+}
+
+/* ─── SCENE 0: INTRO ────────────────────────────────────────────────────────── */
+function SceneIntro() {
+  return (
+    <div className="grid-bg" style={{ height:'100%', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', padding:28 }}>
+      <div className="fade" style={{ textAlign:'center', maxWidth:580 }}>
+        <div className="badge" style={{ marginBottom:14 }}>Módulo 1 · Clase 1.3 PRO</div>
+        <h1 style={{ fontSize:'clamp(20px,3.5vw,32px)', fontWeight:800, lineHeight:1.25, marginBottom:14 }}>
+          Clasificación e<br/><span className="gold">Identificación ISA · P&IDs</span>
+        </h1>
+        <p style={{ color:'rgba(255,255,255,.65)', fontSize:14, lineHeight:1.7, marginBottom:24 }}>
+          En cualquier planta industrial, cada instrumento tiene un <strong style={{color:'#fbbf24'}}>código alfanumérico único</strong> —el <em>tag number</em>—
+          que describe su variable medida y su función. Leer un P&ID es leer el idioma de la planta.
+        </p>
+        <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap', marginBottom:20 }}>
+          {[
+            { n:'ISA-S5.1', label:'Norma de referencia', icon:'📋', c:'#f59e0b' },
+            { n:'P&ID', label:'Diagrama de proceso', icon:'🗺️', c:'#22d3ee' },
+            { n:'Tag', label:'Código de instrumento', icon:'🏷️', c:'#4ade80' },
+          ].map(s=>(
+            <div key={s.label} className="pop card" style={{ minWidth:110, textAlign:'center', padding:'12px 14px', borderColor:`${s.c}44` }}>
+              <div style={{ fontSize:22 }}>{s.icon}</div>
+              <div style={{ fontSize:14, fontWeight:800, color:s.c, lineHeight:1, marginTop:4 }}>{s.n}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,.5)', marginTop:4 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        {/* Sample tag */}
+        <div style={{ display:'inline-flex', gap:0, borderRadius:12, overflow:'hidden',
+          border:'1px solid rgba(245,158,11,.3)', fontFamily:'monospace' }}>
+          {[
+            { ch:'T', label:'Temperatura', bg:'rgba(248,113,113,.15)', c:'#f87171' },
+            { ch:'I', label:'Indicar',     bg:'rgba(34,211,238,.15)',  c:'#22d3ee' },
+            { ch:'C', label:'Controlar',   bg:'rgba(74,222,128,.15)',  c:'#4ade80' },
+            { ch:'-', label:'',            bg:'rgba(255,255,255,.05)', c:'rgba(255,255,255,.3)' },
+            { ch:'1', label:'',            bg:'rgba(245,158,11,.1)',   c:'#f59e0b' },
+            { ch:'0', label:'',            bg:'rgba(245,158,11,.1)',   c:'#f59e0b' },
+            { ch:'3', label:'',            bg:'rgba(245,158,11,.1)',   c:'#f59e0b' },
+          ].map((b,i)=>(
+            <div key={i} style={{ background:b.bg, padding:'10px 12px', textAlign:'center', minWidth:36 }}>
+              <div style={{ fontSize:20, fontWeight:900, color:b.c }}>{b.ch}</div>
+              {b.label && <div style={{ fontSize:8, color:'rgba(255,255,255,.4)', marginTop:2, whiteSpace:'nowrap' }}>{b.label}</div>}
+            </div>
+          ))}
+        </div>
+        <p style={{ marginTop:10, fontSize:11, color:'rgba(255,255,255,.35)' }}>
+          TIC-103 = Controlador Indicador de Temperatura, lazo 103
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 1: CLASIFICACIÓN POR FUNCIÓN ────────────────────────────────────── */
+const FUNC_TYPES = [
+  { icon:'🔇', name:'Ciego',         en:'Blind',       color:'#f87171',
+    desc:'Sin indicación visible. Transmisores sin display, presostatos, termostatos (alarma de punto fijo).',
+    examples:['Transmisor de presión sin display','Presostato','Termostato'] },
+  { icon:'🔢', name:'Indicador',      en:'Indicator',   color:'#f59e0b',
+    desc:'Dispone de índice y escala graduada. Puede ser analógico (aguja) o digital (dígitos).',
+    examples:['Manómetro local','Termómetro de cuadrante','Display digital'] },
+  { icon:'📈', name:'Registrador',    en:'Recorder',    color:'#22d3ee',
+    desc:'Registra la variable con trazo continuo. Circular (24 h/rev) o rectangular (20 mm/h). Sin papel → red LAN.',
+    examples:['Registrador circular','Paperless recorder','Data logger'] },
+  { icon:'📡', name:'Transmisor',     en:'Transmitter', color:'#4ade80',
+    desc:'Capta la variable y la transmite a distancia: neumático (3-15 psi), electrónico (4-20 mA) o digital (HART, FF, Profibus).',
+    examples:['Transmisor de temperatura','Transmisor de presión DP','Transmisor de caudal'] },
+  { icon:'🎛️', name:'Controlador',    en:'Controller',  color:'#a78bfa',
+    desc:'Compara la variable con el setpoint y envía señal correctiva al elemento final.',
+    examples:['Controlador PID','DCS / PLC','Controlador digital universal'] },
+  { icon:'🚦', name:'Elemento Final', en:'Final Element',color:'#fbbf24',
+    desc:'Recibe la señal del controlador y modifica el fluido de proceso. Accionado neumática, eléctrica o digitalmente.',
+    examples:['Válvula de control neumática','Convertidor I/P','Servomotor eléctrico'] },
+];
+
+function SceneFuncClass() {
+  const [sel, setSel] = useState(0);
+  const f = FUNC_TYPES[sel];
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:580 }}>
+        <div className="badge" style={{ marginBottom:12 }}>ISA · Por Función</div>
+        <h2 style={{ fontSize:'clamp(16px,2.8vw,22px)', fontWeight:700, marginBottom:14 }}>
+          Clasificación por Función del Instrumento
+        </h2>
+        {/* Selector grid */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:6, marginBottom:16 }}>
+          {FUNC_TYPES.map((ft,i)=>(
+            <button key={i} onClick={()=>setSel(i)}
+              style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+                padding:'8px 4px', borderRadius:10, cursor:'pointer', transition:'all .18s',
+                background:i===sel?`${ft.color}18`:'rgba(255,255,255,.04)',
+                border:`1px solid ${i===sel?ft.color:'rgba(255,255,255,.1)'}` }}>
+              <span style={{ fontSize:18 }}>{ft.icon}</span>
+              <span style={{ fontSize:9, color:i===sel?ft.color:'rgba(255,255,255,.5)',
+                fontWeight:i===sel?700:400, textAlign:'center', lineHeight:1.2 }}>{ft.name}</span>
+            </button>
+          ))}
+        </div>
+        {/* Detail card */}
+        <div className="card pop" key={sel} style={{ borderColor:`${f.color}44`, background:`${f.color}08` }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
+            <span style={{ fontSize:36 }}>{f.icon}</span>
+            <div>
+              <p style={{ fontSize:18, fontWeight:800, color:f.color }}>{f.name}</p>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.4)', fontStyle:'italic' }}>{f.en}</p>
+            </div>
+          </div>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,.75)', lineHeight:1.6, marginBottom:12 }}>{f.desc}</p>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+            {f.examples.map((e,i)=>(
+              <span key={i} style={{ fontSize:11, padding:'3px 10px', borderRadius:20,
+                background:`${f.color}15`, border:`1px solid ${f.color}40`, color:f.color }}>
+                {e}
+              </span>
+            ))}
+          </div>
+        </div>
+        <p style={{ marginTop:10, fontSize:11, color:'rgba(255,255,255,.35)', textAlign:'center' }}>
+          Toca cada tipo para ver su descripción
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 2: SEÑALES ESTÁNDAR ─────────────────────────────────────────────── */
+function SceneSignals() {
+  const [sel, setSel] = useState(0);
+  const sigs = [
+    { name:'Neumática', range:'3 – 15 psi', metric:'0.2 – 1 bar', color:'#22d3ee', icon:'💨',
+      pros:['Intrínsecamente segura en zonas ATEX','Sin riesgo de chispa eléctrica','Robusta en ambientes hostiles'],
+      cons:['Velocidad de respuesta más lenta','Requiere suministro de aire limpio','Máx. ~300 m de distancia'],
+      use:'Plantas petroquímicas, zonas peligrosas clasificadas' },
+    { name:'Electrónica (4-20 mA)', range:'4 – 20 mA c.c.', metric:'0 = 4 mA · 100% = 20 mA', color:'#f59e0b', icon:'⚡',
+      pros:['Cable de 2 hilos (señal + alimentación)','4 mA en cero → detecta cable roto (0 mA = falla)','Larga distancia sin degradación'],
+      cons:['Resolución analógica limitada','Susceptible a ruido EMI','Solo una variable por lazo'],
+      use:'El estándar mundial en instrumentación de campo' },
+    { name:'Digital (HART / FF / Profibus)', range:'Protocolo digital', metric:'Superpuesto a 4-20 mA (HART)', color:'#4ade80', icon:'📶',
+      pros:['Múltiples variables por lazo','Diagnóstico remoto del instrumento','Configuración sin desconectar'],
+      cons:['Requiere maestro HART compatible','Mayor coste inicial','Configuración más compleja'],
+      use:'Transmisores inteligentes modernos, IIoT, DCS' },
+  ];
+  const s = sigs[sel];
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:570 }}>
+        <div className="badge" style={{ marginBottom:12 }}>Señales de Transmisión</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,21px)', fontWeight:700, marginBottom:14 }}>
+          Los 3 Tipos de Señal Industrial
+        </h2>
+        {/* Tab selector */}
+        <div style={{ display:'flex', gap:6, marginBottom:14 }}>
+          {sigs.map((sg,i)=>(
+            <button key={i} onClick={()=>setSel(i)}
+              style={{ flex:1, padding:'9px 6px', borderRadius:10, cursor:'pointer',
+                border:`1px solid ${i===sel?sg.color:'rgba(255,255,255,.12)'}`,
+                background:i===sel?`${sg.color}15`:'rgba(255,255,255,.04)',
+                color:i===sel?sg.color:'rgba(255,255,255,.5)',
+                fontSize:11, fontWeight:i===sel?700:400, transition:'all .18s', lineHeight:1.3 }}>
+              <div style={{ fontSize:18, marginBottom:3 }}>{sg.icon}</div>
+              {sg.name}
+            </button>
+          ))}
+        </div>
+        {/* Signal diagram */}
+        <div className="card pop" key={sel} style={{ borderColor:`${s.color}40`, marginBottom:12 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10 }}>
+            <div style={{ background:`${s.color}20`, borderRadius:10, padding:'10px 14px',
+              border:`1px solid ${s.color}40`, textAlign:'center', minWidth:90 }}>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.5)' }}>Rango</p>
+              <p style={{ fontSize:15, fontWeight:800, color:s.color, fontFamily:'monospace' }}>{s.range}</p>
+              <p style={{ fontSize:10, color:'rgba(255,255,255,.4)', marginTop:3 }}>{s.metric}</p>
+            </div>
+            <div style={{ flex:1 }}>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,.65)', lineHeight:1.55 }}>{s.use}</p>
+            </div>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            <div style={{ background:'rgba(74,222,128,.06)', borderRadius:8, padding:'8px 10px', border:'1px solid rgba(74,222,128,.2)' }}>
+              <p style={{ fontSize:10, color:'#4ade80', fontWeight:700, marginBottom:5 }}>✅ Ventajas</p>
+              {s.pros.map((p,i)=><p key={i} style={{ fontSize:11, color:'rgba(255,255,255,.65)', marginBottom:3, lineHeight:1.4 }}>· {p}</p>)}
+            </div>
+            <div style={{ background:'rgba(248,113,113,.06)', borderRadius:8, padding:'8px 10px', border:'1px solid rgba(248,113,113,.2)' }}>
+              <p style={{ fontSize:10, color:'#f87171', fontWeight:700, marginBottom:5 }}>⚠️ Limitaciones</p>
+              {s.cons.map((c,i)=><p key={i} style={{ fontSize:11, color:'rgba(255,255,255,.65)', marginBottom:3, lineHeight:1.4 }}>· {c}</p>)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 3: ESTRUCTURA DEL TAG ────────────────────────────────────────────── */
+const FIRST_LETTERS = {
+  T:{ var:'Temperatura',          color:'#f87171' },
+  F:{ var:'Caudal',               color:'#22d3ee' },
+  L:{ var:'Nivel',                color:'#4ade80' },
+  P:{ var:'Presión / Vacío',      color:'#a78bfa' },
+  A:{ var:'Análisis',             color:'#fbbf24' },
+  S:{ var:'Velocidad / Frecuencia',color:'#f59e0b' },
+  E:{ var:'Tensión / f.e.m.',     color:'#22d3ee' },
+  I:{ var:'Corriente eléctrica',  color:'#f59e0b' },
+  W:{ var:'Peso / Fuerza',        color:'#4ade80' },
+  Z:{ var:'Posición / Dimensión', color:'#a78bfa' },
+};
+const SUB_LETTERS = {
+  I:{ fn:'Indicar',         icon:'🔢' },
+  C:{ fn:'Controlar',       icon:'🎛️' },
+  R:{ fn:'Registrar',       icon:'📈' },
+  T:{ fn:'Transmitir',      icon:'📡' },
+  A:{ fn:'Alarma',          icon:'🔔' },
+  H:{ fn:'Alto (High)',     icon:'⬆️' },
+  L:{ fn:'Bajo (Low)',      icon:'⬇️' },
+  S:{ fn:'Interruptor',     icon:'🔀' },
+  V:{ fn:'Válvula',         icon:'🚰' },
+  E:{ fn:'Sensor/Elemento', icon:'🔍' },
+  Y:{ fn:'Relé / Cálculo',  icon:'⚙️' },
+};
+
+function SceneTagStructure() {
+  const [fl, setFl] = useState('T');
+  const [subs, setSubs] = useState(['I','C']);
+  const [loop, setLoop] = useState('103');
+
+  function toggleSub(l) {
+    setSubs(prev => prev.includes(l)
+      ? prev.filter(x=>x!==l)
+      : prev.length < 3 ? [...prev, l] : prev
+    );
+  }
+
+  const tag = fl + subs.join('') + '-' + loop;
+  const flData  = FIRST_LETTERS[fl] || {};
+  const subData = subs.map(s=>SUB_LETTERS[s]).filter(Boolean);
+
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:570 }}>
+        <div className="badge" style={{ marginBottom:12 }}>ISA-S5.1 · Tag Number</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,21px)', fontWeight:700, marginBottom:6 }}>
+          Constructor de Tag ISA — Interactivo
+        </h2>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.5)', marginBottom:14, lineHeight:1.5 }}>
+          Selecciona la <strong style={{color:'#f59e0b'}}>primera letra</strong> (variable medida) y hasta 3 <strong style={{color:'#22d3ee'}}>letras sucesivas</strong> (función) para construir el tag.
+        </p>
+
+        {/* Live tag display */}
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:16 }}>
+          <div style={{ display:'inline-flex', gap:0, borderRadius:14, overflow:'hidden',
+            border:'2px solid rgba(245,158,11,.4)', fontFamily:'monospace', boxShadow:'0 0 24px rgba(245,158,11,.1)' }}>
+            {/* First letter */}
+            <div style={{ background:`${flData.color||'#f59e0b'}22`, padding:'12px 16px', textAlign:'center', minWidth:48 }}>
+              <div style={{ fontSize:28, fontWeight:900, color:flData.color||'#f59e0b', lineHeight:1 }}>{fl}</div>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,.4)', marginTop:4 }}>Variable</div>
+            </div>
+            {/* Sub letters */}
+            {subs.map((s,i)=>(
+              <div key={s+i} style={{ background:'rgba(34,211,238,.12)', padding:'12px 14px', textAlign:'center', minWidth:44, borderLeft:'1px solid rgba(255,255,255,.1)' }}>
+                <div style={{ fontSize:28, fontWeight:900, color:'#22d3ee', lineHeight:1 }}>{s}</div>
+                <div style={{ fontSize:9, color:'rgba(255,255,255,.4)', marginTop:4 }}>{SUB_LETTERS[s]?.fn.slice(0,6)||'Función'}</div>
+              </div>
+            ))}
+            {/* Separator */}
+            <div style={{ background:'rgba(255,255,255,.05)', padding:'12px 10px', textAlign:'center', borderLeft:'1px solid rgba(255,255,255,.1)' }}>
+              <div style={{ fontSize:28, fontWeight:900, color:'rgba(255,255,255,.3)', lineHeight:1 }}>-</div>
+            </div>
+            {/* Loop number */}
+            <div style={{ background:'rgba(245,158,11,.1)', padding:'12px 14px', textAlign:'center', borderLeft:'1px solid rgba(255,255,255,.1)' }}>
+              <div style={{ fontSize:28, fontWeight:900, color:'#f59e0b', lineHeight:1 }}>{loop}</div>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,.4)', marginTop:4 }}>Nº Lazo</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Decoded meaning */}
+        <div className="card" style={{ marginBottom:14, background:'rgba(255,255,255,.03)' }}>
+          <p style={{ fontSize:12, color:'rgba(255,255,255,.5)', marginBottom:6 }}>📖 Significado del tag <strong style={{color:'#fbbf24', fontFamily:'monospace'}}>{tag}</strong>:</p>
+          <p style={{ fontSize:13, color:'#fff', lineHeight:1.6 }}>
+            <strong style={{color:flData.color||'#f59e0b'}}>{fl}</strong> = {flData.var || '—'}
+            {subData.map((s,i)=><span key={i}> · <strong style={{color:'#22d3ee'}}>{subs[i]}</strong> = {s.fn}</span>)}
+            {' '}<span style={{color:'rgba(255,255,255,.4)'}}>· Lazo</span> <strong style={{color:'#f59e0b'}}>{loop}</strong>
+          </p>
+        </div>
+
+        {/* Selectors */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <div>
+            <p style={{ fontSize:10, color:'#f59e0b', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>Primera Letra</p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
+              {Object.entries(FIRST_LETTERS).map(([l,d])=>(
+                <button key={l} onClick={()=>setFl(l)}
+                  style={{ width:34, height:34, borderRadius:8, fontFamily:'monospace', fontWeight:700,
+                    fontSize:14, cursor:'pointer', transition:'all .15s',
+                    background:fl===l?`${d.color}25`:'rgba(255,255,255,.05)',
+                    border:`1px solid ${fl===l?d.color:'rgba(255,255,255,.12)'}`,
+                    color:fl===l?d.color:'rgba(255,255,255,.5)' }}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p style={{ fontSize:10, color:'#22d3ee', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:6 }}>Letras Sucesivas (máx. 3)</p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
+              {Object.entries(SUB_LETTERS).map(([l,d])=>(
+                <button key={l} onClick={()=>toggleSub(l)}
+                  style={{ width:34, height:34, borderRadius:8, fontFamily:'monospace', fontWeight:700,
+                    fontSize:14, cursor:'pointer', transition:'all .15s',
+                    background:subs.includes(l)?'rgba(34,211,238,.2)':'rgba(255,255,255,.05)',
+                    border:`1px solid ${subs.includes(l)?'rgba(34,211,238,.6)':'rgba(255,255,255,.12)'}`,
+                    color:subs.includes(l)?'#22d3ee':'rgba(255,255,255,.5)' }}>{l}</button>
+              ))}
+            </div>
+            <div style={{ display:'flex', gap:6, marginTop:8, alignItems:'center' }}>
+              <span style={{ fontSize:10, color:'rgba(255,255,255,.4)' }}>Nº Lazo:</span>
+              <input type="number" value={loop} onChange={e=>setLoop(e.target.value.slice(0,4))}
+                style={{ width:60, background:'rgba(255,255,255,.07)', border:'1px solid rgba(245,158,11,.3)',
+                  borderRadius:6, padding:'4px 8px', color:'#f59e0b', fontFamily:'monospace',
+                  fontSize:14, fontWeight:700, textAlign:'center' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 4: TABLA DE LETRAS ISA ──────────────────────────────────────────── */
+function SceneISATable() {
+  const [filter, setFilter] = useState('all');
+  const rows = [
+    { l:'A', var:'Análisis',              suc:'Alarma',                    type:'var' },
+    { l:'E', var:'Tensión (f.e.m.)',       suc:'Sensor / Elemento primario',type:'var' },
+    { l:'F', var:'Caudal',                suc:'Relación (ratio)',           type:'var' },
+    { l:'I', var:'Corriente eléctrica',   suc:'Indicar',                   type:'both' },
+    { l:'J', var:'Potencia',              suc:'Exploración (scan)',         type:'var' },
+    { l:'L', var:'Nivel',                 suc:'Luz / Bajo (Low)',           type:'both' },
+    { l:'P', var:'Presión / Vacío',       suc:'Punto de ensayo',           type:'var' },
+    { l:'Q', var:'Cantidad',              suc:'Integrar / Totalizar',      type:'var' },
+    { l:'R', var:'Radiación',             suc:'Registro',                  type:'var' },
+    { l:'S', var:'Velocidad / Frecuencia',suc:'Seguridad / Interruptor',  type:'both' },
+    { l:'T', var:'Temperatura',           suc:'Transmisión',               type:'both' },
+    { l:'V', var:'Vibración / Análisis',  suc:'Válvula / Regulador',       type:'both' },
+    { l:'W', var:'Peso / Fuerza',         suc:'Vaina / Sonda',             type:'var' },
+    { l:'Z', var:'Posición / Dimensión',  suc:'Motor / Actuador / EFC',   type:'var' },
+    { l:'C', var:'— (libre)',             suc:'Controlar',                 type:'suc' },
+    { l:'H', var:'Manual',                suc:'Alto (High)',               type:'both' },
+    { l:'Y', var:'Evento / Estado',       suc:'Relé / Cálculo',            type:'both' },
+  ].sort((a,b)=>a.l.localeCompare(b.l));
+
+  const filtered = filter==='all' ? rows
+    : filter==='var' ? rows.filter(r=>r.type!=='suc')
+    : rows.filter(r=>r.type!=='var');
+
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:580 }}>
+        <div className="badge" style={{ marginBottom:12 }}>ISA-S5.1-84 (R-1992)</div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+          <h2 style={{ fontSize:'clamp(15px,2.5vw,20px)', fontWeight:700 }}>
+            Tabla de Letras ISA
+          </h2>
+          <div style={{ display:'flex', gap:6 }}>
+            {[['all','Todas'],['var','Variable'],['suc','Función']].map(([v,l])=>(
+              <button key={v} onClick={()=>setFilter(v)}
+                style={{ fontSize:10, padding:'4px 10px', borderRadius:8, cursor:'pointer',
+                  background:filter===v?'rgba(245,158,11,.2)':'rgba(255,255,255,.05)',
+                  border:`1px solid ${filter===v?'rgba(245,158,11,.5)':'rgba(255,255,255,.12)'}`,
+                  color:filter===v?'#f59e0b':'rgba(255,255,255,.5)', transition:'all .15s' }}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ overflowY:'auto', maxHeight:320, borderRadius:10, border:'1px solid rgba(245,158,11,.15)' }}>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width:36 }}>Letra</th>
+                <th>Variable medida (1ª letra)</th>
+                <th>Función (letras sucesivas)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(r=>(
+                <tr key={r.l}>
+                  <td style={{ textAlign:'center' }}>
+                    <span style={{ fontFamily:'monospace', fontSize:16, fontWeight:900,
+                      color: r.type==='var'?'#f59e0b': r.type==='suc'?'#22d3ee':'#a78bfa' }}>{r.l}</span>
+                  </td>
+                  <td style={{ color: r.var.startsWith('—')?'rgba(255,255,255,.25)':'rgba(255,255,255,.8)' }}>{r.var}</td>
+                  <td style={{ color:'#22d3ee', fontWeight:500 }}>{r.suc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ display:'flex', gap:12, marginTop:10 }}>
+          {[['#f59e0b','Solo 1ª letra'],['#22d3ee','Solo sucesivas'],['#a78bfa','Ambas']].map(([c,l])=>(
+            <div key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <div style={{ width:10, height:10, borderRadius:'50%', background:c }} />
+              <span style={{ fontSize:10, color:'rgba(255,255,255,.45)' }}>{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 5: SÍMBOLOS P&ID ─────────────────────────────────────────────────── */
+function ScenePID() {
+  const [hover, setHover] = useState(null);
+  const instruments = [
+    { x:80,  y:60,  tag:'FE-101',  label:'Placa\nOrificio', shape:'diamond', color:'#22d3ee', desc:'Elemento primario de caudal. Montado en tubería. Sin burbuja = ciego.' },
+    { x:200, y:60,  tag:'FT-101',  label:'Transmisor\nCaudal', shape:'circle-field', color:'#22d3ee', desc:'Transmisor de campo. Círculo simple = instrumento de campo/local.' },
+    { x:320, y:60,  tag:'FIC-101', label:'Controlador\nIndicador', shape:'circle-panel', color:'#22d3ee', desc:'Instrumento de panel. Círculo con línea horizontal = montado en panel de control.' },
+    { x:460, y:60,  tag:'FV-101',  label:'Válvula\nControl', shape:'valve', color:'#f87171', desc:'Elemento final de control. Recibe señal 4-20 mA del controlador vía convertidor I/P.' },
+  ];
+  const signals = [
+    { x1:115, y1:60, x2:165, y2:60, type:'electric', label:'4-20 mA' },
+    { x1:235, y1:60, x2:285, y2:60, type:'electric', label:'4-20 mA' },
+    { x1:355, y1:60, x2:420, y2:60, type:'pneumatic', label:'3-15 psi' },
+  ];
+
+  function renderShape(inst) {
+    if (inst.shape === 'diamond') {
+      return (
+        <g>
+          <polygon points={`${inst.x},${inst.y-20} ${inst.x+20},${inst.y} ${inst.x},${inst.y+20} ${inst.x-20},${inst.y}`}
+            fill="rgba(34,211,238,.15)" stroke={hover===inst.tag?inst.color:'rgba(34,211,238,.5)'} strokeWidth="1.5"/>
+        </g>
+      );
+    }
+    if (inst.shape === 'circle-field') {
+      return <circle cx={inst.x} cy={inst.y} r="22" fill="rgba(34,211,238,.1)" stroke={hover===inst.tag?inst.color:'rgba(34,211,238,.5)'} strokeWidth="1.5"/>;
+    }
+    if (inst.shape === 'circle-panel') {
+      return (
+        <g>
+          <circle cx={inst.x} cy={inst.y} r="22" fill="rgba(167,139,250,.1)" stroke={hover===inst.tag?'#a78bfa':'rgba(167,139,250,.5)'} strokeWidth="1.5"/>
+          <line x1={inst.x-22} y1={inst.y} x2={inst.x+22} y2={inst.y} stroke={hover===inst.tag?'#a78bfa':'rgba(167,139,250,.5)'} strokeWidth="1.5"/>
+        </g>
+      );
+    }
+    if (inst.shape === 'valve') {
+      return (
+        <g>
+          <polygon points={`${inst.x-18},${inst.y-14} ${inst.x+18},${inst.y} ${inst.x-18},${inst.y+14}`}
+            fill="rgba(248,113,113,.15)" stroke={hover===inst.tag?inst.color:'rgba(248,113,113,.5)'} strokeWidth="1.5"/>
+          <polygon points={`${inst.x+18},${inst.y-14} ${inst.x-18},${inst.y} ${inst.x+18},${inst.y+14}`}
+            fill="rgba(248,113,113,.15)" stroke={hover===inst.tag?inst.color:'rgba(248,113,113,.5)'} strokeWidth="1.5"/>
+          <circle cx={inst.x} cy={inst.y-24} r="10" fill="rgba(248,113,113,.1)" stroke={hover===inst.tag?inst.color:'rgba(248,113,113,.5)'} strokeWidth="1"/>
+          <line x1={inst.x} y1={inst.y-14} x2={inst.x} y2={inst.y-14} stroke={hover===inst.tag?inst.color:'rgba(248,113,113,.5)'} strokeWidth="1.5"/>
+        </g>
+      );
+    }
+  }
+
+  const hInst = instruments.find(i=>i.tag===hover);
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:590 }}>
+        <div className="badge" style={{ marginBottom:12 }}>P&ID — Lazo de Control</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,21px)', fontWeight:700, marginBottom:8 }}>
+          Símbolos ISA en un P&ID Real
+        </h2>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.5)', marginBottom:14 }}>
+          Lazo de control de caudal típico. <strong style={{color:'#f59e0b'}}>Toca cada símbolo</strong> para ver su descripción.
+        </p>
+
+        {/* P&ID Canvas */}
+        <div style={{ background:'rgba(255,255,255,.03)', borderRadius:12, border:'1px solid rgba(245,158,11,.15)', padding:'10px', marginBottom:12, overflow:'hidden' }}>
+          <svg viewBox="0 0 550 130" style={{ width:'100%', maxHeight:130 }}>
+            {/* Pipe */}
+            <line x1="20" y1="60" x2="530" y2="60" stroke="rgba(255,255,255,.2)" strokeWidth="8" strokeLinecap="round"/>
+            {/* Fluid flow arrow */}
+            <polygon points="30,56 44,60 30,64" fill="rgba(34,211,238,.5)"/>
+            <text x="510" y="55" fill="rgba(255,255,255,.3)" fontSize="10">→ Fluido</text>
+            {/* Signals */}
+            {signals.map((sg,i)=>(
+              <g key={i}>
+                <line x1={sg.x1} y1={sg.y1} x2={sg.x2} y2={sg.y2}
+                  stroke={sg.type==='electric'?'rgba(245,158,11,.7)':'rgba(34,211,238,.7)'}
+                  strokeWidth="1.5"
+                  strokeDasharray={sg.type==='pneumatic'?'5,3':'none'}/>
+                <text x={(sg.x1+sg.x2)/2} y={sg.y1-8} fill="rgba(255,255,255,.3)" fontSize="8" textAnchor="middle">{sg.label}</text>
+              </g>
+            ))}
+            {/* Instruments */}
+            {instruments.map((inst)=>(
+              <g key={inst.tag} style={{ cursor:'pointer' }}
+                onMouseEnter={()=>setHover(inst.tag)} onMouseLeave={()=>setHover(null)}
+                onClick={()=>setHover(h=>h===inst.tag?null:inst.tag)}>
+                {renderShape(inst)}
+                <text x={inst.x} y={inst.y-1} textAnchor="middle" fill={hover===inst.tag?inst.color:'rgba(255,255,255,.9)'} fontSize="9" fontWeight="700" fontFamily="monospace">{inst.tag.split('-')[0]}</text>
+                <text x={inst.x} y={inst.y+10} textAnchor="middle" fill="rgba(255,255,255,.5)" fontSize="7" fontFamily="monospace">-{inst.tag.split('-')[1]}</text>
+                <text x={inst.x} y={inst.y+30} textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize="8">{inst.label.split('\n')[0]}</text>
+              </g>
+            ))}
+          </svg>
+        </div>
+
+        {/* Tooltip */}
+        {hInst ? (
+          <div className="card pop" style={{ borderColor:`${hInst.color}50`, background:`${hInst.color}08`, marginBottom:10 }}>
+            <p style={{ fontSize:13, fontWeight:700, color:hInst.color, marginBottom:4, fontFamily:'monospace' }}>{hInst.tag} — {hInst.label.replace('\n',' ')}</p>
+            <p style={{ fontSize:12, color:'rgba(255,255,255,.7)', lineHeight:1.55 }}>{hInst.desc}</p>
+          </div>
+        ) : (
+          <div style={{ marginBottom:10 }}>
+            <div style={{ display:'flex', gap:14, flexWrap:'wrap' }}>
+              {[
+                ['─────', 'rgba(255,255,255,.4)','Tubería proceso'],
+                ['───────', 'rgba(245,158,11,.7)','Señal electrónica (4-20 mA)'],
+                ['- - - -', 'rgba(34,211,238,.7)','Señal neumática (3-15 psi)'],
+                ['○ simple', 'rgba(34,211,238,.5)','Instrumento de campo'],
+                ['○ con ─', 'rgba(167,139,250,.5)','Instrumento de panel'],
+              ].map(([sym,c,l])=>(
+                <div key={l} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <span style={{ fontSize:11, color:c, fontFamily:'monospace' }}>{sym}</span>
+                  <span style={{ fontSize:10, color:'rgba(255,255,255,.45)' }}>{l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Key rule */}
+        <div className="card" style={{ padding:'10px 14px' }}>
+          <p style={{ fontSize:12, color:'rgba(255,255,255,.7)', lineHeight:1.55 }}>
+            📌 <strong style={{color:'#f59e0b'}}>Regla ISA</strong>: el lazo lleva un único número (101).
+            Todos sus instrumentos comparten ese número: FE-101, FT-101, FIC-101, FV-101.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 6: REGLAS DE NUMERACIÓN ────────────────────────────────────────── */
+function SceneRules() {
+  const examples = [
+    { tag:'TIC-103',  decode:'Temperatura · Indicar · Controlar · Lazo 103', color:'#f87171' },
+    { tag:'FRC-201',  decode:'Caudal · Registrar · Controlar · Lazo 201',    color:'#22d3ee' },
+    { tag:'LIC-015',  decode:'Nivel · Indicar · Controlar · Lazo 015',       color:'#4ade80' },
+    { tag:'PSH-302',  decode:'Presión · Seguridad · Alto (High) · Lazo 302', color:'#a78bfa' },
+    { tag:'TAL-044',  decode:'Temperatura · Alarma · Bajo (Low) · Lazo 044', color:'#f59e0b' },
+    { tag:'FE-7',     decode:'Caudal · Sensor (Elemento primario) · Lazo 7', color:'#22d3ee' },
+    { tag:'FV-2A',    decode:'Caudal · Válvula · Lazo 2 · Sufijo A (1ª de varias)', color:'#fbbf24' },
+    { tag:'TE-25-3',  decode:'Temperatura · Sensor · Lazo 25 · Punto 3 (multipoint)', color:'#f87171' },
+  ];
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:580 }}>
+        <div className="badge" style={{ marginBottom:12 }}>Reglas ISA-S5.1</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,21px)', fontWeight:700, marginBottom:6 }}>
+          Reglas de Numeración y Ejemplos
+        </h2>
+        <p style={{ fontSize:12, color:'rgba(255,255,255,.5)', marginBottom:14, lineHeight:1.5 }}>
+          La numeración puede ser <strong style={{color:'#f59e0b'}}>paralela</strong> (secuencia por variable: TIC-100, FRC-100…)
+          o <strong style={{color:'#22d3ee'}}>serie</strong> (secuencia única: TIC-100, FRC-101, LIC-102…).
+        </p>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
+          {examples.map((ex,i)=>(
+            <div key={i} className="card" style={{ padding:'10px 12px', borderColor:`${ex.color}33` }}>
+              <p style={{ fontFamily:'monospace', fontSize:16, fontWeight:900, color:ex.color, marginBottom:4 }}>{ex.tag}</p>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,.65)', lineHeight:1.45 }}>{ex.decode}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+          {[
+            ['Máximo 4 letras funcionales por instrumento — preferir subgrupos','#f59e0b'],
+            ['Sufijo A, B, C... cuando hay varios con igual función en el mismo lazo (FV-2A, FV-2B)','#22d3ee'],
+            ['Sufijo numérico para elementos multipoint: TE-25-1, TE-25-2, TE-25-3','#4ade80'],
+            ['Accesorios (filtros, rotámetros de purga) usan el mismo número de lazo del instrumento asociado','#a78bfa'],
+          ].map(([t,c],i)=>(
+            <div key={i} style={{ display:'flex', gap:8, padding:'8px 12px', borderRadius:8,
+              background:`${c}08`, border:`1px solid ${c}25` }}>
+              <span style={{ color:c, flexShrink:0, marginTop:1 }}>▸</span>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,.7)', lineHeight:1.5 }}>{t}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 7: RESUMEN ──────────────────────────────────────────────────────── */
+function SceneResumen() {
+  const loops = [
+    { tag:'TIC-103', var:'Temperatura', fn:'Indicar + Controlar', signal:'4-20 mA', element:'Válvula de vapor' },
+    { tag:'FRC-201', var:'Caudal',      fn:'Registrar + Controlar', signal:'4-20 mA', element:'Válvula control' },
+    { tag:'LIC-015', var:'Nivel',       fn:'Indicar + Controlar', signal:'4-20 mA', element:'Válvula descarga' },
+    { tag:'PSH-302', var:'Presión',     fn:'Seguridad + Alto',    signal:'Digital',   element:'Interruptor alarma' },
+    { tag:'AT-005',  var:'Análisis pH', fn:'Transmitir',          signal:'HART',      element:'—' },
+  ];
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', padding:'20px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:590 }}>
+        <div className="badge" style={{ marginBottom:12 }}>Resumen · ISA-S5.1</div>
+        <h2 style={{ fontSize:'clamp(15px,2.5vw,20px)', fontWeight:700, marginBottom:14 }}>
+          Lazos ISA Típicos en Planta Industrial
+        </h2>
+        <div style={{ overflowY:'auto', maxHeight:220, borderRadius:10, border:'1px solid rgba(245,158,11,.15)', marginBottom:14 }}>
+          <table>
+            <thead>
+              <tr><th>Tag</th><th>Variable</th><th>Función</th><th>Señal</th><th>Elemento final</th></tr>
+            </thead>
+            <tbody>
+              {loops.map((l,i)=>(
+                <tr key={i}>
+                  <td><span style={{ fontFamily:'monospace', fontWeight:800, color:'#f59e0b' }}>{l.tag}</span></td>
+                  <td style={{ color:'rgba(255,255,255,.8)' }}>{l.var}</td>
+                  <td style={{ color:'#22d3ee' }}>{l.fn}</td>
+                  <td style={{ color:'#4ade80', fontFamily:'monospace' }}>{l.signal}</td>
+                  <td style={{ color:'rgba(255,255,255,.6)' }}>{l.element}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+          {[
+            { icon:'🏷️', t:'Tag',      d:'Código único por instrumento. Máx. 4 letras + nº lazo.' },
+            { icon:'🗺️', t:'P&ID',     d:'Diagrama con todos los instrumentos, lazos y señales del proceso.' },
+            { icon:'📡', t:'Señales',  d:'Neumática (3-15 psi) · Electrónica (4-20 mA) · Digital (HART/FF)' },
+          ].map(c=>(
+            <div key={c.t} className="card" style={{ textAlign:'center', padding:'12px 10px' }}>
+              <div style={{ fontSize:24, marginBottom:6 }}>{c.icon}</div>
+              <p style={{ fontSize:12, fontWeight:700, color:'#f59e0b', marginBottom:4 }}>{c.t}</p>
+              <p style={{ fontSize:10, color:'rgba(255,255,255,.6)', lineHeight:1.5 }}>{c.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENE 8: TEST ─────────────────────────────────────────────────────────── */
+const QUIZ = [
+  { q:'¿Qué tipo de instrumento es un presostato (interruptor de presión)?', opts:['Indicador','Registrador','Ciego (Blind)','Transmisor'], ans:2,
+    exp:'Un presostato es un instrumento ciego: tiene escala de ajuste pero no indica la variable en tiempo real. Solo actúa al cruzar el valor de disparo.' },
+  { q:'¿Qué significa el tag "FIC-201"?', opts:['Caudal Indicador Controlador · Lazo 201','Frecuencia Integrador Conversor · Lazo 201','Caudal Interruptor Ciego · Lazo 201','Fuerza Indicadora Calibrada · Lazo 201'], ans:0,
+    exp:'F = Caudal (Flow), I = Indicar, C = Controlar. 201 = número de lazo. FIC-201 es un Controlador Indicador de Caudal del lazo 201.' },
+  { q:'La señal estándar electrónica en instrumentación industrial es:', opts:['0-20 mA c.c.','4-20 mA c.c.','10-50 mA c.c.','3-15 psi'], ans:1,
+    exp:'4-20 mA c.c. es el estándar mundial. Los 4 mA en cero permiten detectar cable roto (que daría 0 mA). La señal neumática 3-15 psi sigue usándose en zonas ATEX.' },
+  { q:'En un P&ID, ¿cómo se representa un instrumento montado en panel de control?', opts:['Círculo simple','Cuadrado','Círculo con línea horizontal en el centro','Diamante'], ans:2,
+    exp:'ISA-S5.1: círculo simple = instrumento de campo/local. Círculo con línea horizontal en el centro = instrumento montado en panel de control.' },
+  { q:'Un lazo de control de nivel tiene transmisores LE-015, LT-015, LIC-015 y LV-015. ¿Por qué todos terminan en "015"?', opts:['Por orden alfabético','Todos miden la misma variable de proceso','Comparten el número de lazo que los identifica como parte del mismo lazo de control','Por el área de planta donde están instalados'], ans:2,
+    exp:'ISA: todos los instrumentos de un mismo lazo comparten el número de lazo. El "015" identifica que pertenecen al lazo de control nº 15 de nivel.' },
+  { q:'¿Qué indica el sufijo "A" en el tag FV-2A?', opts:['Alarma activada','Es la primera de varias válvulas con la misma identificación en el mismo lazo','Alta presión','Actuador automático'], ans:1,
+    exp:'Cuando un lazo tiene varios instrumentos con la misma identificación funcional, se añaden sufijos A, B, C... Ejemplo: FV-2A y FV-2B son dos válvulas de caudal en el lazo 2.' },
+  { q:'¿Cuál es la primera letra ISA para "Análisis"?', opts:['N','X','A','U'], ans:2,
+    exp:'A = Análisis. La letra A como primera letra cubre todos los análisis de proceso (pH, conductividad, O₂, CO₂, etc.) no cubiertos por otras letras específicas.' },
+  { q:'El tag "PSH-302" corresponde a:', opts:['Presión Sensor Alto · Lazo 302','Potencia Switch High · Lazo 302','Presión Seguridad Alto · Lazo 302','Posición Selector High · Lazo 302'], ans:2,
+    exp:'P = Presión, S = Seguridad (Safety), H = Alto (High). PSH-302: interruptor de seguridad de presión alta, lazo 302. Actúa ante condición de emergencia, a diferencia de PCV que es regulador normal.' },
+  { q:'¿Cuál es la ventaja principal de la señal 4-20 mA frente a 0-20 mA?', opts:['Mayor velocidad de transmisión','Detección de cable roto: 0 mA = falla de lazo','Menor consumo energético','Mayor precisión analógica'], ans:1,
+    exp:'Con 4-20 mA, el cero del proceso = 4 mA. Si el cable se rompe, la señal cae a 0 mA, lo que el sistema interpreta como falla de lazo. Con 0-20 mA, un cable roto y el cero del proceso son indistinguibles.' },
+  { q:'¿Qué tipo de señal usa línea discontinua (guiones) en los P&IDs según ISA?', opts:['Señal eléctrica (4-20 mA)','Señal digital (HART)','Señal neumática (3-15 psi)','Fibra óptica'], ans:2,
+    exp:'ISA-S5.1: la señal neumática se representa con línea discontinua (- - - -). La señal eléctrica usa línea continua. La señal digital tiene su propio símbolo.' },
+];
+
+function SceneTest() {
+  const [cur,  setCur]  = useState(0);
+  const [sel,  setSel]  = useState(null);
+  const [conf, setConf] = useState(false);
+  const [ans,  setAns]  = useState([]);
+  const [done, setDone] = useState(false);
+  const q = QUIZ[cur];
+  const score = ans.filter(a=>a.ok).length;
+
+  function confirm() { if(sel===null) return; setConf(true); setAns(p=>[...p,{qi:cur,sel,ok:sel===q.ans}]); }
+  function next()    { if(cur<QUIZ.length-1){setCur(c=>c+1);setSel(null);setConf(false);}else setDone(true); }
+  function retry()   { setCur(0);setSel(null);setConf(false);setAns([]);setDone(false); }
+
+  if (done) {
+    const pct = Math.round((score/QUIZ.length)*100);
+    const [badge,col,msg] =
+      pct>=90?['🏆 Experto','#f59e0b','¡Lees P&IDs como un instrumentista senior!']:
+      pct>=70?['✅ Aprobado','#4ade80','Buen dominio del código ISA. Practica con P&IDs reales.']:
+      pct>=50?['📘 En proceso','#22d3ee','Revisa la tabla de letras y los ejemplos.']:
+             ['🔄 Repasar','#f87171','Vuelve a las escenas del constructor de tags y los símbolos.'];
+    return (
+      <div className="grid-bg" style={{ minHeight:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'24px 20px' }}>
+        <div className="fade card" style={{ maxWidth:500, width:'100%', textAlign:'center', padding:'28px 22px' }}>
+          <div style={{ fontSize:52, marginBottom:10 }}>{pct>=90?'🏆':pct>=70?'🎯':pct>=50?'📖':'🔄'}</div>
+          <div style={{ fontSize:20, fontWeight:800, color:col, marginBottom:6 }}>{badge}</div>
+          <div style={{ fontSize:44, fontWeight:900, color:'#f59e0b', lineHeight:1, marginBottom:4 }}>
+            {score}<span style={{ fontSize:20, color:'rgba(255,255,255,.35)' }}>/{QUIZ.length}</span>
+          </div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,.45)', marginBottom:14 }}>{pct}% correctas</div>
+          <div className="prog-track" style={{ height:6, marginBottom:18 }}>
+            <div className="prog-fill" style={{ width:`${pct}%`, background:`linear-gradient(90deg,${col},${col}88)` }} />
+          </div>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,.65)', lineHeight:1.6, marginBottom:20 }}>{msg}</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:20, textAlign:'left' }}>
+            {ans.map((a,i)=>(
+              <div key={i} style={{ display:'flex', gap:8, padding:'6px 10px', borderRadius:8,
+                background:a.ok?'rgba(74,222,128,.07)':'rgba(248,113,113,.07)',
+                border:`1px solid ${a.ok?'rgba(74,222,128,.2)':'rgba(248,113,113,.2)'}` }}>
+                <span style={{ flexShrink:0 }}>{a.ok?'✅':'❌'}</span>
+                <div>
+                  <p style={{ fontSize:11, color:'rgba(255,255,255,.7)' }}><strong style={{color:a.ok?'#4ade80':'#f87171'}}>P{i+1}.</strong> {QUIZ[a.qi].q.slice(0,55)}…</p>
+                  {!a.ok&&<p style={{ fontSize:10, color:'rgba(255,255,255,.4)', marginTop:2 }}>Correcta: <span style={{color:'#4ade80'}}>{QUIZ[a.qi].opts[QUIZ[a.qi].ans]}</span></p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={retry}
+            style={{ background:'rgba(245,158,11,.15)', border:'1px solid rgba(245,158,11,.4)',
+              color:'#f59e0b', borderRadius:10, padding:'9px 24px', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+            🔁 Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid-bg" style={{ minHeight:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+      <div className="fade" style={{ width:'100%', maxWidth:540, marginBottom:16 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+          <span className="badge">Test · {cur+1}/{QUIZ.length}</span>
+          <span style={{ fontSize:12, color:'rgba(255,255,255,.4)' }}>✅ {score}</span>
+        </div>
+        <div className="prog-track" style={{ height:4 }}>
+          <div className="prog-fill" style={{ width:`${(cur/QUIZ.length)*100}%` }} />
+        </div>
+      </div>
+      <div className="fade card" style={{ maxWidth:540, width:'100%', padding:'20px 20px 16px' }}>
+        <p style={{ fontSize:'clamp(13px,2vw,15px)', fontWeight:700, lineHeight:1.5, color:'#fff', marginBottom:16 }}>{q.q}</p>
+        <div style={{ display:'flex', flexDirection:'column', gap:7, marginBottom:14 }}>
+          {q.opts.map((opt,i)=>{
+            let bg='rgba(255,255,255,.04)', bord='1px solid rgba(255,255,255,.1)', col='rgba(255,255,255,.8)', icon=null;
+            if(!conf&&sel===i){bg='rgba(245,158,11,.12)';bord='1px solid rgba(245,158,11,.5)';col='#f59e0b';}
+            if(conf){
+              if(i===q.ans){bg='rgba(74,222,128,.1)';bord='1px solid rgba(74,222,128,.4)';col='#4ade80';icon='✅';}
+              else if(sel===i){bg='rgba(248,113,113,.1)';bord='1px solid rgba(248,113,113,.4)';col='#f87171';icon='❌';}
+            }
+            return (
+              <button key={i} onClick={()=>!conf&&setSel(i)}
+                style={{ display:'flex', alignItems:'center', gap:10, textAlign:'left',
+                  background:bg, border:bord, borderRadius:9, padding:'9px 13px',
+                  cursor:conf?'default':'pointer', color, fontSize:12,
+                  fontWeight:sel===i||conf?600:400, width:'100%', transition:'all .15s' }}>
+                <span style={{ flexShrink:0, width:22, height:22, borderRadius:'50%',
+                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700,
+                  background:conf&&i===q.ans?'rgba(74,222,128,.2)':conf&&sel===i?'rgba(248,113,113,.2)':sel===i?'rgba(245,158,11,.2)':'rgba(255,255,255,.07)',
+                  border:`1px solid ${conf&&i===q.ans?'rgba(74,222,128,.4)':conf&&sel===i?'rgba(248,113,113,.4)':sel===i?'rgba(245,158,11,.4)':'rgba(255,255,255,.15)'}`,
+                  color:'inherit' }}>{icon||String.fromCharCode(65+i)}</span>
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+        {conf&&(
+          <div className="fade" style={{ padding:'10px 12px', borderRadius:9, marginBottom:12,
+            background:sel===q.ans?'rgba(74,222,128,.07)':'rgba(248,113,113,.07)',
+            border:`1px solid ${sel===q.ans?'rgba(74,222,128,.2)':'rgba(248,113,113,.2)'}` }}>
+            <p style={{ fontSize:12, fontWeight:700, color:sel===q.ans?'#4ade80':'#f87171', marginBottom:4 }}>
+              {sel===q.ans?'¡Correcto! 🎉':'Incorrecto'}
+            </p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,.6)', lineHeight:1.55 }}>{q.exp}</p>
+          </div>
+        )}
+        <div style={{ display:'flex', justifyContent:'flex-end' }}>
+          {!conf?(
+            <button onClick={confirm} disabled={sel===null}
+              style={{ background:sel!==null?'rgba(245,158,11,.15)':'rgba(255,255,255,.04)',
+                border:`1px solid ${sel!==null?'rgba(245,158,11,.5)':'rgba(255,255,255,.1)'}`,
+                color:sel!==null?'#f59e0b':'rgba(255,255,255,.3)',
+                borderRadius:9, padding:'8px 20px', fontSize:12, fontWeight:700,
+                cursor:sel!==null?'pointer':'not-allowed', transition:'all .2s' }}>
+              Confirmar respuesta
+            </button>
+          ):(
+            <button onClick={next}
+              style={{ background:'rgba(245,158,11,.18)', border:'1px solid rgba(245,158,11,.5)',
+                color:'#f59e0b', borderRadius:9, padding:'8px 20px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+              {cur<QUIZ.length-1?'Siguiente →':'Ver resultados →'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN APP ───────────────────────────────────────────────────────────────── */
+const SCENES = [
+  { id:'intro',   label:'Introducción',            Component: SceneIntro        },
+  { id:'func',    label:'Clasificación por Función', Component: SceneFuncClass  },
+  { id:'signals', label:'Señales de Transmisión',  Component: SceneSignals      },
+  { id:'tag',     label:'Constructor de Tag ISA',  Component: SceneTagStructure },
+  { id:'table',   label:'Tabla de Letras ISA',     Component: SceneISATable     },
+  { id:'pid',     label:'Símbolos P&ID',            Component: ScenePID         },
+  { id:'rules',   label:'Reglas de Numeración',    Component: SceneRules        },
+  { id:'resumen', label:'Resumen',                 Component: SceneResumen      },
+  { id:'test',    label:'Test de Evaluación',      Component: SceneTest         },
+];
+
+function App() {
+  const [scene, setScene] = useState(0);
+  const [key,   setKey]   = useState(0);
+  function goTo(i) { setScene(i); setKey(k=>k+1); }
+  function prev()  { if(scene>0) goTo(scene-1); }
+  function next()  { if(scene<SCENES.length-1) goTo(scene+1); }
+  useEffect(()=>{
+    const h = e=>{ if(e.key==='ArrowRight'||e.key==='ArrowDown') next(); if(e.key==='ArrowLeft'||e.key==='ArrowUp') prev(); };
+    window.addEventListener('keydown',h);
+    return ()=>window.removeEventListener('keydown',h);
+  },[scene]);
+  const { Component } = SCENES[scene];
+  return (
+    <div style={{ position:'relative', width:'100%', height:'100vh', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:10, left:10, zIndex:100,
+        background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'#000',
+        fontSize:10, fontWeight:900, letterSpacing:'.1em', padding:'3px 10px', borderRadius:20 }}>PRO</div>
+      <div style={{ position:'absolute', top:10, right:10, zIndex:100,
+        background:'rgba(0,0,0,.5)', color:'rgba(255,255,255,.6)', fontSize:10, padding:'3px 10px', borderRadius:10 }}>
+        {SCENES[scene].label}
+      </div>
+      <div key={key} style={{ height:'calc(100% - 48px)', overflowY:'auto' }}>
+        <Component />
+      </div>
+      <PlayBar scene={scene} total={SCENES.length} onPrev={prev} onNext={next} onGo={goTo} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

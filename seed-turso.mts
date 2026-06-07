@@ -775,6 +775,14 @@ const lessonsPro = [
     durationSec: 960,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.2 - Definiciones en Control.html`,
   },
+  {
+    order: 3,
+    title: "Clasificación e Identificación ISA — Tags y P&IDs",
+    description:
+      "Aprende a leer y construir tags de instrumentos según ISA-S5.1: letras de variable (T, F, L, P…), letras de función (I, C, R, T…), número de lazo. Interpreta P&IDs con sus símbolos normalizados y construye identificaciones completas de forma interactiva.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 1.3 - Clasificacion e Identificacion ISA.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
