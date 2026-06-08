@@ -68,12 +68,13 @@ function groupByModule(lessons: Lesson[]): ModuleGroup[] {
 export default function LessonPlayer({
   course, lesson, lessons, prevLessonId, nextLessonId,
 }: Props) {
-  const [completed,      setCompleted]      = useState<Record<number, boolean>>({});
-  const [sidebarOpen,    setSidebarOpen]    = useState(false);
-  const [openMap,        setOpenMap]        = useState<Record<string, boolean>>({});
-  const [videoExpanded,  setVideoExpanded]  = useState(false);
+  const [completed,       setCompleted]      = useState<Record<number, boolean>>({});
+  const [sidebarOpen,     setSidebarOpen]    = useState(false);
+  const [openMap,         setOpenMap]        = useState<Record<string, boolean>>({});
+  const [videoExpanded,   setVideoExpanded]  = useState(false);
   const [mobileLandscape, setMobileLandscape] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerWidth,  setContainerWidth] = useState(0);
+  const [winSize,         setWinSize]        = useState({ w: 0, h: 0 });
   const iframeRef    = useRef<HTMLIFrameElement>(null);
   const videoWrapRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +97,20 @@ export default function LessonPlayer({
     });
     ro.observe(el);
     return () => ro.disconnect();
+  }, []);
+
+  // Track window size (used for expanded scale calculation)
+  useEffect(() => {
+    function updateWin() {
+      setWinSize({ w: window.innerWidth, h: window.innerHeight });
+    }
+    updateWin();
+    window.addEventListener("resize", updateWin);
+    window.addEventListener("orientationchange", updateWin);
+    return () => {
+      window.removeEventListener("resize", updateWin);
+      window.removeEventListener("orientationchange", updateWin);
+    };
   }, []);
 
   // Detect mobile landscape orientation
@@ -137,6 +152,13 @@ export default function LessonPlayer({
   const DESIGN_H = 720;
   const iframeScale  = containerWidth > 0 ? containerWidth / DESIGN_W : 1;
   const scaledHeight = Math.round(DESIGN_H * iframeScale);
+
+  // Scale for expanded/fullscreen mode: fit 1280×720 inside the viewport
+  // keeping aspect ratio (letterbox), so the iframe content stays readable
+  // on any screen size or orientation.
+  const expandScaleW = winSize.w > 0 ? winSize.w / DESIGN_W : 1;
+  const expandScaleH = winSize.h > 0 ? winSize.h / DESIGN_H : 1;
+  const expandScale  = Math.min(expandScaleW, expandScaleH);
 
   // Lock body scroll when video is expanded
   useEffect(() => {
@@ -369,8 +391,15 @@ export default function LessonPlayer({
             sandbox="allow-scripts allow-same-origin"
             className="border-0"
             style={showExpanded
-              /* expanded / landscape: fill screen naturally */
-              ? { position: "absolute", inset: 0, width: "100%", height: "100%" }
+              /* expanded: render at 1280×720, scale to fit viewport (letterbox),
+                 centered so content is always fully visible regardless of orientation */
+              ? { position: "absolute",
+                  width:  `${DESIGN_W}px`,
+                  height: `${DESIGN_H}px`,
+                  top:    "50%",
+                  left:   "50%",
+                  transform: `translate(-50%, -50%) scale(${expandScale})`,
+                  transformOrigin: "center center" }
               /* normal: render at full design resolution, CSS-scale to fit */
               : containerWidth > 0
                 ? { position: "absolute", top: 0, left: 0,
