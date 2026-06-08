@@ -855,6 +855,22 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.8 - Seguridad Funcional SIL.html`,
   },
+  {
+    order: 13,
+    title: "Redes Industriales — Modbus, PROFIBUS, HART, OPC-UA e IIoT",
+    description:
+      "Domina los protocolos de comunicación industrial: pirámide ISA-95, Modbus RTU/TCP (generador de trama, function codes), PROFIBUS DP (velocidades, GSD), PROFINET IO (RT/IRT), HART (FSK, comandos), Foundation Fieldbus H1 (bloques función), OPC-UA (modelo información, seguridad X.509), MQTT Sparkplug B, IO-Link y APL.",
+    durationSec: 960,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.9 - Redes Industriales.html`,
+  },
+  {
+    order: 14,
+    title: "SCADA y DCS — Supervisión, Control Distribuido e Industria 4.0",
+    description:
+      "Domina los sistemas de supervisión y control: diferencias SCADA vs DCS vs PLC+SCADA, mini SCADA simulado con alarmas en tiempo real (ISA-18.2), arquitectura DCS redundante, redundancia activo-standby, ciberseguridad IT/OT (IEC 62443), KPIs de alarmas y tendencias Industria 4.0: edge computing, digital twin, cloud SCADA, AI/ML.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 3.0 - SCADA y DCS.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);

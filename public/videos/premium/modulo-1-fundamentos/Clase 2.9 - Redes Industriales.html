@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 2.9 — Redes Industriales</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080c18;color:#e2e8f0;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+  .slide{width:1280px;height:720px;display:flex;flex-direction:column}
+  .hdr{background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:3px solid #f59e0b;padding:18px 48px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .hdr-title{font-size:22px;font-weight:700;color:#f59e0b}
+  .hdr-sub{font-size:13px;color:#94a3b8}
+  .badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .content{flex:1;overflow:hidden;padding:24px 48px}
+  .nav{display:flex;gap:12px;justify-content:center;padding:14px;background:#0a0f1e;border-top:1px solid #1e293b;flex-shrink:0}
+  .btn{padding:10px 28px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+  .btn-gold{background:#f59e0b;color:#000}.btn-gold:hover{background:#fbbf24}.btn-gold:disabled{opacity:.4;cursor:not-allowed}
+  .btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8}.btn-outline:hover{border-color:#f59e0b;color:#f59e0b}.btn-outline:disabled{opacity:.3;cursor:not-allowed}
+  .dots{display:flex;gap:8px;align-items:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:#1e293b;transition:all .3s;cursor:pointer}
+  .dot.active{background:#f59e0b;width:24px;border-radius:4px}
+  .card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px}
+  .card-gold{border-color:#f59e0b44;background:#f59e0b08}
+  .card h3{color:#f59e0b;font-size:14px;margin-bottom:10px}
+  .formula{background:#020817;border:1px solid #f59e0b44;border-radius:8px;padding:8px 14px;font-family:monospace;font-size:14px;color:#fbbf24;text-align:center;margin:6px 0}
+  .tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin:2px}
+  .tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+  .tag-green{background:#15803d33;color:#4ade80;border:1px solid #15803d55}
+  .tag-red{background:#991b1b33;color:#f87171;border:1px solid #991b1b55}
+  .tag-yellow{background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44}
+  .tag-purple{background:#6d28d955;color:#c084fc;border:1px solid #6d28d944}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:#0a0f1e;color:#f59e0b;padding:7px 10px;text-align:left;border-bottom:2px solid #f59e0b44}
+  td{padding:6px 10px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+  tr:hover td{background:#0f172a}
+  .tab-bar{display:flex;gap:4px;margin-bottom:12px}
+  .tab{padding:6px 16px;border-radius:6px 6px 0 0;border:1px solid #1e293b;border-bottom:none;cursor:pointer;font-size:12px;font-weight:600;background:#0a0f1e;color:#64748b;transition:all .2s}
+  .tab.active{background:#0f172a;color:#f59e0b;border-color:#f59e0b44}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div className="card card-gold" style={{padding:14}}>
+      <div style={{fontSize:13,color:'#94a3b8'}}>
+        <strong style={{color:'#f59e0b'}}>Pirámide de Automatización ISA-95:</strong> La comunicación industrial se organiza en niveles jerárquicos.
+        Cada nivel usa protocolos optimizados para su velocidad, distancia y criticidad.
+      </div>
+    </div>
+    {/* Pirámide SVG */}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,flex:1}}>
+      <svg viewBox="0 0 500 300" style={{width:'100%'}}>
+        <rect width={500} height={300} fill="#020817" rx={8}/>
+        {/* Niveles */}
+        {[
+          {y:10,w:100,label:'Nivel 4-5: ERP/MES',sub:'SAP, Oracle — Ethernet TCP/IP',c:'#f59e0b'},
+          {y:60,w:150,label:'Nivel 3: SCADA/DCS',sub:'Ignition, WinCC — OPC-UA, Ethernet',c:'#60a5fa'},
+          {y:120,w:200,label:'Nivel 2: Control (PLC/DCS)',sub:'TIA Portal, DeltaV — PROFINET, Modbus',c:'#4ade80'},
+          {y:183,w:270,label:'Nivel 1: Fieldbus / HART',sub:'PROFIBUS, Foundation FF, HART, IO-Link',c:'#c084fc'},
+          {y:248,w:350,label:'Nivel 0: Instrumentos de campo',sub:'Transmisores, válvulas, sensores — 4-20 mA',c:'#f87171'},
+        ].map((x,i)=>{
+          const cx=250;
+          return(
+            <g key={i}>
+              <rect x={cx-x.w/2} y={x.y} width={x.w} height={42} rx={4} fill={x.c+'22'} stroke={x.c} strokeWidth={1.5}/>
+              <text x={cx} y={x.y+16} textAnchor="middle" fill={x.c} fontSize={11} fontWeight="bold">{x.label}</text>
+              <text x={cx} y={x.y+30} textAnchor="middle" fill="#94a3b8" fontSize={9}>{x.sub}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        <div className="card">
+          <h3>📡 Evolución de los protocolos industriales</h3>
+          <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}}>
+            {[
+              {era:'1960s-80s',prot:'4-20 mA analógico, neumático 3-15 psi',c:'#64748b'},
+              {era:'1980s-90s',prot:'HART, PROFIBUS, Foundation Fieldbus, DeviceNet',c:'#60a5fa'},
+              {era:'2000s',prot:'PROFINET, Modbus TCP, EtherNet/IP, OPC-UA',c:'#4ade80'},
+              {era:'2010s-hoy',prot:'WirelessHART, ISA100, OPC-UA, APL, MQTT Sparkplug',c:'#f59e0b'},
+            ].map(x=>(
+              <div key={x.era} style={{display:'flex',gap:10,marginBottom:4}}>
+                <span style={{color:x.c,fontWeight:700,width:90,flexShrink:0,fontSize:11}}>{x.era}</span>
+                <span style={{fontSize:11,color:'#94a3b8'}}>{x.prot}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card">
+          <h3>⚖️ Criterios de selección</h3>
+          <table><thead><tr><th>Criterio</th><th>Impacto</th></tr></thead>
+          <tbody>
+            <tr><td>Velocidad requerida</td><td>Motion control (µs) vs proceso (ms)</td></tr>
+            <tr><td>Distancia</td><td>IO-Link (20m) vs Modbus RS-485 (1200m)</td></tr>
+            <tr><td>Determinismo</td><td>Safety: determinista. SCADA: best effort</td></tr>
+            <tr><td>Diagnóstico</td><td>HART/PROFIBUS DP: variables secundarias</td></tr>
+            <tr><td>Zona ATEX</td><td>Ex i: HART, FF H1. No Ex: PROFINET</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function Scene2(){
+  const [addr,setAddr]=useState(1);
+  const [func,setFunc]=useState(3);
+  const [reg,setReg]=useState(40001);
+  const [qty,setQty]=useState(2);
+  // Calcular bytes de trama RTU
+  const fnHex=func.toString(16).toUpperCase().padStart(2,'0');
+  const addrHex=addr.toString(16).toUpperCase().padStart(2,'0');
+  const regHex=(reg-40001).toString(16).toUpperCase().padStart(4,'0');
+  const qtyHex=qty.toString(16).toUpperCase().padStart(4,'0');
+  const trama=`[${addrHex}][${fnHex}][${regHex}][${qtyHex}][CRC_LO][CRC_HI]`;
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🔌 Modbus RTU / TCP (1979 — Modicon)</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <p>El protocolo más extendido de la historia industrial. Simple, abierto y gratuito.</p>
+          <br/>
+          <p><strong style={{color:'#f59e0b'}}>RTU (RS-232/RS-485):</strong> Binario. Hasta 32 nodos en RS-485. 9600-115200 baud. Máster/Esclavo.</p>
+          <br/>
+          <p><strong style={{color:'#60a5fa'}}>ASCII:</strong> Hexadecimal legible. Menos eficiente. Equipos viejos.</p>
+          <br/>
+          <p><strong style={{color:'#4ade80'}}>TCP/IP (Modbus TCP):</strong> Mismo protocolo sobre Ethernet. Puerto <strong>502</strong>. Redes LAN.</p>
+          <br/>
+          <p>Modelo de datos:</p>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:4}}>
+            <span className="tag tag-blue">Coils (0x)</span>
+            <span className="tag tag-green">Discrete Inputs (1x)</span>
+            <span className="tag tag-yellow">Input Registers (3x)</span>
+            <span className="tag tag-red">Holding Registers (4x)</span>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔧 Generador de trama Modbus RTU</h3>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[
+            {l:'Dirección esclavo',min:1,max:247,v:addr,set:setAddr},
+            {l:'Función (03=HR 06=WR)',min:1,max:16,v:func,set:setFunc},
+            {l:'Registro inicial',min:40001,max:49999,v:reg,set:setReg},
+            {l:'Cantidad de registros',min:1,max:125,v:qty,set:setQty},
+          ].map(x=>(
+            <div key={x.l} style={{background:'#020817',padding:8,borderRadius:6}}>
+              <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>{x.l}</div>
+              <input type="number" min={x.min} max={x.max} value={x.v}
+                onChange={e=>x.set(+e.target.value)}
+                style={{width:'100%',background:'#0a0f1e',border:'1px solid #334155',color:'#fbbf24',
+                  borderRadius:4,padding:'4px 8px',fontSize:13}}/>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:12,background:'#020817',border:'1px solid #f59e0b44',borderRadius:8,padding:12}}>
+          <div style={{fontSize:10,color:'#64748b',marginBottom:6}}>Trama RTU (hex)</div>
+          <div style={{fontFamily:'monospace',fontSize:13,color:'#fbbf24',letterSpacing:2}}>{trama}</div>
+        </div>
+        <table style={{marginTop:10,fontSize:11}}>
+          <thead><tr><th>FC</th><th>Función</th><th>R/W</th></tr></thead>
+          <tbody>
+            {[[1,'Read Coils','R'],[2,'Read Discrete Inputs','R'],[3,'Read Holding Registers','R'],[4,'Read Input Registers','R'],[5,'Write Single Coil','W'],[6,'Write Single Register','W'],[16,'Write Multiple Registers','W']].map(r=>(
+              <tr key={r[0]}><td style={{color:'#f59e0b',fontWeight:700}}>0x{r[0].toString(16).toUpperCase().padStart(2,'0')}</td><td>{r[1]}</td><td style={{color:r[2]==='R'?'#60a5fa':'#f87171'}}>{r[2]}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function Scene3(){
+  const [tab,setTab]=useState('profibus');
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+    <div className="tab-bar">
+      {[['profibus','PROFIBUS DP'],['profinet','PROFINET IO'],['hart','HART'],['ff','Foundation Fieldbus']].map(([k,l])=>(
+        <div key={k} className={`tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>{l}</div>
+      ))}
+    </div>
+    <div style={{flex:1,overflow:'hidden',display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      {tab==='profibus'&&<>
+        <div className="card card-gold">
+          <h3>🔵 PROFIBUS DP (Siemens, 1989)</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p><strong>Process Field Bus</strong> — Decentralized Peripherals. Estándar EN 50170.</p><br/>
+            <p>Físico: RS-485 par trenzado. Hasta <strong style={{color:'#fbbf24'}}>12 Mbit/s</strong> (depende de distancia).</p><br/>
+            <p>Hasta <strong style={{color:'#4ade80'}}>126 nodos</strong> por segmento. Maestro-esclavo con token passing.</p><br/>
+            <p>Cada esclavo tiene un archivo <strong style={{color:'#60a5fa'}}>GSD (General Station Description)</strong> que describe sus I/O.</p><br/>
+            <p>Variantes: DP-V0 (básico), DP-V1 (acíclico), DP-V2 (isócrono).</p><br/>
+            <p>PROFIBUS PA: versión intrínsecamente segura. 31,25 kbit/s. Zona ATEX.</p>
+          </div>
+        </div>
+        <div className="card">
+          <h3>📊 Velocidades vs Distancia PROFIBUS DP</h3>
+          <table><thead><tr><th>Velocidad</th><th>Distancia máx/segm</th></tr></thead>
+          <tbody>
+            {[['9,6 kbit/s','1200 m'],['93,75 kbit/s','1200 m'],['500 kbit/s','400 m'],['1,5 Mbit/s','200 m'],['3-12 Mbit/s','100 m']].map(([v,d])=>(
+              <tr key={v}><td style={{color:'#f59e0b'}}>{v}</td><td style={{color:'#4ade80'}}>{d}</td></tr>
+            ))}
+          </tbody></table>
+          <div style={{marginTop:10,background:'#020817',padding:8,borderRadius:6,fontSize:12,color:'#94a3b8'}}>
+            <strong style={{color:'#f59e0b'}}>Amplificador (Repeater):</strong> extiende hasta 10 segmentos. Máx 126 nodos por red.
+            Terminación activa al inicio y fin del bus.
+          </div>
+        </div>
+      </>}
+      {tab==='profinet'&&<>
+        <div className="card card-gold">
+          <h3>🟢 PROFINET IO (Ethernet industrial)</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p>Extensión de PROFIBUS DP sobre Ethernet estándar (IEEE 802.3). Compatible TCP/IP.</p><br/>
+            <p><strong style={{color:'#fbbf24'}}>100 Mbit/s Full Duplex</strong> (o 1 Gbit/s). Topología estrella con switches.</p><br/>
+            <p>3 modos de comunicación:</p>
+            <div style={{marginTop:6}}>
+              {[
+                {m:'TCP/IP',vel:'~100 ms',u:'Configuración, diagnóstico, acíclico'},
+                {m:'RT (Real-Time)',vel:'~1 ms',u:'E/S proceso normal. PROFINET IO estándar'},
+                {m:'IRT (Isochronous)',vel:'~31 µs',u:'Motion control, sincronización de ejes'},
+              ].map(x=>(
+                <div key={x.m} style={{background:'#020817',padding:6,borderRadius:4,marginBottom:4}}>
+                  <span className="tag tag-green">{x.m}</span>
+                  <span style={{color:'#fbbf24',fontSize:11,marginLeft:6}}>{x.vel}</span>
+                  <span style={{color:'#64748b',fontSize:11,marginLeft:6}}>{x.u}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <h3>🔄 PROFIBUS → PROFINET: migración</h3>
+          <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+            <div style={{background:'#020817',padding:8,borderRadius:6,marginBottom:8}}>
+              <strong style={{color:'#60a5fa'}}>Proxy device:</strong> Pasarela PROFIBUS↔PROFINET.
+              Un proxy permite conectar esclavos PROFIBUS existentes al controlador PROFINET sin reemplazar hardware de campo.
+            </div>
+            <table><thead><tr><th>Parámetro</th><th>PROFIBUS DP</th><th>PROFINET</th></tr></thead>
+            <tbody>
+              <tr><td>Velocidad</td><td>12 Mbit/s</td><td style={{color:'#4ade80'}}>100 Mbit/s</td></tr>
+              <tr><td>Ciclo E/S</td><td>~1 ms</td><td style={{color:'#4ade80'}}>~1 ms RT / 31µs IRT</td></tr>
+              <tr><td>Topología</td><td>Bus</td><td style={{color:'#4ade80'}}>Estrella/árbol/anillo</td></tr>
+              <tr><td>Diagnóstico</td><td>GSD</td><td style={{color:'#4ade80'}}>GSDML + web</td></tr>
+              <tr><td>Ciberseguridad</td><td>Baja</td><td style={{color:'#4ade80'}}>VLAN, firewall</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </>}
+      {tab==='hart'&&<>
+        <div className="card card-gold">
+          <h3>📻 HART — Highway Addressable Remote Transducer</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p>Protocolo sobre la señal 4-20 mA analógica. Comunicación digital simultánea.</p><br/>
+            <div className="formula">f_0 = 1200 Hz (bit 0), f_1 = 2200 Hz (bit 1)</div>
+            <p style={{fontSize:11,color:'#64748b',textAlign:'center'}}>FSK — Modulación por desplazamiento de frecuencia</p><br/>
+            <p><strong style={{color:'#f59e0b'}}>Velocidad:</strong> 1200 bits/s. Latencia ~250 ms por comando.</p><br/>
+            <p><strong>Modo punto a punto:</strong> 1 master + 1 esclavo. Analógico + digital simultáneos.</p><br/>
+            <p><strong>Modo multidrop:</strong> hasta 15 esclavos. Solo digital. Corriente fija 4 mA.</p><br/>
+            <p><strong>HART IP:</strong> HART encapsulado en UDP/IP para sistemas modernos.</p>
+          </div>
+        </div>
+        <div className="card">
+          <h3>📋 Comandos HART</h3>
+          <table><thead><tr><th>Comando</th><th>Función</th></tr></thead>
+          <tbody>
+            {[[0,'Leer identificador único del dispositivo'],[1,'Leer PV actual'],[2,'Leer PV, corriente y porcentaje de rango'],[3,'Leer PV, corriente, span y cero'],[6,'Escribir dirección de polling'],[35,'Escribir rango'],[40,'Entrar en modo fijo de corriente'],[48,'Leer estado adicional del dispositivo'],[512,'(Específico) Diagnóstico avanzado']].map(([c,f])=>(
+              <tr key={c}><td style={{color:'#f59e0b',fontWeight:700}}>{c}</td><td style={{color:'#94a3b8',fontSize:11}}>{f}</td></tr>
+            ))}
+          </tbody></table>
+        </div>
+      </>}
+      {tab==='ff'&&<>
+        <div className="card card-gold">
+          <h3>🟡 Foundation Fieldbus H1</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p>Bus de campo estándar IEC 61158. Control distribuido en el instrumento de campo.</p><br/>
+            <p><strong style={{color:'#fbbf24'}}>H1:</strong> 31,25 kbit/s. Par trenzado. Hasta 32 dispositivos/segmento. Fuente de alimentación por bus.</p><br/>
+            <p><strong style={{color:'#60a5fa'}}>H2 / HSE:</strong> 100 Mbit/s Ethernet. Para nivel de control.</p><br/>
+            <p>Bloques funcionales estandarizados:</p>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:6}}>
+              {['AI (Analog Input)','AO (Analog Output)','DI (Digital Input)','DO (Digital Output)','PID','SC (Signal Char.)','OS (Output Splitter)'].map(b=>(
+                <span key={b} className="tag tag-yellow">{b}</span>
+              ))}
+            </div><br/>
+            <p>El PID puede ejecutarse en el transmisor de campo, reduciendo carga en DCS.</p>
+          </div>
+        </div>
+        <div className="card">
+          <h3>📊 Comparativa HART vs Foundation FF vs PROFIBUS PA</h3>
+          <table><thead><tr><th>Parámetro</th><th>HART</th><th>FF H1</th><th>PROFIBUS PA</th></tr></thead>
+          <tbody>
+            {[
+              ['Velocidad','1,2 kbit/s','31,25 kbit/s','31,25 kbit/s'],
+              ['Dispositivos','15 (MD)','32','32'],
+              ['Señal base','4-20 mA','2 hilos','2 hilos'],
+              ['Control en campo','No','Sí (PID FB)','Limitado'],
+              ['ATEX','Ex i','Ex i','Ex i'],
+              ['Migración','Fácil','Compleja','Media'],
+              ['Uso actual','Muy extendido','DCS industria','Siemens'],
+            ].map(r=>(
+              <tr key={r[0]}><td style={{color:'#94a3b8',fontSize:11}}>{r[0]}</td><td style={{color:'#60a5fa',fontSize:11}}>{r[1]}</td><td style={{color:'#f59e0b',fontSize:11}}>{r[2]}</td><td style={{color:'#4ade80',fontSize:11}}>{r[3]}</td></tr>
+            ))}
+          </tbody></table>
+        </div>
+      </>}
+    </div>
+  </div>
+  );
+}
+
+function Scene4(){
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>☁️ OPC-UA — Open Platform Communications Unified Architecture</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <p>El estándar de interoperabilidad de la Industria 4.0. IEC 62541.</p><br/>
+          <p><strong style={{color:'#f59e0b'}}>OPC clásico (DA/HDA):</strong> basado en COM/DCOM de Microsoft. Solo Windows. No seguro.</p><br/>
+          <p><strong style={{color:'#4ade80'}}>OPC-UA:</strong> Plataforma independiente (Linux, ARM, embebido). Seguridad nativa con certificados X.509.</p><br/>
+          <p>Modelo de información orientado a objetos: <strong style={{color:'#60a5fa'}}>nodos, referencias, tipos</strong>.</p><br/>
+          <p>Transportes: TCP binario (puerto 4840), HTTPS, WebSocket, MQTT con Pub/Sub.</p><br/>
+          <p><strong>Companion Specifications:</strong> modelos de datos para PLCs (PLCopen), robots (UMATI), farmacia (PackML), análisis (MDIS).</p>
+        </div>
+      </div>
+      <div className="card">
+        <h3>📡 MQTT Sparkplug B — IIoT</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <p><strong style={{color:'#f59e0b'}}>MQTT:</strong> Protocolo pub/sub ligero. Broker central. TLS/SSL seguro. QoS 0/1/2.</p><br/>
+          <p><strong style={{color:'#60a5fa'}}>Sparkplug B:</strong> Especificación de payload para MQTT industrial. Estructura de datos normalizada: namespace, grupo, tipo de nodo, ID.</p><br/>
+          <div style={{background:'#020817',padding:8,borderRadius:6,marginBottom:8}}>
+            <code style={{fontSize:11,color:'#fbbf24'}}>spBv1.0/Plant01/DDATA/PLC-01/Temperature</code>
+          </div>
+          <p>Características:</p>
+          <div style={{marginTop:4}}>
+            <div style={{color:'#4ade80',fontSize:12}}>✓ Estado del dispositivo (nacimiento/muerte)</div>
+            <div style={{color:'#4ade80',fontSize:12}}>✓ Reporte por excepción (solo cambios)</div>
+            <div style={{color:'#4ade80',fontSize:12}}>✓ Compresión Protobuf</div>
+            <div style={{color:'#4ade80',fontSize:12}}>✓ Ideal para cloud y edge computing</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+      {[
+        {t:'EtherNet/IP',d:'ODVA. CIP sobre Ethernet. Allen-Bradley/Rockwell. Muy extendido en América. Puerto 44818.',c:'#f59e0b'},
+        {t:'CC-Link IE',d:'Mitsubishi. 1 Gbit/s. Determinista. Muy usado en Asia. Control de movimiento.',c:'#60a5fa'},
+        {t:'IO-Link',d:'IEC 61131-9. Punto a punto inteligente. 20 m. Diagnóstico de sensor. Sin bus. 230 kbit/s.',c:'#4ade80'},
+        {t:'APL (Ethernet)',d:'Advanced Physical Layer. Ethernet 10 Mbit/s intrínsecamente seguro. Zona 0. Reemplazará FF y HART.',c:'#c084fc'},
+      ].map(x=>(
+        <div key={x.t} style={{background:'#0a0f1e',border:`1px solid ${x.c}44`,borderRadius:8,padding:10}}>
+          <div style={{fontWeight:700,color:x.c,fontSize:13,marginBottom:4}}>{x.t}</div>
+          <div style={{fontSize:11,color:'#64748b',lineHeight:1.5}}>{x.d}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
+}
+
+const QUIZ=[
+  {q:'¿Cuál es el puerto TCP estándar de Modbus TCP?',opts:['80','443','502','4840'],ans:2},
+  {q:'¿Cuántos nodos máximos admite un segmento PROFIBUS DP?',opts:['32','64','126','256'],ans:2},
+  {q:'HART usa FSK con frecuencias de:',opts:['500 Hz / 1000 Hz','1200 Hz / 2200 Hz','2400 Hz / 4800 Hz','100 Hz / 200 Hz'],ans:1},
+  {q:'¿Qué modo PROFINET permite ciclos de ~31 µs para motion control?',opts:['TCP/IP','RT','IRT','OPC-UA'],ans:2},
+  {q:'Foundation Fieldbus H1 opera a:',opts:['12 Mbit/s','31,25 kbit/s','1,2 kbit/s','100 Mbit/s'],ans:1},
+  {q:'OPC-UA usa certificados _____ para seguridad:',opts:['MD5','SHA-1','X.509','AES-256 simétrico'],ans:2},
+  {q:'¿Qué protocolo es pub/sub con broker central y se usa en IIoT/cloud?',opts:['PROFIBUS','Modbus RTU','MQTT','OPC-DA'],ans:2},
+  {q:'IO-Link es un estándar:',opts:['Bus de campo multi-drop','Punto a punto para sensores/actuadores inteligentes','Red Ethernet industrial','Protocolo inalámbrico'],ans:1},
+  {q:'¿Cuál es la función del archivo GSD en PROFIBUS?',opts:['Almacena el programa del PLC','Describe los parámetros de E/S del esclavo','Guarda históricos de alarmas','Define la dirección IP del dispositivo'],ans:1},
+  {q:'El protocolo Sparkplug B define:',opts:['Un bus de campo físico','La estructura de payload para MQTT industrial','La velocidad de PROFINET IRT','El estándar de calibración de transmisores'],ans:1},
+];
+function Scene5(){
+  const [ans,setAns]=useState(Array(QUIZ.length).fill(null));
+  const [show,setShow]=useState(false);
+  const score=ans.filter((a,i)=>a===QUIZ[i].ans).length;
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+    <div style={{flex:1,overflowY:'auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingRight:4}}>
+      {!show?QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:12}}>
+          <div style={{fontSize:11,color:'#64748b',marginBottom:4}}>P.{i+1}</div>
+          <div style={{fontSize:12,color:'#cbd5e1',marginBottom:8,lineHeight:1.4}}>{q.q}</div>
+          {q.opts.map((o,j)=>(
+            <button key={j} onClick={()=>{const a=[...ans];a[i]=j;setAns(a);}}
+              style={{display:'block',width:'100%',textAlign:'left',padding:'5px 10px',borderRadius:5,
+                border:`1px solid ${ans[i]===j?'#f59e0b':'#1e293b'}`,background:ans[i]===j?'#f59e0b22':'#0a0f1e',
+                color:ans[i]===j?'#fbbf24':'#64748b',cursor:'pointer',fontSize:11,marginBottom:3}}>{o}</button>
+          ))}
+        </div>
+      )):QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:12,borderColor:ans[i]===q.ans?'#4ade8044':'#f8717144'}}>
+          <div style={{fontSize:11,color:ans[i]===q.ans?'#4ade80':'#f87171',marginBottom:3}}>{ans[i]===q.ans?'✅':'❌'}</div>
+          <div style={{fontSize:11,color:'#cbd5e1',marginBottom:4}}>{q.q}</div>
+          <div style={{fontSize:11,color:'#4ade80'}}>✓ {q.opts[q.ans]}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0 0'}}>
+      <div style={{fontSize:13,color:'#94a3b8'}}>
+        Respondidas: <strong style={{color:'#fbbf24'}}>{ans.filter(a=>a!==null).length}/10</strong>
+        {show&&<span style={{marginLeft:16,color:score>=8?'#4ade80':'#f87171',fontWeight:700}}>Puntuación: {score}/10</span>}
+      </div>
+      {!show?(<button className="btn btn-gold" disabled={ans.filter(a=>a!==null).length<10} onClick={()=>setShow(true)}>Ver resultados</button>)
+        :(<button className="btn btn-outline" onClick={()=>{setAns(Array(QUIZ.length).fill(null));setShow(false);}}>Reintentar</button>)}
+    </div>
+  </div>
+  );
+}
+
+const SCENES=[
+  {id:1,title:'Pirámide ISA-95 y Evolución',sub:'Niveles 0-5, criterios de selección, historia de protocolos',comp:Scene1},
+  {id:2,title:'Modbus RTU / TCP',sub:'Trama RTU generador, función codes, registros',comp:Scene2},
+  {id:3,title:'PROFIBUS, PROFINET, HART, FF',sub:'Velocidades, modos, comandos HART, comparativa',comp:Scene3},
+  {id:4,title:'OPC-UA, MQTT Sparkplug B e IIoT',sub:'EtherNet/IP, IO-Link, APL, estándares modernos',comp:Scene4},
+  {id:5,title:'Test de Evaluación',sub:'10 preguntas sobre redes industriales y protocolos',comp:Scene5},
+];
+
+function App(){
+  const [sc,setSc]=useState(0);
+  const S=SCENES[sc]; const Comp=S.comp;
+  return(
+  <div className="slide">
+    <div className="hdr">
+      <div>
+        <div className="hdr-title">2.9 — Redes Industriales</div>
+        <div className="hdr-sub">{S.title} · {S.sub}</div>
+      </div>
+      <div style={{display:'flex',gap:12,alignItems:'center'}}>
+        <span className="badge">PRO</span>
+        <span style={{fontSize:12,color:'#64748b'}}>{sc+1}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content"><Comp/></div>
+    <div className="nav">
+      <button className="btn btn-outline" disabled={sc===0} onClick={()=>setSc(s=>s-1)}>← Anterior</button>
+      <div className="dots">{SCENES.map((_,i)=>(<div key={i} className={`dot${sc===i?' active':''}`} onClick={()=>setSc(i)}/>))}</div>
+      <button className="btn btn-gold" disabled={sc===SCENES.length-1} onClick={()=>setSc(s=>s+1)}>Siguiente →</button>
+    </div>
+  </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
