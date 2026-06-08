@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.1 – Instrumentación Analítica</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+  .gold{color:#f59e0b;}
+  .slide{width:1280px;height:720px;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  .topbar{background:linear-gradient(135deg,#0f1729 0%,#1a2540 100%);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .topbar-title{font-size:15px;font-weight:700;color:#f59e0b;letter-spacing:.5px;}
+  .topbar-sub{font-size:11px;color:#94a3b8;}
+  .scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
+  .content{flex:1;display:flex;overflow:hidden;}
+  .sidebar{width:220px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+  .nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+  .nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+  .nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+  .main{flex:1;padding:18px 24px;overflow-y:auto;overflow-x:hidden;}
+  .main::-webkit-scrollbar{width:4px;}
+  .main::-webkit-scrollbar-track{background:#0d1425;}
+  .main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+  .sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:4px;}
+  .sec-sub{font-size:12px;color:#64748b;margin-bottom:14px;}
+  .card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .card-h{font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+  .tag-blue{background:#1e40af44;color:#93c5fd;border:1px solid #1e40af66;}
+  .tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+  .tag-orange{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+  .tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+  .tag-purple{background:#4c1d9544;color:#c4b5fd;border:1px solid #4c1d9566;}
+  .formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:13px;color:#fcd34d;text-align:center;margin:8px 0;}
+  .btn{padding:7px 16px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;}
+  .btn-gold{background:#f59e0b;color:#080c18;}
+  .btn-gold:hover{background:#d97706;}
+  .btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 12px;border-radius:5px;cursor:pointer;font-size:11px;}
+  .btn-outline:hover{background:#f59e0b22;}
+  .btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+  table{width:100%;border-collapse:collapse;font-size:11px;}
+  th{background:#0f1729;color:#f59e0b;padding:7px 10px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+  td{padding:6px 10px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+  tr:hover td{background:#ffffff05;}
+  .meter-bar{height:14px;background:#0f1729;border-radius:7px;overflow:hidden;margin:4px 0;}
+  .meter-fill{height:100%;border-radius:7px;transition:width .4s;}
+  .quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+  .quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+  .quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+  .quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+  .quiz-opt.selected{border-color:#f59e0b;background:#f59e0b10;}
+  .pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;}
+  .pill-green{background:#14532d55;color:#86efac;border:1px solid #22c55e44;}
+  .pill-red{background:#7f1d1d55;color:#fca5a5;border:1px solid #ef444444;}
+  .pill-yellow{background:#78350f55;color:#fcd34d;border:1px solid #f59e0b44;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+/* ── SCENE 1: pH Measurement ─────────────────────────────── */
+function Scene1(){
+  const [pH,setPH]=useState(7.0);
+  const [temp,setTemp]=useState(25);
+  const color=(v)=>{
+    if(v<3)return'#ef4444';if(v<6)return'#f97316';if(v<7)return'#eab308';
+    if(v===7)return'#22c55e';if(v<9)return'#3b82f6';return'#8b5cf6';
+  };
+  const label=(v)=>{
+    if(v<2)return'Ácido fuerte';if(v<4)return'Ácido moderado';if(v<6)return'Ácido débil';
+    if(v<7.5)return'Neutro';if(v<9)return'Base débil';if(v<11)return'Base moderada';return'Base fuerte';
+  };
+  // Nernst equation: E = E0 - (RT/nF)*2.303*pH  → sensitivity ≈ 59.16 mV/pH at 25°C
+  const S=(0.0001984*(temp+273.15));  // S = RT/F * ln10  in V/pH
+  const E0=0.2;
+  const E=(E0 - S*pH).toFixed(4);
+  const pHScale=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14];
+  const pHColors=['#dc2626','#ea580c','#f97316','#fb923c','#facc15','#a3e635','#22c55e','#22c55e','#34d399','#3b82f6','#60a5fa','#818cf8','#8b5cf6','#7c3aed','#6d28d9'];
+  return(
+    <div>
+      <div className="sec-title">Medición de pH</div>
+      <div className="sec-sub">Electrodo de vidrio — Ecuación de Nernst — ISA-5.1 / ASTM E70</div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h">Principio: Electrodo de Vidrio</div>
+            <svg width="100%" viewBox="0 0 300 200">
+              {/* Vessel */}
+              <rect x="50" y="60" width="200" height="120" rx="8" fill="#0f1729" stroke="#1e2d4a"/>
+              {/* Solution color */}
+              <rect x="51" y="61" width="198" height="118" rx="7" fill={color(pH)+'22'}/>
+              {/* pH electrode */}
+              <rect x="110" y="20" width="20" height="100" rx="4" fill="#1e3a5f" stroke="#3b82f6"/>
+              <ellipse cx="120" cy="125" rx="10" ry="8" fill="#60a5fa" stroke="#3b82f6"/>
+              <text x="140" y="80" fill="#93c5fd" fontSize="9">Electrodo</text>
+              <text x="140" y="90" fill="#93c5fd" fontSize="9">de vidrio</text>
+              {/* Reference electrode */}
+              <rect x="160" y="20" width="16" height="95" rx="3" fill="#1a2540" stroke="#f59e0b"/>
+              <line x1="168" y1="115" x2="168" y2="125" stroke="#f59e0b" strokeWidth="1.5"/>
+              <text x="182" y="75" fill="#fcd34d" fontSize="9">Ref. (Ag/AgCl)</text>
+              {/* Voltmeter */}
+              <rect x="80" y="10" width="50" height="28" rx="4" fill="#0d1425" stroke="#f59e0b55"/>
+              <text x="105" y="23" textAnchor="middle" fill="#f59e0b" fontSize="10" fontWeight="bold">{(E*1000).toFixed(0)} mV</text>
+              <text x="105" y="33" textAnchor="middle" fill="#64748b" fontSize="8">Potencial</text>
+              <line x1="120" y1="20" x2="120" y2="10" stroke="#3b82f6" strokeWidth="1.5"/>
+              <line x1="168" y1="20" x2="168" y2="10" stroke="#f59e0b" strokeWidth="1.5"/>
+              <line x1="80" y1="24" x2="120" y2="10" stroke="#3b82f6" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="130" y1="24" x2="168" y2="10" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,2"/>
+              {/* pH label */}
+              <text x="150" y="145" textAnchor="middle" fill={color(pH)} fontSize="24" fontWeight="bold">pH {pH.toFixed(1)}</text>
+              <text x="150" y="162" textAnchor="middle" fill="#94a3b8" fontSize="11">{label(pH)}</text>
+            </svg>
+            <div style={{marginTop:6}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:4}}>
+                <span>pH: <b style={{color:color(pH)}}>{pH.toFixed(1)}</b></span>
+                <span>Temp: <b className="gold">{temp}°C</b></span>
+              </div>
+              <input type="range" min="0" max="14" step="0.1" value={pH} onChange={e=>setPH(+e.target.value)}/>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#475569',marginTop:2}}>
+                <span>0 (Ácido)</span><span>7 (Neutro)</span><span>14 (Base)</span>
+              </div>
+              <input type="range" min="5" max="80" step="1" value={temp} onChange={e=>setTemp(+e.target.value)} style={{marginTop:8}}/>
+              <div style={{textAlign:'center',fontSize:10,color:'#64748b'}}>Temperatura proceso: {temp}°C</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{marginBottom:10}}>
+            <div className="card-h">Ecuación de Nernst</div>
+            <div className="formula-box">E = E₀ − S · pH</div>
+            <div className="formula-box" style={{fontSize:11}}>S = (R·T) / (n·F) · ln(10) ≈ {(S*1000).toFixed(2)} mV/pH @ {temp}°C</div>
+            <div style={{fontSize:11,color:'#94a3b8',marginTop:8,lineHeight:1.6}}>
+              <b style={{color:'#cbd5e1'}}>E₀</b> = potencial estándar del electrodo (V)<br/>
+              <b style={{color:'#cbd5e1'}}>R</b> = 8.314 J/mol·K &nbsp; <b style={{color:'#cbd5e1'}}>T</b> = temperatura (K)<br/>
+              <b style={{color:'#cbd5e1'}}>n</b> = 1 (H⁺) &nbsp; <b style={{color:'#cbd5e1'}}>F</b> = 96485 C/mol<br/>
+              <b style={{color:'#fcd34d'}}>Sensibilidad teórica @ 25°C ≈ 59.16 mV/pH</b>
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-h">Escala de pH — Identificación visual</div>
+            <div style={{display:'flex',height:18,borderRadius:4,overflow:'hidden',margin:'6px 0'}}>
+              {pHColors.map((c,i)=><div key={i} style={{flex:1,background:c}}/>)}
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#64748b'}}>
+              {[0,2,4,6,7,8,10,12,14].map(v=><span key={v}>{v}</span>)}
+            </div>
+            <table style={{marginTop:8}}>
+              <thead><tr><th>Tipo</th><th>pH típico</th><th>Aplicación</th></tr></thead>
+              <tbody>
+                {[
+                  ['Agua de proceso industrial','6.5–8.5','Monitoreo continuo'],
+                  ['Efluente planta química','5–9','Control pH previo descarga'],
+                  ['Fermentación (biorreactor)','4–7','Producción farmacéutica'],
+                  ['Agua potable','6.5–8.5','Cumplimiento regulatorio'],
+                  ['Pasta de papel (kraft)','9–12','Control blanqueado'],
+                ].map(([a,b,c],i)=>(
+                  <tr key={i}><td>{a}</td><td style={{color:'#fcd34d'}}>{b}</td><td style={{color:'#94a3b8'}}>{c}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SCENE 2: Conductividad ───────────────────────────────── */
+function Scene2(){
+  const [conc,setConc]=useState(500); // ppm NaCl
+  const [cellK,setCellK]=useState(1.0); // cell constant cm-1
+  // Approx: conductivity NaCl ≈ conc * 2.0 μS/cm (linear in dilute range)
+  const cond=(conc*2.0).toFixed(0); // μS/cm
+  const tds=(conc).toFixed(0); // ppm TDS ≈ conc in this sim
+  const res=conc>0?(1e6/(conc*2.0)).toFixed(1):'>∞';
+  const [method,setMethod]=useState('2-elec');
+  return(
+    <div>
+      <div className="sec-title">Medición de Conductividad</div>
+      <div className="sec-sub">Conductividad eléctrica del agua — TDS — Resistividad — ASTM D1125</div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h">Principio electroquímico</div>
+            <svg width="100%" viewBox="0 0 300 180">
+              {/* Cell */}
+              <rect x="40" y="30" width="220" height="120" rx="6" fill="#0f1729" stroke="#1e2d4a"/>
+              <rect x="41" y="31" width="218" height="118" rx="5" fill={`hsl(200,60%,${Math.min(40,5+conc/80)}%)`} opacity="0.3"/>
+              {/* Electrodes */}
+              <rect x="90" y="40" width="14" height="100" rx="3" fill="#1e3a5f" stroke="#60a5fa" strokeWidth="2"/>
+              <rect x="196" y="40" width="14" height="100" rx="3" fill="#1e3a5f" stroke="#f59e0b" strokeWidth="2"/>
+              {/* Current lines */}
+              {method==='2-elec' && [60,80,100,120,140].map(y=>(
+                <line key={y} x1="104" y1={y} x2="196" y2={y} stroke="#22c55e" strokeWidth="1" opacity="0.5" strokeDasharray="4,3"/>
+              ))}
+              {method==='4-elec' && (<>
+                <rect x="125" y="40" width="8" height="100" rx="2" fill="#1e3a5f" stroke="#a78bfa" strokeWidth="1.5"/>
+                <rect x="167" y="40" width="8" height="100" rx="2" fill="#1e3a5f" stroke="#a78bfa" strokeWidth="1.5"/>
+                {[60,80,100,120,140].map(y=>(
+                  <line key={y} x1="104" y1={y} x2="196" y2={y} stroke="#22c55e" strokeWidth="1" opacity="0.4" strokeDasharray="3,2"/>
+                ))}
+              </>)}
+              {/* Labels */}
+              <text x="97" y="160" textAnchor="middle" fill="#93c5fd" fontSize="9">I+</text>
+              <text x="203" y="160" textAnchor="middle" fill="#fcd34d" fontSize="9">I−</text>
+              {method==='4-elec'&&<><text x="129" y="160" textAnchor="middle" fill="#c4b5fd" fontSize="8">V+</text>
+              <text x="171" y="160" textAnchor="middle" fill="#c4b5fd" fontSize="8">V−</text></>}
+              <text x="150" y="95" textAnchor="middle" fill="#22c55e" fontSize="14" fontWeight="bold">{cond} μS/cm</text>
+              <text x="150" y="110" textAnchor="middle" fill="#64748b" fontSize="9">Conductividad</text>
+              {/* Cell constant K */}
+              <text x="150" y="20" textAnchor="middle" fill="#94a3b8" fontSize="9">K = d/A = {cellK.toFixed(2)} cm⁻¹</text>
+            </svg>
+            <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:8}}>
+              {['2-elec','4-elec'].map(m=>(
+                <button key={m} className={`btn-outline${method===m?' active':''}`} onClick={()=>setMethod(m)}>{m==='2-elec'?'2 Electrodos':'4 Electrodos'}</button>
+              ))}
+            </div>
+            <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+              {method==='2-elec'?'2 electrodos: económico, corriente = tensión/Z. Polarizable en altas concentraciones.':'4 electrodos: corriente separada de medida de voltaje. Elimina polarización. Rango amplio.'}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{marginBottom:10}}>
+            <div className="card-h">Simulador — Solución NaCl</div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:6}}>
+              <span>Concentración NaCl: <b className="gold">{conc} ppm</b></span>
+            </div>
+            <input type="range" min="0" max="5000" step="10" value={conc} onChange={e=>setConc(+e.target.value)}/>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#475569',marginTop:2,marginBottom:10}}>
+              <span>0 ppm (DI)</span><span>2500 ppm</span><span>5000 ppm</span>
+            </div>
+            <div className="formula-box" style={{marginBottom:8}}>σ = G · K &nbsp;&nbsp; [S/cm · cm⁻¹ = S]</div>
+            <table>
+              <tbody>
+                {[
+                  ['Conductividad (σ)',`${Number(cond).toLocaleString()} μS/cm`,'#22c55e'],
+                  ['Resistividad (ρ)',`${res} kΩ·cm`,'#60a5fa'],
+                  ['TDS estimado',`${tds} ppm`,'#fcd34d'],
+                  ['Constante de celda (K)',`${cellK.toFixed(2)} cm⁻¹`,'#a78bfa'],
+                ].map(([n,v,c],i)=>(
+                  <tr key={i}><td style={{color:'#94a3b8'}}>{n}</td><td style={{color:c,fontWeight:700}}>{v}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{marginTop:8}}>
+              <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>Constante celda K (cm⁻¹):</div>
+              <input type="range" min="0.01" max="10" step="0.01" value={cellK} onChange={e=>setCellK(+e.target.value)}/>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#475569'}}>
+                <span>0.01 (Alta pureza)</span><span>1.0</span><span>10 (Alta σ)</span>
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-h">Rangos típicos por aplicación</div>
+            <table>
+              <thead><tr><th>Agua / Proceso</th><th>σ típica</th><th>Sensor</th></tr></thead>
+              <tbody>
+                {[
+                  ['Agua ultra-pura (semiconductores)','<0.1 μS/cm','Inductiva'],
+                  ['Agua purificada farma (USP)','<1 μS/cm','2 electrodo K=0.01'],
+                  ['Agua desmineralizada','1–50 μS/cm','2 electrodo K=0.1'],
+                  ['Agua potable','200–800 μS/cm','2 electrodo K=1'],
+                  ['Agua de mar','~50 mS/cm','4 electrodo / inductiva'],
+                  ['Ácidos/bases concentrados','>200 mS/cm','Inductiva (toroidal)'],
+                ].map(([a,b,c],i)=>(
+                  <tr key={i}><td>{a}</td><td style={{color:'#22c55e'}}>{b}</td><td style={{color:'#94a3b8'}}>{c}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SCENE 3: Turbidez y OD ───────────────────────────────── */
+function Scene3(){
+  const [turb,setTurb]=useState(5);
+  const [od,setOD]=useState(8.0);
+  const [tempOD,setTempOD]=useState(20);
+  // OD saturation Benson & Krause (simplified)
+  const odSat=(14.62 - 0.3898*tempOD + 0.006969*tempOD*tempOD - 5.696e-5*tempOD*tempOD*tempOD).toFixed(2);
+  const odPct=((od/odSat)*100).toFixed(1);
+  const turbColor=(v)=>{if(v<1)return'#60a5fa';if(v<5)return'#22c55e';if(v<50)return'#eab308';if(v<500)return'#f97316';return'#ef4444';};
+  const turbLabel=(v)=>{if(v<1)return'Cristalina';if(v<5)return'Clara';if(v<50)return'Ligeramente turbia';if(v<500)return'Turbia';return'Muy turbia';};
+  return(
+    <div>
+      <div className="sec-title">Turbidez y Oxígeno Disuelto</div>
+      <div className="sec-sub">Dispersión de luz (NTU/FTU) — Electroquímica Clark — Óptica fluorescente</div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h">Turbidez — Dispersión Nefelométrica (ISO 7027)</div>
+            <svg width="100%" viewBox="0 0 300 160">
+              {/* Sample cell */}
+              <rect x="100" y="40" width="100" height="80" rx="6" fill={`rgba(100,180,255,${Math.min(0.9,turb/600+0.05)})`} stroke="#1e2d4a"/>
+              {/* Incident light */}
+              <line x1="20" y1="80" x2="100" y2="80" stroke="#fbbf24" strokeWidth="3"/>
+              <polygon points="96,74 110,80 96,86" fill="#fbbf24"/>
+              <text x="55" y="72" textAnchor="middle" fill="#fcd34d" fontSize="9">Luz incidente</text>
+              {/* Transmitted */}
+              <line x1="200" y1="80" x2="275" y2="80" stroke="#fbbf2466" strokeWidth={Math.max(0.5,3*(1-turb/1000))}/>
+              <text x="238" y="72" textAnchor="middle" fill="#64748b" fontSize="9">Transmitida</text>
+              {/* Scattered 90° */}
+              {turb>0&&<>
+                <line x1="150" y1="40" x2="150" y2="5" stroke="#22c55e" strokeWidth={Math.min(4,turb/100+0.5)}/>
+                <polygon points="144,10 150,0 156,10" fill="#22c55e"/>
+                <text x="170" y="18" fill="#86efac" fontSize="9">90° nefelometría</text>
+                <text x="170" y="28" fill="#86efac" fontSize="9">{turb} NTU</text>
+              </>}
+              {/* Detector label */}
+              <rect x="260" y="65" width="35" height="30" rx="3" fill="#0f1729" stroke="#22c55e55"/>
+              <text x="277" y="82" textAnchor="middle" fill="#22c55e" fontSize="8">Det.</text>
+              <text x="277" y="90" textAnchor="middle" fill="#64748b" fontSize="7">0°</text>
+            </svg>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:4}}>
+              <span>Turbidez: <b style={{color:turbColor(turb)}}>{turb} NTU</b></span>
+              <span style={{fontSize:10,color:turbColor(turb)}}>{turbLabel(turb)}</span>
+            </div>
+            <input type="range" min="0" max="1000" step="1" value={turb} onChange={e=>setTurb(+e.target.value)}/>
+            <table style={{marginTop:8}}>
+              <thead><tr><th>Límite</th><th>NTU</th><th>Regulación</th></tr></thead>
+              <tbody>
+                {[['Agua potable OMS','<4 NTU','WHO 2022'],
+                  ['Agua potable EPA','<1 NTU','EPA 815-R-18'],
+                  ['Efluente industrial','<50 NTU','Local'],
+                  ['Proceso alimentario','<10 NTU','FDA 21 CFR'],
+                ].map(([a,b,c],i)=><tr key={i}><td>{a}</td><td style={{color:'#fcd34d'}}>{b}</td><td style={{color:'#94a3b8'}}>{c}</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{marginBottom:10}}>
+            <div className="card-h">Oxígeno Disuelto (OD)</div>
+            <div style={{display:'flex',gap:16,marginBottom:8}}>
+              <div style={{textAlign:'center',flex:1}}>
+                <div style={{fontSize:28,fontWeight:700,color:'#22c55e'}}>{od.toFixed(1)}</div>
+                <div style={{fontSize:10,color:'#64748b'}}>mg/L (ppm)</div>
+              </div>
+              <div style={{textAlign:'center',flex:1}}>
+                <div style={{fontSize:28,fontWeight:700,color:'#3b82f6'}}>{odPct}%</div>
+                <div style={{fontSize:10,color:'#64748b'}}>Saturación</div>
+              </div>
+              <div style={{textAlign:'center',flex:1}}>
+                <div style={{fontSize:22,fontWeight:700,color:'#fcd34d'}}>{odSat}</div>
+                <div style={{fontSize:10,color:'#64748b'}}>mg/L sat @ {tempOD}°C</div>
+              </div>
+            </div>
+            <div className="meter-bar">
+              <div className="meter-fill" style={{width:`${Math.min(100,odPct)}%`,background:odPct>70?'#22c55e':odPct>40?'#eab308':'#ef4444'}}/>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:6,marginTop:8}}>
+              <span>OD: <b className="gold">{od.toFixed(1)} mg/L</b></span>
+              <span>T: <b className="gold">{tempOD}°C</b></span>
+            </div>
+            <input type="range" min="0" max="20" step="0.1" value={od} onChange={e=>setOD(+e.target.value)}/>
+            <input type="range" min="0" max="40" step="1" value={tempOD} onChange={e=>setTempOD(+e.target.value)} style={{marginTop:6}}/>
+          </div>
+          <div className="card">
+            <div className="card-h">Tecnologías de medición OD</div>
+            <table>
+              <thead><tr><th>Tecnología</th><th>Principio</th><th>Ventaja</th></tr></thead>
+              <tbody>
+                {[
+                  ['Celda Clark','Electroquímica (O₂→4e⁻)','Económica, probada'],
+                  ['Luminiscencia','Extinción fluorescente','Sin mantenimiento, precisa'],
+                  ['Galvánica','Sin polarización externa','Simple, robusta'],
+                  ['Óptica (PSt3)','Fosforescencia Ru(II)','Larga vida útil'],
+                ].map(([a,b,c],i)=><tr key={i}><td>{a}</td><td style={{color:'#93c5fd'}}>{b}</td><td style={{color:'#86efac'}}>{c}</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SCENE 4: Analizadores de Gas ─────────────────────────── */
+function Scene4(){
+  const [gas,setGas]=useState('IR');
+  const gases={
+    IR:{name:'NDIR — Infrarrojo No Dispersivo',color:'#f97316',target:'CO₂, CO, CH₄, SO₂, NO',principle:'Absorción IR específica de moléculas asimétricas (Ley Beer-Lambert: A = ε·c·l)',range:'0–5000 ppm / 0–100%',resp:'<30 s',acc:'±1% FS',icon:'🔴',apps:['Combustión','Invernaderos','Seguridad CO','Emisiones']},
+    O2:{name:'Paramagnético — O₂',color:'#3b82f6',target:'O₂ (0–25%)',principle:'O₂ es paramagnético (2 e⁻ no pareados). Fuerza magnética desplaza celda → medida de momento angular.',range:'0–25% O₂',resp:'<10 s',acc:'±0.1% O₂ abs',icon:'🔵',apps:['Análisis combustión','Oxígeno médico','Inertización N₂','Control quemador']},
+    TC:{name:'Catarometría (TCD)',color:'#a78bfa',target:'H₂, He, Ar, hidrocarbonos',principle:'Diferencia conductividad térmica entre gas muestra y referencia. Filamento calefactado en puente Wheatstone.',range:'0–100%',resp:'<5 s',acc:'±0.5% FS',icon:'🟣',apps:['Cromatografía GC','H₂ puro','Helio','Gas natural']},
+    EC:{name:'Electroquímica (ECD)',color:'#22c55e',target:'O₂, CO, H₂S, Cl₂, NO₂',principle:'Reacción electroquímica en electrolito: oxidación/reducción genera corriente proporcional a concentración.',range:'0–500 ppm (tóxicos)',resp:'<60 s',acc:'±2% FS',icon:'🟢',apps:['Detección gases tóxicos','Seguridad personal','ATEX zonas','Monitoreo ambiental']},
+    PID:{name:'FID / PID',color:'#fcd34d',target:'COV, hidrocarburos totales',principle:'FID: ionización en llama H₂. PID: fotoionización UV (energía > IE del gas). Mide corriente de iones.',range:'0.1 ppb – 5000 ppm',resp:'<2 s',acc:'±5% FS',icon:'🟡',apps:['COV totales','Vigilancia ambiental','Detección fugas','Industria petroquímica']},
+  };
+  const g=gases[gas];
+  return(
+    <div>
+      <div className="sec-title">Analizadores de Gas</div>
+      <div className="sec-sub">NDIR · Paramagnético · Catarometría · Electroquímico · FID/PID</div>
+      <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
+        {Object.entries(gases).map(([k,v])=>(
+          <button key={k} className={`btn-outline${gas===k?' active':''}`} onClick={()=>setGas(k)} style={{fontSize:11}}>
+            {v.icon} {k}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h" style={{color:g.color}}>{g.name}</div>
+            <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7,marginBottom:10}}>{g.principle}</div>
+            <div className="formula-box" style={{fontSize:11}}>
+              {gas==='IR'?'A = ε · c · l  (Beer-Lambert)':
+               gas==='O2'?'F = χ · V · B² / μ  (paramagnético)':
+               gas==='TC'?'ΔR / R = f(κ_muestra − κ_ref)':
+               gas==='EC'?'I = n · F · A · D · C / δ  (Fick)':
+               'I_ion = f([COV])  →  pA corriente'}
+            </div>
+            <svg width="100%" viewBox="0 0 280 140">
+              {gas==='IR'&&(<>
+                <rect x="10" y="50" width="50" height="40" rx="4" fill="#78350f44" stroke="#f97316"/>
+                <text x="35" y="73" textAnchor="middle" fill="#f97316" fontSize="9">Fuente IR</text>
+                <rect x="110" y="40" width="60" height="60" rx="6" fill="#0f1729" stroke="#1e2d4a"/>
+                <text x="140" y="68" textAnchor="middle" fill="#cbd5e1" fontSize="8">Celda</text>
+                <text x="140" y="80" textAnchor="middle" fill="#fcd34d" fontSize="8">muestra</text>
+                <rect x="210" y="50" width="60" height="40" rx="4" fill="#14532d44" stroke="#22c55e"/>
+                <text x="240" y="70" textAnchor="middle" fill="#22c55e" fontSize="9">Detector</text>
+                <text x="240" y="80" textAnchor="middle" fill="#22c55e" fontSize="8">DTGS/MCT</text>
+                <line x1="60" y1="70" x2="110" y2="70" stroke="#f97316" strokeWidth="2"/>
+                <line x1="170" y1="70" x2="210" y2="70" stroke="#f97316" strokeWidth="1.5"/>
+                <text x="140" y="120" textAnchor="middle" fill="#64748b" fontSize="9">Filtro λ específico para gas objetivo</text>
+              </>)}
+              {gas==='O2'&&(<>
+                <ellipse cx="140" cy="70" rx="60" ry="40" fill="#1e3a5f44" stroke="#3b82f6"/>
+                <text x="140" y="65" textAnchor="middle" fill="#93c5fd" fontSize="10">Campo magnético B</text>
+                <circle cx="140" cy="80" r="10" fill="#3b82f644"/>
+                <text x="140" y="84" textAnchor="middle" fill="#60a5fa" fontSize="8">O₂</text>
+                <line x1="80" y1="70" x2="200" y2="70" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="5,3"/>
+                <text x="140" y="125" textAnchor="middle" fill="#64748b" fontSize="9">Desplazamiento proporcional a χ_m(O₂)</text>
+              </>)}
+              {gas==='TC'&&(<>
+                <rect x="50" y="40" width="180" height="60" rx="6" fill="#0f1729" stroke="#a78bfa"/>
+                <line x1="140" y1="40" x2="140" y2="100" stroke="#a78bfa" strokeWidth="1" strokeDasharray="4,3"/>
+                <text x="95" y="65" textAnchor="middle" fill="#c4b5fd" fontSize="9">Celda REF</text>
+                <text x="95" y="78" textAnchor="middle" fill="#64748b" fontSize="8">(He o N₂)</text>
+                <text x="185" y="65" textAnchor="middle" fill="#c4b5fd" fontSize="9">Celda muestra</text>
+                <text x="185" y="78" textAnchor="middle" fill="#fcd34d" fontSize="8">gas desconocido</text>
+                <text x="140" y="120" textAnchor="middle" fill="#64748b" fontSize="9">Puente Wheatstone → ΔV ∝ Δκ</text>
+              </>)}
+              {gas==='EC'&&(<>
+                <rect x="60" y="30" width="160" height="80" rx="8" fill="#0f1729" stroke="#22c55e"/>
+                <rect x="75" y="50" width="30" height="50" rx="3" fill="#14532d44" stroke="#22c55e"/>
+                <text x="90" y="78" textAnchor="middle" fill="#86efac" fontSize="8">Cátodo</text>
+                <rect x="175" y="50" width="30" height="50" rx="3" fill="#7f1d1d44" stroke="#ef4444"/>
+                <text x="190" y="78" textAnchor="middle" fill="#fca5a5" fontSize="8">Ánodo</text>
+                <rect x="110" y="40" width="60" height="70" rx="3" fill="#0d1a30"/>
+                <text x="140" y="70" textAnchor="middle" fill="#94a3b8" fontSize="8">Electrolito</text>
+                <text x="140" y="82" textAnchor="middle" fill="#64748b" fontSize="7">KOH / H₂SO₄</text>
+                <text x="140" y="125" textAnchor="middle" fill="#64748b" fontSize="9">I ∝ concentración gas</text>
+              </>)}
+              {gas==='PID'&&(<>
+                <rect x="30" y="45" width="70" height="50" rx="5" fill="#78350f44" stroke="#fcd34d"/>
+                <text x="65" y="68" textAnchor="middle" fill="#fcd34d" fontSize="9">Lámpara UV</text>
+                <text x="65" y="80" textAnchor="middle" fill="#fcd34d" fontSize="8">(10.6 eV)</text>
+                <rect x="150" y="35" width="100" height="70" rx="5" fill="#0f1729" stroke="#fcd34d55"/>
+                <text x="200" y="62" textAnchor="middle" fill="#e2e8f0" fontSize="9">Cámara</text>
+                <text x="200" y="75" textAnchor="middle" fill="#e2e8f0" fontSize="8">ionización</text>
+                <line x1="100" y1="70" x2="150" y2="70" stroke="#fcd34d" strokeWidth="2"/>
+                <text x="140" y="125" textAnchor="middle" fill="#64748b" fontSize="9">hν {'>'} IE → COV⁺ + e⁻ → corriente</text>
+              </>)}
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{marginBottom:10}}>
+            <div className="card-h">Especificaciones</div>
+            <table>
+              <tbody>
+                {[
+                  ['Gas objetivo',g.target,'#fcd34d'],
+                  ['Rango',g.range,'#22c55e'],
+                  ['Tiempo respuesta',g.resp,'#60a5fa'],
+                  ['Exactitud',g.acc,'#f97316'],
+                ].map(([n,v,c],i)=>(
+                  <tr key={i}><td style={{color:'#94a3b8'}}>{n}</td><td style={{color:c,fontWeight:600}}>{v}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="card">
+            <div className="card-h">Aplicaciones industriales</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+              {g.apps.map((a,i)=><span key={i} className="tag tag-blue">{a}</span>)}
+            </div>
+            <div className="card-h" style={{marginTop:8}}>Selección rápida de analizador</div>
+            <table>
+              <thead><tr><th>Necesidad</th><th>Tecnología</th></tr></thead>
+              <tbody>
+                {[
+                  ['CO/CO₂ combustión','NDIR'],
+                  ['O₂ exacto ±0.1%','Paramagnético'],
+                  ['H₂ en mezclas','Catarometría'],
+                  ['Gas tóxico personal','Electroquímico'],
+                  ['COV ambientales','PID'],
+                  ['Análisis multicomponente','GC + TCD/FID'],
+                ].map(([n,v],i)=>(
+                  <tr key={i}><td>{n}</td><td style={{color:'#f59e0b',fontWeight:600}}>{v}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SCENE 5: Cromatografía de Gases ─────────────────────────── */
+function Scene5(){
+  const [run,setRun]=useState(false);
+  const [t,setT]=useState(0);
+  const timerRef=useRef(null);
+  // Simulated peaks: retention time, amplitude, name, color
+  const peaks=[
+    {rt:18,amp:0.85,w:3,name:'CH₄',col:'#22c55e'},
+    {rt:32,amp:0.60,w:4,name:'C₂H₆',col:'#3b82f6'},
+    {rt:48,amp:0.42,w:5,name:'C₃H₈',col:'#f97316'},
+    {rt:67,amp:0.28,w:6,name:'n-C₄',col:'#a78bfa'},
+    {rt:90,amp:0.15,w:8,name:'n-C₅',col:'#fcd34d'},
+  ];
+  const gaussian=(x,rt,amp,w)=>amp*Math.exp(-((x-rt)**2)/(2*w*w));
+  useEffect(()=>{
+    if(run){
+      timerRef.current=setInterval(()=>{
+        setT(prev=>{
+          if(prev>=100){setRun(false);return 100;}
+          return prev+0.5;
+        });
+      },50);
+    } else clearInterval(timerRef.current);
+    return()=>clearInterval(timerRef.current);
+  },[run]);
+  const W=520,H=160,pad=30;
+  const pts=Array.from({length:Math.floor(t)},(_,i)=>i);
+  const signal=(x)=>peaks.reduce((s,p)=>s+gaussian(x,p.rt,p.amp,p.w),0);
+  const pathD=pts.map((x,i)=>`${i===0?'M':'L'}${pad+x*(W-2*pad)/100},${H-pad-signal(x)*(H-2*pad)}`).join(' ');
+  return(
+    <div>
+      <div className="sec-title">Cromatografía de Gases (GC)</div>
+      <div className="sec-sub">Separación por columna — Detección TCD/FID — Identificación por tiempo de retención</div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h">Simulación Cromatograma — Gas Natural</div>
+            <svg width="100%" viewBox={`0 0 ${W} ${H+20}`} style={{background:'#060a14',borderRadius:6}}>
+              {/* Grid */}
+              {[0.25,0.5,0.75,1].map(v=>(
+                <line key={v} x1={pad} y1={H-pad-v*(H-2*pad)} x2={W-pad} y2={H-pad-v*(H-2*pad)} stroke="#1e2d4a" strokeWidth="0.5"/>
+              ))}
+              {/* Baseline */}
+              <line x1={pad} y1={H-pad} x2={W-pad} y2={H-pad} stroke="#1e2d4a" strokeWidth="1"/>
+              {/* Signal */}
+              {pts.length>1&&<path d={pathD} fill="none" stroke="#f59e0b" strokeWidth="1.5"/>}
+              {/* Peak labels */}
+              {peaks.map((p,i)=>(
+                t > p.rt && <g key={i}>
+                  <circle cx={pad+p.rt*(W-2*pad)/100} cy={H-pad-p.amp*(H-2*pad)} r="3" fill={p.col}/>
+                  <text x={pad+p.rt*(W-2*pad)/100} y={H-pad-p.amp*(H-2*pad)-8} textAnchor="middle" fill={p.col} fontSize="9" fontWeight="bold">{p.name}</text>
+                  <text x={pad+p.rt*(W-2*pad)/100} y={H-pad-p.amp*(H-2*pad)-19} textAnchor="middle" fill="#64748b" fontSize="7">tR={p.rt}'</text>
+                </g>
+              ))}
+              {/* Time cursor */}
+              {t<100&&<line x1={pad+t*(W-2*pad)/100} y1={pad} x2={pad+t*(W-2*pad)/100} y2={H-pad} stroke="#ef4444" strokeWidth="1" strokeDasharray="3,2"/>}
+              {/* Axes labels */}
+              <text x={W/2} y={H+12} textAnchor="middle" fill="#64748b" fontSize="9">Tiempo de retención (min)</text>
+              <text x="8" y={H/2} fill="#64748b" fontSize="8" transform={`rotate(-90,8,${H/2})`} textAnchor="middle">Señal</text>
+              {[0,25,50,75,100].map(v=>(
+                <text key={v} x={pad+v*(W-2*pad)/100} y={H-pad+10} textAnchor="middle" fill="#64748b" fontSize="8">{v}</text>
+              ))}
+            </svg>
+            <div style={{display:'flex',gap:8,marginTop:8,alignItems:'center'}}>
+              <button className="btn btn-gold" onClick={()=>{if(!run){setT(0);setRun(true);}}}>▶ Iniciar corrida</button>
+              <button className="btn-outline" onClick={()=>{setRun(false);setT(0);}}>↺ Reset</button>
+              <span style={{fontSize:11,color:'#64748b',marginLeft:'auto'}}>t = {t.toFixed(0)} min</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{marginBottom:10}}>
+            <div className="card-h">Arquitectura GC</div>
+            <svg width="100%" viewBox="0 0 280 130">
+              {[
+                {x:10,y:45,w:45,h:40,col:'#f59e0b',label:'Inyector',sub:'Split/Splitless'},
+                {x:75,y:30,w:130,h:70,col:'#3b82f6',label:'Columna capilar',sub:'GC-Oven 40–350°C'},
+                {x:220,y:45,w:50,h:40,col:'#22c55e',label:'Detector',sub:'TCD/FID/MS'},
+              ].map((b,i)=>(
+                <g key={i}>
+                  <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="4" fill={b.col+'22'} stroke={b.col+'88'}/>
+                  <text x={b.x+b.w/2} y={b.y+b.h/2-4} textAnchor="middle" fill={b.col} fontSize="9" fontWeight="bold">{b.label}</text>
+                  <text x={b.x+b.w/2} y={b.y+b.h/2+8} textAnchor="middle" fill="#94a3b8" fontSize="7">{b.sub}</text>
+                </g>
+              ))}
+              <line x1="55" y1="65" x2="75" y2="65" stroke="#f59e0b" strokeWidth="1.5"/>
+              <line x1="205" y1="65" x2="220" y2="65" stroke="#22c55e" strokeWidth="1.5"/>
+              <text x="140" y="115" textAnchor="middle" fill="#64748b" fontSize="9">Gas portador: He o H₂ — control de flujo másico (MFC)</text>
+              <rect x="100" y="85" width="80" height="18" rx="3" fill="#0f1729" stroke="#1e2d4a"/>
+              <text x="140" y="97" textAnchor="middle" fill="#94a3b8" fontSize="8">Col. DB-1: 30m × 0.32mm</text>
+            </svg>
+          </div>
+          <div className="card">
+            <div className="card-h">Picos identificados — Gas Natural</div>
+            <table>
+              <thead><tr><th>Componente</th><th>tR (min)</th><th>% vol</th><th>Det.</th></tr></thead>
+              <tbody>
+                {peaks.map((p,i)=>(
+                  <tr key={i} style={{opacity:t>p.rt?1:0.3}}>
+                    <td style={{color:p.col,fontWeight:600}}>{p.name}</td>
+                    <td style={{color:'#fcd34d'}}>{p.rt}</td>
+                    <td style={{color:'#94a3b8'}}>{[87,8,3,1.5,0.5][i]}%</td>
+                    <td style={{color:'#64748b'}}>TCD/FID</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SCENE 6: Tabla comparativa + selección ──────────────── */
+function Scene6(){
+  const [filter,setFilter]=useState('todos');
+  const instruments=[
+    {name:'Transmisor pH',var:'pH',tech:'Electrodo vidrio',rng:'0–14 pH',acc:'±0.01 pH',resp:'<5 s',app:'Agua, bio, quím.',cat:'liquido',icon:'🧪'},
+    {name:'Medidor Conductividad',var:'σ',tech:'2/4 electrodos',rng:'0–2 S/cm',acc:'±0.5%',resp:'<10 s',app:'Agua purificada',cat:'liquido',icon:'⚡'},
+    {name:'Sensor OD',var:'O₂ disuelto',tech:'Fluorescencia óptica',rng:'0–20 mg/L',acc:'±0.1 mg/L',resp:'<60 s',app:'Aguas residuales',cat:'liquido',icon:'🫧'},
+    {name:'Turbidímetro',var:'Turbidez',tech:'Nefelometría 90°',rng:'0–4000 NTU',acc:'±2%',resp:'<5 s',app:'Agua potable',cat:'liquido',icon:'💧'},
+    {name:'Analizador NDIR',var:'CO/CO₂/CH₄',tech:'Absorción IR',rng:'0–5000 ppm',acc:'±1%',resp:'<30 s',app:'Combustión',cat:'gas',icon:'🌡️'},
+    {name:'Analizador O₂ param.',var:'O₂',tech:'Paramagnético',rng:'0–25%',acc:'±0.1%',resp:'<10 s',app:'Combustión/médico',cat:'gas',icon:'🔬'},
+    {name:'Detector TCD',var:'Multi-comp.',tech:'Conductividad térmica',rng:'0–100%',acc:'±0.5%',resp:'<5 s',app:'GC — gas natural',cat:'gas',icon:'🔥'},
+    {name:'Sensor ECD',var:'Tóxicos/O₂',tech:'Electroquímico',rng:'0–500 ppm',acc:'±2%',resp:'<60 s',app:'Seguridad ATEX',cat:'gas',icon:'⚠️'},
+    {name:'Detector PID',var:'COV totales',tech:'Fotoionización UV',rng:'0.1 ppb–5 ppm',acc:'±5%',resp:'<2 s',app:'Ambiental/fugas',cat:'gas',icon:'☁️'},
+    {name:'Cromatógrafo GC',var:'Multi-comp.',tech:'Separación columna',rng:'ppb–100%',acc:'±0.1%',resp:'2–30 min',app:'Gas natural/refinería',cat:'gas',icon:'📊'},
+  ];
+  const cats=['todos','liquido','gas'];
+  const filtered=filter==='todos'?instruments:instruments.filter(i=>i.cat===filter);
+  return(
+    <div>
+      <div className="sec-title">Comparativa de Instrumentos Analíticos</div>
+      <div className="sec-sub">Selección por variable, tecnología y aplicación industrial</div>
+      <div style={{display:'flex',gap:8,marginBottom:12}}>
+        {cats.map(c=>(
+          <button key={c} className={`btn-outline${filter===c?' active':''}`} onClick={()=>setFilter(c)} style={{textTransform:'capitalize'}}>
+            {c==='todos'?'📋 Todos':c==='liquido'?'💧 Fase líquida':'⛽ Fase gaseosa'}
+          </button>
+        ))}
+      </div>
+      <div style={{overflowY:'auto',maxHeight:480}}>
+        <table>
+          <thead>
+            <tr>
+              <th>Instrumento</th><th>Variable</th><th>Tecnología</th><th>Rango</th>
+              <th>Exactitud</th><th>T. respuesta</th><th>Aplicación típica</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((r,i)=>(
+              <tr key={i}>
+                <td><span style={{marginRight:6}}>{r.icon}</span><b style={{color:'#e2e8f0'}}>{r.name}</b></td>
+                <td><span className="tag tag-blue">{r.var}</span></td>
+                <td style={{color:'#94a3b8',fontSize:10}}>{r.tech}</td>
+                <td style={{color:'#fcd34d',fontFamily:'monospace',fontSize:11}}>{r.rng}</td>
+                <td><span className="pill pill-green">{r.acc}</span></td>
+                <td style={{color:'#60a5fa'}}>{r.resp}</td>
+                <td style={{color:'#94a3b8',fontSize:10}}>{r.app}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="card" style={{marginTop:10,padding:'10px 14px'}}>
+        <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
+          {[
+            {icon:'⚖️',t:'Calibración',d:'Soluciones buffer (pH 4/7/10), estándares NIST para conductividad, cero/span para gas'},
+            {icon:'🌡️',t:'Compensación T°',d:'pH: corrección automática Nernst. OD: compensación Benson-Krause. Gas: densidad'},
+            {icon:'🔧',t:'Mantenimiento',d:'Limpieza de membranas, reemplazo electrolito, verificación periódica con patrón'},
+            {icon:'📡',t:'Comunicación',d:'HART 4-20mA, PROFIBUS PA, Foundation Fieldbus H1, MODBUS RTU, IO-Link'},
+          ].map((item,i)=>(
+            <div key={i} style={{flex:'1 1 200px'}}>
+              <div style={{fontSize:13,marginBottom:4}}>{item.icon} <b className="gold">{item.t}</b></div>
+              <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5}}>{item.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SCENE 7: Quiz ────────────────────────────────────────── */
+const QS=[
+  {q:'¿Qué ecuación describe el principio del electrodo de pH de vidrio?',opts:['Ecuación de Nernst','Ley de Ohm','Ecuación de Bernoulli','Ley de Faraday'],ans:0,exp:'E = E₀ − S·pH, donde S ≈ 59.16 mV/pH @ 25°C (Nernst).'},
+  {q:'¿Cuál es la unidad estándar de turbidez en el método nefelométrico ISO 7027?',opts:['NTU (Nephelometric Turbidity Units)','ppm','mg/L','FTU equivale a NTU y son intercambiables'],ans:0,exp:'NTU es la unidad usada con medición a 90° con luz de tungsteno (ISO 7027 usa FNU con IR, pero NTU es el término más común).'},
+  {q:'Un analizador NDIR mide gases por:',opts:['Absorción de radiación infrarroja específica de cada gas','Conductividad térmica de la mezcla','Ionización en llama de hidrógeno','Propiedad paramagnética del gas'],ans:0,exp:'NDIR (Non-Dispersive InfraRed) mide la absorción de IR a longitud de onda específica de cada molécula (Beer-Lambert).'},
+  {q:'¿Por qué el O₂ puede medirse con sensor paramagnético pero el N₂ no?',opts:['O₂ tiene 2 electrones no apareados → es paramagnético; N₂ es diamagnético','O₂ absorbe IR; N₂ no','O₂ es más conductivo térmicamente','O₂ se ioniza con UV; N₂ no'],ans:0,exp:'El O₂ (³Σg⁻) tiene 2 e⁻ sin parear → fuertemente paramagnético. Es la base del medidor paramagnético.'},
+  {q:'En cromatografía de gases, el tiempo de retención (tR) se usa para:',opts:['Identificar componentes por comparación con patrones','Cuantificar concentración directamente','Medir conductividad térmica','Ajustar temperatura de columna'],ans:0,exp:'Cada compuesto tiene un tR característico bajo condiciones fijas. La identificación es por tR; la cuantificación por área del pico.'},
+  {q:'La constante de celda K de un sensor de conductividad se define como:',opts:['K = d/A (distancia entre electrodos / área)','K = R·T/F','K = ε·c·l','K = Q·√(ΔP)'],ans:0,exp:'K [cm⁻¹] = d/A relaciona la geometría de la celda con la conductividad: σ = G·K.'},
+  {q:'¿Qué tecnología de sensor OD NO requiere consumo de O₂ en la medición?',opts:['Luminiscencia/fluorescencia óptica (PSt3)','Celda Clark amperométrica','Celda galvánica','Polarografía clásica'],ans:0,exp:'Los sensores ópticos (PSt3, Ru-complex) miden extinción de fosforescencia sin consumir O₂, a diferencia de las celdas electroquímicas.'},
+  {q:'El detector PID (Photo-Ionization Detector) ioniza COV mediante:',opts:['Radiación UV con energía > potencial de ionización del compuesto','Llama de hidrógeno','Campo magnético rotatorio','Absorción IR selectiva'],ans:0,exp:'La lámpara UV (típicamente 10.6 eV) ioniza moléculas cuyo potencial de ionización sea menor. FID usa llama de H₂.'},
+  {q:'¿Cuál es la ventaja del sensor de conductividad de 4 electrodos vs 2 electrodos?',opts:['Elimina la polarización separando la corriente de la medida de voltaje','Es más económico','Funciona solo con agua pura','Mide conductividad térmica'],ans:0,exp:'Con 4 electrodos: 2 inyectan corriente y 2 miden voltaje sin polarización, permitiendo medir rangos altos (>100 mS/cm).'},
+  {q:'Un pH de 4.0 en efluente industrial indica:',opts:['Solución ácida — requiere neutralización antes de descarga','Solución neutra — descarga directa permitida','Solución básica — agregar ácido','Fuera del rango del sensor'],ans:0,exp:'pH 4.0 es ácido (H⁺ = 0.0001 mol/L). La mayoría de regulaciones requieren 6.0–9.0 para descarga. Se neutraliza con cal/soda.'},
+];
+
+function Scene7(){
+  const [idx,setIdx]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const [answers,setAnswers]=useState([]);
+  const q=QS[idx];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    const ok=i===q.ans;
+    if(ok)setScore(s=>s+1);
+    setAnswers(a=>[...a,ok]);
+  };
+  const next=()=>{
+    if(idx<QS.length-1){setIdx(i=>i+1);setSel(null);}
+    else setDone(true);
+  };
+  const restart=()=>{setIdx(0);setSel(null);setScore(0);setDone(false);setAnswers([]);};
+  if(done){
+    const pct=Math.round(score/QS.length*100);
+    return(
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:500}}>
+        <div style={{fontSize:64,marginBottom:12}}>{pct>=80?'🏆':pct>=60?'📊':'📚'}</div>
+        <div style={{fontSize:28,fontWeight:700,color:'#f59e0b',marginBottom:4}}>{score}/{QS.length} correctas</div>
+        <div style={{fontSize:16,color:'#94a3b8',marginBottom:20}}>{pct}% — {pct>=80?'¡Excelente dominio de instrumentación analítica!':pct>=60?'Buen nivel, repasa los analizadores de gas':'Revisa los principios electroquímicos y de absorción'}</div>
+        <div style={{display:'flex',gap:6,marginBottom:24}}>
+          {answers.map((ok,i)=><div key={i} style={{width:28,height:28,borderRadius:4,background:ok?'#14532d':'#7f1d1d',border:`1px solid ${ok?'#22c55e':'#ef4444'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>{ok?'✓':'✗'}</div>)}
+        </div>
+        <button className="btn btn-gold" onClick={restart}>Reiniciar Quiz</button>
+      </div>
+    );
+  }
+  return(
+    <div>
+      <div className="sec-title">Quiz — Instrumentación Analítica</div>
+      <div className="sec-sub">Evalúa tu comprensión de los principios de medición analítica</div>
+      <div style={{display:'flex',gap:4,marginBottom:14}}>
+        {QS.map((_,i)=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<idx?'#f59e0b':i===idx?'#f59e0b88':'#1e2d4a'}}/>)}
+      </div>
+      <div className="card" style={{marginBottom:10,minHeight:80}}>
+        <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>Pregunta {idx+1} de {QS.length}</div>
+        <div style={{fontSize:15,fontWeight:600,color:'#e2e8f0',lineHeight:1.5}}>{q.q}</div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:10}}>
+        {q.opts.map((o,i)=>{
+          let cls='quiz-opt';
+          if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel)cls+=' wrong';}
+          else if(sel===i)cls+=' selected';
+          return(<div key={i} className={cls} onClick={()=>choose(i)}>
+            <div style={{width:22,height:22,borderRadius:'50%',background:'#1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+            <span>{o}</span>
+          </div>);
+        })}
+      </div>
+      {sel!==null&&(
+        <div className="card" style={{background:'#060a14',borderColor:'#f59e0b33',marginBottom:10}}>
+          <div style={{fontSize:11,color:'#fcd34d',marginBottom:2}}>💡 Explicación</div>
+          <div style={{fontSize:12,color:'#cbd5e1'}}>{q.exp}</div>
+        </div>
+      )}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span style={{fontSize:12,color:'#64748b'}}>Puntuación: <b className="gold">{score}</b></span>
+        {sel!==null&&<button className="btn btn-gold" onClick={next}>{idx<QS.length-1?'Siguiente →':'Ver resultados'}</button>}
+      </div>
+    </div>
+  );
+}
+
+/* ── APP ──────────────────────────────────────────────────── */
+const SCENES=[
+  {id:1,label:'1. Medición de pH',short:'pH'},
+  {id:2,label:'2. Conductividad',short:'σ'},
+  {id:3,label:'3. Turbidez y OD',short:'Turb/OD'},
+  {id:4,label:'4. Analizadores Gas',short:'Gas'},
+  {id:5,label:'5. Cromatografía GC',short:'GC'},
+  {id:6,label:'6. Tabla Comparativa',short:'Tabla'},
+  {id:7,label:'7. Quiz',short:'Quiz'},
+];
+
+function App(){
+  const [scene,setScene]=useState(1);
+  const SC={1:<Scene1/>,2:<Scene2/>,3:<Scene3/>,4:<Scene4/>,5:<Scene5/>,6:<Scene6/>,7:<Scene7/>};
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Instrumentación Analítica</div>
+          <div className="topbar-sub">Clase 3.1 · pH · Conductividad · Turbidez · OD · Analizadores de Gas · GC</div>
+        </div>
+        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+          {SCENES.map(s=>(
+            <button key={s.id} onClick={()=>setScene(s.id)}
+              className="scene-badge"
+              style={{cursor:'pointer',background:scene===s.id?'#f59e0b22':'transparent',borderColor:scene===s.id?'#f59e0b':'#1e2d4a',color:scene===s.id?'#f59e0b':'#475569'}}>
+              {s.short}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px 4px',fontSize:9,color:'#334155',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700}}>Contenido</div>
+          {SCENES.map(s=>(
+            <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>
+              {s.label}
+            </div>
+          ))}
+          <div style={{marginTop:'auto',padding:'10px 14px',borderTop:'1px solid #1e2d4a'}}>
+            <div style={{fontSize:9,color:'#334155',marginBottom:4}}>NORMAS</div>
+            {['ASTM E70 (pH)','ASTM D1125 (Cond.)','ISO 7027 (Turb.)','EPA Method 360','ISA-5.1-2022'].map(n=>(
+              <div key={n} style={{fontSize:9,color:'#475569',padding:'2px 0'}}>{n}</div>
+            ))}
+          </div>
+        </div>
+        <div className="main">{SC[scene]}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

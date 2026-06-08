@@ -871,6 +871,14 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 3.0 - SCADA y DCS.html`,
   },
+  {
+    order: 15,
+    title: "Instrumentación Analítica — pH, Conductividad, Turbidez, OD y Analizadores de Gas",
+    description:
+      "Domina los principios de la instrumentación analítica: electrodo de vidrio y ecuación de Nernst para pH, sensores de conductividad 2/4 electrodos, turbidímetros nefelométricos (ISO 7027), oxígeno disuelto (Clark y fluorescencia), analizadores NDIR/paramagnético/TCD/ECD/PID y cromatografía de gases. Simuladores interactivos y tabla comparativa completa.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 3.1 - Instrumentacion Analitica.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
