@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 2.7 — Calibración de Instrumentos</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080c18;color:#e2e8f0;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+  .slide{width:1280px;height:720px;display:flex;flex-direction:column}
+  .hdr{background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:3px solid #f59e0b;padding:18px 48px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .hdr-title{font-size:22px;font-weight:700;color:#f59e0b}
+  .hdr-sub{font-size:13px;color:#94a3b8}
+  .badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .content{flex:1;overflow:hidden;padding:24px 48px}
+  .nav{display:flex;gap:12px;justify-content:center;padding:14px;background:#0a0f1e;border-top:1px solid #1e293b;flex-shrink:0}
+  .btn{padding:10px 28px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+  .btn-gold{background:#f59e0b;color:#000}.btn-gold:hover{background:#fbbf24}.btn-gold:disabled{opacity:.4;cursor:not-allowed}
+  .btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8}.btn-outline:hover{border-color:#f59e0b;color:#f59e0b}.btn-outline:disabled{opacity:.3;cursor:not-allowed}
+  .dots{display:flex;gap:8px;align-items:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:#1e293b;transition:all .3s;cursor:pointer}
+  .dot.active{background:#f59e0b;width:24px;border-radius:4px}
+  .card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px}
+  .card-gold{border-color:#f59e0b44;background:#f59e0b08}
+  .card h3{color:#f59e0b;font-size:14px;margin-bottom:10px}
+  .formula{background:#020817;border:1px solid #f59e0b44;border-radius:8px;padding:8px 14px;font-family:monospace;font-size:14px;color:#fbbf24;text-align:center;margin:6px 0}
+  .tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin:2px}
+  .tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+  .tag-green{background:#15803d33;color:#4ade80;border:1px solid #15803d55}
+  .tag-red{background:#991b1b33;color:#f87171;border:1px solid #991b1b55}
+  .tag-yellow{background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44}
+  .slider-row{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .slider-row label{width:130px;font-size:12px;color:#94a3b8;flex-shrink:0}
+  .slider-row input[type=range]{flex:1;accent-color:#f59e0b}
+  .slider-row span{width:80px;text-align:right;font-size:12px;color:#fbbf24;font-weight:600;flex-shrink:0}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:#0a0f1e;color:#f59e0b;padding:7px 10px;text-align:left;border-bottom:2px solid #f59e0b44}
+  td{padding:6px 10px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+  tr:hover td{background:#0f172a}
+  .step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+  .step-num{width:28px;height:28px;border-radius:50%;background:#f59e0b;color:#000;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* SCENE 1 — Conceptos */
+function Scene1(){
+  const [LRV,setLRV]=useState(0);
+  const [URV,setURV]=useState(100);
+  const [mA,setMA]=useState(12);
+  const span=URV-LRV;
+  const pct=((mA-4)/16*100).toFixed(1);
+  const pv=(LRV+span*(mA-4)/16).toFixed(2);
+  const mA_calc=(4+((+pv-LRV)/span)*16).toFixed(2);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🎯 Definición de Calibración</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <p>Según <strong style={{color:'#f59e0b'}}>JCGM 200:2012 (VIM)</strong> — Vocabulario Internacional de Metrología:</p>
+          <br/>
+          <p style={{fontStyle:'italic',borderLeft:'3px solid #f59e0b',paddingLeft:10}}>
+            "Operación que establece, bajo condiciones especificadas, la relación entre los valores indicados por un instrumento de medición y los valores correspondientes de las magnitudes realizadas por patrones."
+          </p>
+          <br/>
+          <p>✅ Calibración <strong style={{color:'#4ade80'}}>NO</strong> implica ajuste. Es solo la <em>comparación</em>.</p>
+          <p>✅ El ajuste es opcional tras conocer el error.</p>
+          <br/>
+          <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+            <span className="tag tag-yellow">ISO 9001</span>
+            <span className="tag tag-blue">ISO/IEC 17025</span>
+            <span className="tag tag-green">ISA-51.1</span>
+            <span className="tag tag-yellow">OIML</span>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>📐 Convertidor 4-20 mA ↔ Ingeniería</h3>
+        <div className="slider-row">
+          <label>LRV (cero)</label>
+          <input type="range" min={-200} max={URV-1} value={LRV} onChange={e=>setLRV(+e.target.value)}/>
+          <span>{LRV}</span>
+        </div>
+        <div className="slider-row">
+          <label>URV (span)</label>
+          <input type="range" min={LRV+1} max={500} value={URV} onChange={e=>setURV(+e.target.value)}/>
+          <span>{URV}</span>
+        </div>
+        <div className="slider-row">
+          <label>Señal (mA)</label>
+          <input type="range" min={4} max={20} step={0.1} value={mA} onChange={e=>setMA(+e.target.value)}/>
+          <span>{mA.toFixed(1)} mA</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginTop:10}}>
+          <div style={{background:'#020817',border:'2px solid #f59e0b',borderRadius:8,padding:10,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:'#f59e0b'}}>{pv}</div>
+            <div style={{fontSize:10,color:'#64748b'}}>PV ({LRV}–{URV})</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #60a5fa',borderRadius:8,padding:10,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:'#60a5fa'}}>{pct}%</div>
+            <div style={{fontSize:10,color:'#64748b'}}>% del span</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #4ade80',borderRadius:8,padding:10,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:'#4ade80'}}>{span}</div>
+            <div style={{fontSize:10,color:'#64748b'}}>Span = URV-LRV</div>
+          </div>
+        </div>
+        <div style={{marginTop:8,fontSize:11,color:'#64748b',textAlign:'center'}}>
+          Fórmula: PV = LRV + (mA−4)/16 · Span
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+      {[
+        {t:'Error absoluto',f:'E = PV_ind - PV_real',c:'#f87171',d:'Diferencia entre lectura y patrón en unidades de ingeniería.'},
+        {t:'Error relativo',f:'E% = E/Span × 100%',c:'#f59e0b',d:'Error expresado como porcentaje del span total.'},
+        {t:'Exactitud',f:'A = ±E%_máx',c:'#4ade80',d:'Mayor error encontrado en toda la curva. ±0,1% span es alta exactitud.'},
+        {t:'Incertidumbre',f:'U = k · u_c',c:'#60a5fa',d:'Parámetro estadístico que cuantifica la dispersión del resultado. k=2 para 95%.'},
+      ].map(x=>(
+        <div key={x.t} style={{background:'#0a0f1e',border:`1px solid ${x.c}44`,borderRadius:8,padding:10}}>
+          <div style={{fontWeight:700,color:x.c,fontSize:12,marginBottom:4}}>{x.t}</div>
+          <div style={{fontFamily:'monospace',color:'#fbbf24',fontSize:12,marginBottom:4}}>{x.f}</div>
+          <div style={{fontSize:11,color:'#64748b'}}>{x.d}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 2 — Procedimiento de calibración */
+function Scene2(){
+  const puntos=[0,25,50,75,100];
+  const [readings,setReadings]=useState([4.00,8.05,12.10,15.95,20.02]);
+  const ideal=[4,8,12,16,20];
+  const errors=readings.map((r,i)=>((r-ideal[i])/16*100).toFixed(3));
+  const maxErr=Math.max(...errors.map(e=>Math.abs(+e))).toFixed(3);
+  const passed=+maxErr<=0.5;
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div className="card card-gold" style={{padding:14}}>
+      <div style={{fontSize:13,color:'#94a3b8',display:'flex',gap:20,alignItems:'center'}}>
+        <div style={{flex:1}}>
+          <strong style={{color:'#f59e0b'}}>Procedimiento estándar de calibración ISA:</strong> Se aplican valores conocidos al instrumento
+          (con patrón de mayor exactitud — norma 4:1) y se registran las lecturas para calcular errores.
+          Se deben verificar al menos <strong style={{color:'#fbbf24'}}>5 puntos: 0, 25, 50, 75, 100% del rango</strong>,
+          en sentido ascendente y descendente para detectar histéresis.
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <span className="tag tag-green">✓ Subida</span>
+          <span className="tag tag-blue">↓ Bajada</span>
+          <span className="tag tag-yellow">Regla 4:1</span>
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,flex:1}}>
+      <div className="card">
+        <h3>📋 Tabla de calibración — Transmisor 4-20 mA</h3>
+        <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>Span: 0–100 kPa. Patrón: manómetro digital ±0,025% FS</div>
+        <table>
+          <thead>
+            <tr><th>Punto</th><th>Entrada (kPa)</th><th>Ideal (mA)</th><th>Medido (mA)</th><th>Error (%Span)</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            {puntos.map((p,i)=>(
+              <tr key={i}>
+                <td style={{color:'#94a3b8'}}>{p}%</td>
+                <td>{p}</td>
+                <td style={{color:'#60a5fa'}}>{ideal[i].toFixed(2)}</td>
+                <td>
+                  <input type="number" step={0.01} value={readings[i]}
+                    onChange={e=>{const r=[...readings];r[i]=+e.target.value;setReadings(r);}}
+                    style={{width:70,background:'#020817',border:'1px solid #334155',color:'#fbbf24',
+                      borderRadius:4,padding:'2px 6px',fontSize:12}}/>
+                </td>
+                <td style={{color:Math.abs(+errors[i])>0.5?'#f87171':'#4ade80',fontWeight:600}}>
+                  {+errors[i]>0?'+':''}{errors[i]}%
+                </td>
+                <td>{Math.abs(+errors[i])<=0.5?<span style={{color:'#4ade80'}}>✅</span>:<span style={{color:'#f87171'}}>❌</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div style={{marginTop:10,display:'flex',gap:14,alignItems:'center'}}>
+          <div style={{background:'#020817',padding:8,borderRadius:6}}>
+            <span style={{fontSize:11,color:'#64748b'}}>Error máximo: </span>
+            <span style={{fontWeight:700,color:passed?'#4ade80':'#f87171'}}>±{maxErr}% Span</span>
+          </div>
+          <div style={{background:passed?'#15803d22':'#991b1b22',border:`1px solid ${passed?'#4ade80':'#f87171'}`,
+            padding:'6px 14px',borderRadius:6,color:passed?'#4ade80':'#f87171',fontWeight:700}}>
+            {passed?'✅ APROBADO (≤±0.5%)':'❌ REPROBADO (>±0.5%)'}
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>📊 Corrección de Cero y Span</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <div className="step">
+            <div className="step-num">1</div>
+            <div><strong style={{color:'#f59e0b'}}>Error de cero:</strong> offset constante en todo el rango. Se ajusta el tornillo ZERO. Corrección: desplaza toda la curva verticalmente.</div>
+          </div>
+          <div className="step">
+            <div className="step-num">2</div>
+            <div><strong style={{color:'#60a5fa'}}>Error de span:</strong> la pendiente es incorrecta. Se ajusta el tornillo SPAN. Afecta más a las lecturas alejadas del cero.</div>
+          </div>
+          <div className="step">
+            <div className="step-num">3</div>
+            <div><strong style={{color:'#4ade80'}}>Ajuste iterativo:</strong> primero corregir cero (0%), luego span (100%), repetir hasta que ambos puntos estén dentro de tolerancia.</div>
+          </div>
+          <div className="step">
+            <div className="step-num">4</div>
+            <div><strong style={{color:'#c084fc'}}>Verificación:</strong> tras ajuste, repetir medición en los 5 puntos (arriba y abajo) y documentar.</div>
+          </div>
+        </div>
+        <div style={{background:'#020817',padding:8,borderRadius:6,fontSize:12,color:'#94a3b8',marginTop:4}}>
+          <strong style={{color:'#f59e0b'}}>Electrónico HART:</strong> ajuste ZERO y SPAN por comando digital.
+          Opción Lower Trim / Upper Trim. Sin tornillos físicos.
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 3 — Trazabilidad y patrones */
+function Scene3(){
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🔗 Trazabilidad metrológica</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <p>Cadena ininterrumpida de calibraciones que conecta las mediciones de campo con los
+          <strong style={{color:'#f59e0b'}}> patrones nacionales e internacionales (BIPM / SI)</strong>.</p>
+          <br/>
+          <div style={{background:'#020817',padding:10,borderRadius:8}}>
+            {[
+              {n:'Patrón Internacional',s:'BIPM — París. Unidad definitoria del SI.',c:'#f59e0b',w:100},
+              {n:'Patrón Nacional',s:'NIST / PTB / CENAM. ±0,001% incertidumbre.',c:'#60a5fa',w:85},
+              {n:'Patrón de Referencia',s:'Laboratorio acreditado ISO/IEC 17025. ±0,01%.',c:'#4ade80',w:70},
+              {n:'Patrón de Trabajo',s:'Laboratorio de empresa. ±0,05%.',c:'#c084fc',w:55},
+              {n:'Instrumento de campo',s:'Planta industrial. ±0,1 a 0,5%.',c:'#f87171',w:40},
+            ].map((x,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                <div style={{width:x.w+'%',background:x.c,height:16,borderRadius:4,display:'flex',alignItems:'center',paddingLeft:6}}>
+                  <span style={{fontSize:10,color:'#000',fontWeight:600,whiteSpace:'nowrap'}}>{x.n}</span>
+                </div>
+                <span style={{fontSize:10,color:'#64748b',flex:1}}>{x.s}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔬 Tipos de patrones de calibración</h3>
+        <table>
+          <thead><tr><th>Patrón</th><th>Descripción</th><th>Exactitud típica</th></tr></thead>
+          <tbody>
+            {[
+              ['Manómetro digital','Presión. Sensor piezoresistivo certificado.','±0,025% FS'],
+              ['Calibrador de proceso','Genera y mide 4-20 mA, pulsos, Ω, V. Todo en uno.','±0,01% FS'],
+              ['Fuente de temperatura','Horno de pozo o bloque seco. Pt100 interno.','±0,1°C'],
+              ['Generador de termopares','Simula FEM de tipo J/K/T/E.','±0,02 µV'],
+              ['Manómetro muerto','Masas y pistón. Patrón primario de presión.','±0,005%'],
+              ['Patrón de caudal','Masa o volumen por tiempo. Referencia absoluta.','±0,02%'],
+            ].map(([p,d,a])=>(
+              <tr key={p}><td style={{color:'#f59e0b',fontWeight:600}}>{p}</td><td style={{color:'#94a3b8',fontSize:11}}>{d}</td><td style={{color:'#4ade80'}}>{a}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+      {[
+        {t:'ISO/IEC 17025',d:'Norma para laboratorios de calibración. Acreditación por ONAC/EMA/A2LA. Garantiza competencia técnica.',c:'#f59e0b'},
+        {t:'Regla 4:1',d:'El patrón debe ser 4x más exacto que el instrumento a calibrar. Minimiza la contribución del patrón a la incertidumbre.',c:'#60a5fa'},
+        {t:'Intervalo de calibración',d:'Frecuencia según: historia del instrumento, normas del proceso, análisis estadístico. Típico: 6-12 meses.',c:'#4ade80'},
+        {t:'Certificado de calibración',d:'Documenta: equipo calibrado, patrones usados, resultados, incertidumbre, trazabilidad, fecha próxima cal.',c:'#c084fc'},
+      ].map(x=>(
+        <div key={x.t} style={{background:'#0a0f1e',border:`1px solid ${x.c}44`,borderRadius:8,padding:10}}>
+          <div style={{fontWeight:700,color:x.c,fontSize:12,marginBottom:4}}>{x.t}</div>
+          <div style={{fontSize:11,color:'#64748b',lineHeight:1.5}}>{x.d}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 4 — Histéresis, linealidad, repetibilidad */
+function Scene4(){
+  const [bias,setBias]=useState(0.2);
+  const [hyst,setHyst]=useState(0.15);
+  const puntos=[0,25,50,75,100];
+  const subida=puntos.map(p=>(p*0.16+4+bias*(p/100)).toFixed(3));
+  const bajada=puntos.map((p,i)=>(+subida[i]-hyst*(1-p/100)*0.16).toFixed(3));
+  const ideal=puntos.map(p=>(p*0.16+4).toFixed(3));
+
+  const W=300,H=160;
+  const px=v=>(v/100)*W;
+  const py=v=>H-(v/100)*H;
+  function mAtoY(mA){return H-((+mA-4)/16)*H;}
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card">
+        <h3>📊 Visualización — Histéresis y Error</h3>
+        <div style={{display:'flex',gap:10}}>
+          <div className="slider-row" style={{flex:1}}>
+            <label style={{width:80}}>Bias (mA)</label>
+            <input type="range" min={0} max={0.5} step={0.01} value={bias} onChange={e=>setBias(+e.target.value)}/>
+            <span>{bias.toFixed(2)}</span>
+          </div>
+          <div className="slider-row" style={{flex:1}}>
+            <label style={{width:80}}>Hyst (mA)</label>
+            <input type="range" min={0} max={0.5} step={0.01} value={hyst} onChange={e=>setHyst(+e.target.value)}/>
+            <span>{hyst.toFixed(2)}</span>
+          </div>
+        </div>
+        <svg width="100%" viewBox={`0 0 ${W+50} ${H+40}`}>
+          <rect x={40} width={W} height={H} fill="#020817" rx={4}/>
+          {[0,25,50,75,100].map(v=>(
+            <g key={v}>
+              <line x1={40} y1={mAtoY(4+v*0.16)} x2={40+W} y2={mAtoY(4+v*0.16)} stroke="#1e293b" strokeWidth={1}/>
+              <text x={34} y={mAtoY(4+v*0.16)+4} textAnchor="end" fill="#475569" fontSize={9}>{v}%</text>
+              <line x1={40+px(v)} y1={0} x2={40+px(v)} y2={H} stroke="#1e293b" strokeWidth={1}/>
+              <text x={40+px(v)} y={H+14} textAnchor="middle" fill="#475569" fontSize={9}>{v}%</text>
+            </g>
+          ))}
+          {/* Ideal */}
+          <path d={puntos.map((p,i)=>`${i===0?'M':'L'}${40+px(p)},${mAtoY(+ideal[i])}`).join(' ')}
+            fill="none" stroke="#334155" strokeWidth={1.5} strokeDasharray="4,3"/>
+          {/* Subida */}
+          <path d={puntos.map((p,i)=>`${i===0?'M':'L'}${40+px(p)},${mAtoY(+subida[i])}`).join(' ')}
+            fill="none" stroke="#4ade80" strokeWidth={2}/>
+          {puntos.map((p,i)=><circle key={i} cx={40+px(p)} cy={mAtoY(+subida[i])} r={4} fill="#4ade80"/>)}
+          {/* Bajada */}
+          <path d={[...puntos].reverse().map((p,i,a)=>`${i===0?'M':'L'}${40+px(p)},${mAtoY(+bajada[a.length-1-i])}`).join(' ')}
+            fill="none" stroke="#60a5fa" strokeWidth={2} strokeDasharray="5,3"/>
+          {puntos.map((p,i)=><circle key={i} cx={40+px(p)} cy={mAtoY(+bajada[i])} r={3} fill="#60a5fa"/>)}
+          {/* Leyendas */}
+          <line x1={50} y1={H+28} x2={70} y2={H+28} stroke="#4ade80" strokeWidth={2}/>
+          <text x={75} y={H+32} fill="#4ade80" fontSize={10}>Subida</text>
+          <line x1={130} y1={H+28} x2={150} y2={H+28} stroke="#60a5fa" strokeWidth={2} strokeDasharray="4,2"/>
+          <text x={155} y={H+32} fill="#60a5fa" fontSize={10}>Bajada</text>
+        </svg>
+      </div>
+      <div className="card card-gold">
+        <h3>📚 Parámetros estáticos ISA-51.1</h3>
+        <table style={{fontSize:12}}>
+          <thead><tr><th>Parámetro</th><th>Definición</th></tr></thead>
+          <tbody>
+            {[
+              ['Exactitud (Accuracy)','Mayor desviación entre lectura e ideal, incluyendo todos los efectos.'],
+              ['Linealidad','Desviación máxima de la curva real respecto a la línea recta de referencia.'],
+              ['Histéresis','Diferencia entre subida y bajada al mismo valor de entrada.'],
+              ['Repetibilidad','Variación en lecturas sucesivas al mismo valor, mismas condiciones.'],
+              ['Reproducibilidad','Variación en lecturas en condiciones distintas (tiempo, operador).'],
+              ['Zona muerta (Deadband)','Rango de entrada sin cambio en salida.'],
+              ['Resolución','Mínimo cambio detectable en la salida.'],
+              ['Deriva (Drift)','Cambio lento de la lectura sin cambio en la entrada. Inestabilidad.'],
+            ].map(([p,d])=>(
+              <tr key={p}><td style={{color:'#f59e0b',fontWeight:600,whiteSpace:'nowrap'}}>{p}</td><td style={{color:'#94a3b8',fontSize:11}}>{d}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 5 — QUIZ */
+const QUIZ=[
+  {q:'Según el VIM, calibración es:',opts:['Ajustar un instrumento a su valor verdadero','Comparar lecturas con patrones bajo condiciones especificadas','Limpiar y mantener un instrumento','Verificar la señal 4-20 mA'],ans:1},
+  {q:'La regla 4:1 en calibración significa:',opts:['Calibrar 4 instrumentos por cada patrón','El patrón debe ser 4x más exacto que el instrumento','Calibrar cada 4 meses','Usar 4 puntos de verificación'],ans:1},
+  {q:'¿Qué es el ajuste de SPAN en un transmisor?',opts:['Corregir el valor de cero','Corregir la pendiente de la curva salida vs entrada','Cambiar el LRV','Ajustar el lazo 4-20 mA'],ans:1},
+  {q:'¿Cuál es el número mínimo de puntos de calibración según ISA?',opts:['3','5','7','10'],ans:1},
+  {q:'La trazabilidad metrológica conecta las mediciones de campo con:',opts:['La norma ISO 9001','Los patrones nacionales e internacionales (BIPM/SI)','El manual del fabricante','El laboratorio de la empresa'],ans:1},
+  {q:'¿Qué norma acredita los laboratorios de calibración?',opts:['ISO 9001','ATEX 2014','ISO/IEC 17025','ISA-5.1'],ans:2},
+  {q:'La histéresis se detecta calibrando en:',opts:['Un solo punto (50%)','Sentido ascendente y descendente','Solo en el punto de cero','Temperatura ambiente'],ans:1},
+  {q:'¿Qué es la deriva (drift) de un instrumento?',opts:['Error de linealidad','Cambio lento de lectura sin cambio en entrada','Ruido en la señal','Histéresis'],ans:1},
+  {q:'La señal 4 mA en un transmisor 4-20 mA representa:',opts:['El 50% del rango','El 0% del rango (LRV)','El 25% del rango','Ausencia de señal'],ans:1},
+  {q:'¿Qué patrón primario se usa para calibrar presión con máxima exactitud?',opts:['Manómetro digital','Manómetro de Bourdon','Manómetro de masas muerta (peso muerto)','Transmisor de presión certificado'],ans:2},
+];
+function Scene5(){
+  const [ans,setAns]=useState(Array(QUIZ.length).fill(null));
+  const [show,setShow]=useState(false);
+  const score=ans.filter((a,i)=>a===QUIZ[i].ans).length;
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+    <div style={{flex:1,overflowY:'auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingRight:4}}>
+      {!show?QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:12}}>
+          <div style={{fontSize:11,color:'#64748b',marginBottom:4}}>P.{i+1}</div>
+          <div style={{fontSize:12,color:'#cbd5e1',marginBottom:8,lineHeight:1.4}}>{q.q}</div>
+          {q.opts.map((o,j)=>(
+            <button key={j} onClick={()=>{const a=[...ans];a[i]=j;setAns(a);}}
+              style={{display:'block',width:'100%',textAlign:'left',padding:'5px 10px',borderRadius:5,
+                border:`1px solid ${ans[i]===j?'#f59e0b':'#1e293b'}`,
+                background:ans[i]===j?'#f59e0b22':'#0a0f1e',
+                color:ans[i]===j?'#fbbf24':'#64748b',cursor:'pointer',fontSize:11,marginBottom:3}}>{o}</button>
+          ))}
+        </div>
+      )):QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:12,borderColor:ans[i]===q.ans?'#4ade8044':'#f8717144'}}>
+          <div style={{fontSize:11,color:ans[i]===q.ans?'#4ade80':'#f87171',marginBottom:3}}>{ans[i]===q.ans?'✅':'❌'}</div>
+          <div style={{fontSize:11,color:'#cbd5e1',marginBottom:4}}>{q.q}</div>
+          <div style={{fontSize:11,color:'#4ade80'}}>✓ {q.opts[q.ans]}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0 0'}}>
+      <div style={{fontSize:13,color:'#94a3b8'}}>
+        Respondidas: <strong style={{color:'#fbbf24'}}>{ans.filter(a=>a!==null).length}/10</strong>
+        {show&&<span style={{marginLeft:16,color:score>=8?'#4ade80':'#f87171',fontWeight:700}}>Puntuación: {score}/10</span>}
+      </div>
+      {!show?(<button className="btn btn-gold" disabled={ans.filter(a=>a!==null).length<10} onClick={()=>setShow(true)}>Ver resultados</button>)
+        :(<button className="btn btn-outline" onClick={()=>{setAns(Array(QUIZ.length).fill(null));setShow(false);}}>Reintentar</button>)}
+    </div>
+  </div>
+  );
+}
+
+const SCENES=[
+  {id:1,title:'Conceptos y Convertidor 4-20 mA',sub:'Definición VIM, LRV/URV, errores, incertidumbre',comp:Scene1},
+  {id:2,title:'Procedimiento de Calibración',sub:'5 puntos, tabla editable, ajuste Cero y Span',comp:Scene2},
+  {id:3,title:'Trazabilidad y Patrones',sub:'Pirámide de trazabilidad, ISO/IEC 17025, tipos de patrones',comp:Scene3},
+  {id:4,title:'Parámetros Estáticos ISA-51.1',sub:'Histéresis, linealidad, repetibilidad, deriva, zona muerta',comp:Scene4},
+  {id:5,title:'Test de Evaluación',sub:'10 preguntas sobre calibración de instrumentos',comp:Scene5},
+];
+
+function App(){
+  const [sc,setSc]=useState(0);
+  const S=SCENES[sc]; const Comp=S.comp;
+  return(
+  <div className="slide">
+    <div className="hdr">
+      <div>
+        <div className="hdr-title">2.7 — Calibración de Instrumentos</div>
+        <div className="hdr-sub">{S.title} · {S.sub}</div>
+      </div>
+      <div style={{display:'flex',gap:12,alignItems:'center'}}>
+        <span className="badge">PRO</span>
+        <span style={{fontSize:12,color:'#64748b'}}>{sc+1}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content"><Comp/></div>
+    <div className="nav">
+      <button className="btn btn-outline" disabled={sc===0} onClick={()=>setSc(s=>s-1)}>← Anterior</button>
+      <div className="dots">{SCENES.map((_,i)=>(<div key={i} className={`dot${sc===i?' active':''}`} onClick={()=>setSc(i)}/>))}</div>
+      <button className="btn btn-gold" disabled={sc===SCENES.length-1} onClick={()=>setSc(s=>s+1)}>Siguiente →</button>
+    </div>
+  </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

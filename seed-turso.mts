@@ -839,6 +839,22 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.6 - Valvulas de Control.html`,
   },
+  {
+    order: 11,
+    title: "Calibración de Instrumentos — Trazabilidad, Patrones e ISA-51.1",
+    description:
+      "Domina la calibración industrial: definición VIM, convertidor 4-20 mA interactivo (LRV/URV/span), tabla de calibración de 5 puntos editable con verificación de errores, ajuste de cero y span, pirámide de trazabilidad (BIPM→planta), ISO/IEC 17025, regla 4:1, tipos de patrones, e histéresis/linealidad/repetibilidad/deriva según ISA-51.1.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.7 - Calibracion de Instrumentos.html`,
+  },
+  {
+    order: 12,
+    title: "Seguridad Funcional SIL y Áreas Peligrosas ATEX",
+    description:
+      "Domina la seguridad funcional: IEC 61508/61511, SIS/SIF/SIL, capas de protección (BPCS, alarmas, SIS, PSV), cálculo de PFD y RRF por nivel SIL 1-4, arquitecturas MooN (1oo1/1oo2/2oo3/1oo2D), cobertura de diagnóstico (DC), proof test, HAZOP, LOPA, ciclo de vida SIS. Áreas peligrosas ATEX zonas 0/1/2 y tipos de protección Ex d/e/i/p.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.8 - Seguridad Funcional SIL.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
