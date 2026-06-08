@@ -1,514 +1,895 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=1280"/>
-<title>Clase 2.3 — Medición de Nivel</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.3 – Medición de Nivel</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0}#root{width:1280px;height:720px}</style>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729 0%,#1a2540 100%);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;cursor:pointer;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:13px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;}
+.btn-gold{background:#f59e0b;color:#080c18;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-blue{background:#1e40af44;color:#93c5fd;border:1px solid #1e40af66;}
+</style>
 </head>
-<body><div id="root"></div>
+<body>
+<div id="root"></div>
 <script type="text/babel">
-const {useState,useEffect}=React;
-const BG='#080c18',CARD='#111827',BORDER='#1e3a5f';
-const GOLD='#f59e0b',CYAN='#22d3ee',GREEN='#4ade80',RED='#f87171',VIOLET='#a78bfa',ORANGE='#fb923c';
+const {useState,useEffect,useRef}=React;
 
-const QUIZ=[
-  {q:'La fórmula de presión hidrostática para medición de nivel es:',opts:['P = h/ρ·g','P = h·ρ·g','P = ρ·g/h','P = h²·ρ'],correct:1},
-  {q:'¿Qué principio usa el medidor de nivel por desplazamiento (flotador)?',opts:['Presión hidrostática','Principio de Arquímedes — empuje','Capacitancia eléctrica','Ultrasonidos'],correct:1},
-  {q:'El medidor de nivel ultrasónico se instala:',opts:['En el fondo del tanque','En la parte superior del tanque, apuntando hacia abajo','En la mitad del tanque','En la línea de proceso'],correct:1},
-  {q:'¿Qué es la "supresión de cero" en un transmisor de nivel DP?',opts:['Calibrar el cero en fábrica','Restar la columna de líquido fija cuando el transmisor está debajo del tanque','Elevar la señal de salida','Reducir el rango de medida'],correct:1},
-  {q:'El medidor capacitivo de nivel funciona midiendo:',opts:['La presión del líquido','La capacitancia entre electrodo y pared, que varía con el nivel','La frecuencia de ultrasonidos','El empuje del flotador'],correct:1},
-  {q:'Para fluidos corrosivos con sólidos en suspensión, el mejor principio de nivel es:',opts:['Flotador mecánico','Burbujeo o DP con diafragma rasante','Capacitivo de electrodo estándar','Ultrasonido de contacto'],correct:1},
-  {q:'¿Cuál es la exactitud típica de un transmisor de nivel inteligente DP?',opts:['±5%','±2%','±0.2%','±10%'],correct:2},
-  {q:'El medidor de nivel por radar (microondas) mide:',opts:['La presión del vapor','El tiempo de tránsito de ondas electromagnéticas hacia la superficie','La capacitancia del líquido','La temperatura superficial'],correct:1},
-  {q:'En un tanque abierto con agua (ρ=1000 kg/m³) y nivel máximo 5 m, la presión máxima es:',opts:['5 Pa','4900 Pa','49000 Pa','490000 Pa'],correct:2},
-  {q:'El medidor resistivo/conductivo se usa principalmente como:',opts:['Medida continua de nivel','Alarma de nivel alto o bajo','Medida de interfase','Medidor de densidad'],correct:1},
-];
-
-function Title({icon,color,title,sub}){return(<div style={{textAlign:'center',marginBottom:4}}><div style={{fontSize:28}}>{icon}</div><div style={{fontSize:30,fontWeight:800,color:'#fff'}}>{title}</div><div style={{fontSize:13,color:'#64748b',marginTop:4}}>{sub}</div><div style={{width:50,height:3,background:color,borderRadius:2,margin:'8px auto 0'}}/></div>);}
-function IB({color,title,children}){return(<div style={{background:'#0a1628',border:`1px solid ${color}44`,borderRadius:10,padding:'12px 16px'}}><div style={{fontSize:11,color,fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>{title}</div><div style={{fontSize:12,color:'#cbd5e1',lineHeight:1.7}}>{children}</div></div>);}
-
-/* SCENE 1 — INTRO */
-function S1(){
-  const [lvl,setLvl]=useState(60);
+function Scene1(){
+  const [sel,setSel]=useState('cristal');
+  const techs={
+    cristal:{name:'Nivel de Cristal (gauge glass)',color:'#60a5fa',
+      desc:'Tubo de vidrio conectado al tanque con tres válvulas (2 de seguridad + purga). Modos: reflexión (zona líquido oscura) y transparencia (para líquidos coloreados). Válvulas de bola magnéticas cortan automáticamente ante rotura del vidrio.',
+      specs:[['Presión máx.','7 bar (normal) / >70 bar (vidrio armado)'],['Temperatura','hasta 400°C'],['Exactitud','Visual / ±10 mm'],['Longitud tramo','0.3–1.5 m']],app:'Calderas, vaporizadores, tanques de proceso'},
+    flotador:{name:'Flotador + Indicador Magnético (MLI)',color:'#22c55e',
+      desc:'Cable/polea conectado a indicador exterior. MLI: flotador con imán permanente dentro de tubo guía; tiras fluorescentes bicolores (rojo/blanco) rotan al paso del campo magnético. Visible a distancia sin energía eléctrica.',
+      specs:[['Exactitud','±0.5%'],['Repetibilidad','±0.01 a ±0.4 mm'],['Presión','hasta 25 bar (flotador) / >25 bar (MLI)'],['Uso','Tanques grandes, materias peligrosas']],app:'Refinería, almacenamiento de crudo, productos tóxicos/inflamables'},
+    servo:{name:'Palpador Servooperado',color:'#f97316',
+      desc:'Cinta de acero inoxidable perforada en tambor ranurado accionado por servomotor. Disco desciende hasta tocar la superficie; tensión cae → inversión de marcha. Encoder óptico transmite nivel digitalmente. Para inventario fiscal.',
+      specs:[['Exactitud','±3 mm'],['Rango','1 mm a 30 m'],['Salida','4–20 mA, HART, Fieldbus'],['Uso','Inventario fiscal — tanques API 650']],app:'Terminales petrolíferas, tanques de almacenamiento fiscal'},
+    magneto:{name:'Magnetoestrictivo',color:'#a78bfa',
+      desc:'Pulso de corriente por tubo guía crea campo magnético → interacción con imanes del flotador genera onda torsional. Tiempo entre pulso emitido y recibido medido a 10⁻⁸ s. Sin partes mecánicas en movimiento en el proceso.',
+      specs:[['Exactitud','±0.01%'],['Rango','0.1–5 m'],['Resolución','0.1 mm'],['Salida','4–20 mA HART, FOUNDATION Fieldbus']],app:'Alta precisión: dosificación, mezcla, tanques de reacción'},
+  };
+  const t=techs[sel];
   return(
-    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'relative'}}>
-      <div style={{position:'absolute',top:44,textAlign:'center'}}>
-        <div style={{fontSize:12,letterSpacing:4,color:GOLD,textTransform:'uppercase',marginBottom:6}}>Módulo 2 · Clase 2.3</div>
-        <div style={{fontSize:48,fontWeight:800,color:'#fff',lineHeight:1.1}}>Medición de Nivel</div>
-        <div style={{fontSize:16,color:'#94a3b8',marginTop:10}}>Hidrostático · Flotador · Ultrasónico · Radar · Capacitivo</div>
-      </div>
-      <div style={{display:'flex',gap:60,marginTop:60,alignItems:'flex-end'}}>
-        <TankViz pct={lvl}/>
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <div style={{fontSize:12,color:'#94a3b8'}}>Nivel del tanque</div>
-          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)} style={{accentColor:CYAN,width:200}}/>
-          <div style={{fontSize:32,fontWeight:800,color:CYAN}}>{lvl}%</div>
-          <div style={{fontSize:16,color:GOLD}}>P = {(lvl/100*5*1000*9.81/1000).toFixed(1)} kPa</div>
-          <div style={{fontSize:12,color:'#64748b'}}>P = h·ρ·g (h={((lvl/100)*5).toFixed(1)}m, ρ=1000 kg/m³)</div>
-        </div>
-      </div>
-      <div style={{position:'absolute',bottom:40,display:'flex',gap:16}}>
-        {[{icon:'📐',l:'Hidrostático',sub:'P=h·ρ·g',c:CYAN},{icon:'🔵',l:'Flotador',sub:'Arquímedes',c:GREEN},{icon:'🔊',l:'Ultrasónico',sub:'Tiempo vuelo',c:VIOLET},{icon:'📡',l:'Radar',sub:'Microondas',c:GOLD},{icon:'⚡',l:'Capacitivo',sub:'Constante K',c:ORANGE},{icon:'🔴',l:'Conductivo',sub:'Alarma on/off',c:RED}].map((t,i)=>(
-          <div key={i} style={{background:CARD,border:`1px solid ${t.c}33`,borderRadius:10,padding:'10px 14px',textAlign:'center',minWidth:120}}>
-            <div style={{fontSize:20}}>{t.icon}</div>
-            <div style={{fontSize:11,fontWeight:700,color:t.c,marginTop:4}}>{t.l}</div>
-            <div style={{fontSize:10,color:'#64748b'}}>{t.sub}</div>
-          </div>
+    <div>
+      <div className="sec-title">Medida Directa de Nivel</div>
+      <div className="sec-sub">Nivel de cristal · Flotador · Indicador magnético · Servopalpador · Magnetoestrictivo</div>
+      <div style={{display:'flex',gap:6,marginBottom:10,flexWrap:'wrap'}}>
+        {Object.entries(techs).map(([k,v])=>(
+          <button key={k} className={`btn-outline${sel===k?' active':''}`} onClick={()=>setSel(k)} style={{fontSize:11}}>{v.name.split('(')[0].split('+')[0].trim()}</button>
         ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h" style={{color:t.color}}>{t.name}</div>
+            <p style={{fontSize:12,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>{t.desc}</p>
+            <table><tbody>{t.specs.map(([k,v],i)=>(
+              <tr key={i}><td style={{color:'#64748b',width:130}}>{k}</td><td style={{color:'#fcd34d',fontWeight:600}}>{v}</td></tr>
+            ))}</tbody></table>
+            <div style={{marginTop:8,padding:'7px 10px',background:'#060a14',borderRadius:6,fontSize:11,color:'#94a3b8'}}>
+              🏭 <b style={{color:'#cbd5e1'}}>Aplicación:</b> {t.app}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <div className="card-h">Principio visual — {t.name.split('(')[0].trim()}</div>
+            <svg width="100%" viewBox="0 0 280 280">
+              {sel==='cristal'&&(<>
+                <rect x="50" y="20" width="80" height="240" rx="5" fill="#0f1729" stroke="#1e2d4a" strokeWidth="2"/>
+                <rect x="52" y="140" width="76" height="118" rx="3" fill="#60a5fa22"/>
+                <rect x="170" y="30" width="20" height="220" rx="4" fill="#0f1729" stroke="#60a5fa" strokeWidth="2"/>
+                <rect x="172" y="32" width="16" height="218" rx="3" fill="#60a5fa11"/>
+                <rect x="172" y="148" width="16" height="102" rx="2" fill="#60a5fa55"/>
+                <rect x="150" y="46" width="20" height="14" rx="3" fill="#f59e0b55" stroke="#f59e0b"/>
+                <rect x="150" y="228" width="20" height="14" rx="3" fill="#f59e0b55" stroke="#f59e0b"/>
+                <rect x="150" y="136" width="20" height="14" rx="3" fill="#ef444455" stroke="#ef4444"/>
+                <line x1="90" y1="53" x2="170" y2="53" stroke="#1e2d4a" strokeWidth="3"/>
+                <line x1="90" y1="235" x2="170" y2="235" stroke="#1e2d4a" strokeWidth="3"/>
+                <text x="90" y="148" textAnchor="middle" fill="#f59e0b" fontSize="10">50%</text>
+                <text x="198" y="48" fill="#f59e0b" fontSize="8">V. seguridad</text>
+                <text x="198" y="230" fill="#f59e0b" fontSize="8">V. seguridad</text>
+                <text x="198" y="145" fill="#ef4444" fontSize="8">Purga</text>
+                <text x="90" y="275" textAnchor="middle" fill="#94a3b8" fontSize="9">Tanque proceso</text>
+                <text x="180" y="275" textAnchor="middle" fill="#64748b" fontSize="9">Tubo vidrio</text>
+              </>)}
+              {sel==='flotador'&&(<>
+                <rect x="30" y="30" width="120" height="200" rx="6" fill="#0f1729" stroke="#1e2d4a" strokeWidth="2"/>
+                <rect x="32" y="130" width="116" height="100" rx="4" fill="#22c55e22"/>
+                <ellipse cx="90" cy="128" rx="28" ry="12" fill="#22c55e44" stroke="#22c55e" strokeWidth="2"/>
+                <line x1="90" y1="116" x2="90" y2="38" stroke="#94a3b8" strokeWidth="1.5"/>
+                <circle cx="90" cy="38" r="6" fill="#0f1729" stroke="#f59e0b"/>
+                <rect x="180" y="30" width="30" height="200" rx="4" fill="#0d1425" stroke="#22c55e" strokeWidth="1.5"/>
+                <rect x="182" y="130" width="26" height="100" rx="3" fill="#22c55e33"/>
+                <rect x="184" y="126" width="22" height="8" rx="2" fill="#22c55e"/>
+                <text x="195" y="265" textAnchor="middle" fill="#22c55e" fontSize="8">MLI</text>
+                <text x="90" y="268" textAnchor="middle" fill="#94a3b8" fontSize="9">Flotador directo</text>
+                <text x="155" y="128" fill="#22c55e" fontSize="9">50%</text>
+              </>)}
+              {sel==='servo'&&(<>
+                <circle cx="140" cy="58" r="34" fill="#0f1729" stroke="#f97316" strokeWidth="2"/>
+                <text x="140" y="54" textAnchor="middle" fill="#f97316" fontSize="9">Servo</text>
+                <text x="140" y="65" textAnchor="middle" fill="#f97316" fontSize="8">motor</text>
+                <line x1="140" y1="92" x2="140" y2="196" stroke="#94a3b8" strokeWidth="2"/>
+                <ellipse cx="140" cy="196" rx="18" ry="5" fill="#f97316" stroke="#f97316"/>
+                <rect x="65" y="108" width="150" height="152" rx="6" fill="#0f1729" stroke="#1e2d4a" strokeWidth="2"/>
+                <rect x="67" y="180" width="146" height="78" rx="4" fill="#3b82f622"/>
+                <line x1="65" y1="196" x2="215" y2="196" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4,3"/>
+                <rect x="160" y="38" width="50" height="26" rx="4" fill="#060a14" stroke="#f59e0b55"/>
+                <text x="185" y="50" textAnchor="middle" fill="#f59e0b" fontSize="9">Encoder</text>
+                <text x="185" y="60" textAnchor="middle" fill="#94a3b8" fontSize="8">óptico</text>
+                <text x="140" y="278" textAnchor="middle" fill="#94a3b8" fontSize="9">Exactitud ±3 mm</text>
+              </>)}
+              {sel==='magneto'&&(<>
+                <rect x="115" y="20" width="18" height="240" rx="4" fill="#0f1729" stroke="#a78bfa" strokeWidth="2"/>
+                <ellipse cx="124" cy="160" rx="20" ry="9" fill="#a78bfa33" stroke="#a78bfa" strokeWidth="2"/>
+                <text x="124" y="163" textAnchor="middle" fill="#a78bfa" fontSize="9">🧲</text>
+                <rect x="28" y="22" width="70" height="32" rx="4" fill="#0d1425" stroke="#a78bfa55"/>
+                <text x="63" y="36" textAnchor="middle" fill="#a78bfa" fontSize="9">Pulso I</text>
+                <text x="63" y="47" textAnchor="middle" fill="#64748b" fontSize="8">Transmisor</text>
+                <path d="M124,165 Q100,175 124,185 Q148,195 124,205" fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="3,2"/>
+                <text x="155" y="185" fill="#f59e0b" fontSize="8">Onda</text>
+                <text x="155" y="195" fill="#f59e0b" fontSize="8">torsional</text>
+                <rect x="28" y="240" width="70" height="26" rx="4" fill="#0d1425" stroke="#22c55e55"/>
+                <text x="63" y="252" textAnchor="middle" fill="#22c55e" fontSize="9">Receptor</text>
+                <text x="63" y="262" textAnchor="middle" fill="#64748b" fontSize="8">Δt → nivel</text>
+                <line x1="98" y1="38" x2="115" y2="38" stroke="#a78bfa" strokeWidth="1.5" strokeDasharray="3,2"/>
+                <line x1="98" y1="253" x2="115" y2="245" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="3,2"/>
+                <text x="196" y="160" fill="#a78bfa" fontSize="9">h = v·Δt/2</text>
+                <text x="196" y="172" fill="#64748b" fontSize="8">±0.01%</text>
+                <text x="124" y="278" textAnchor="middle" fill="#94a3b8" fontSize="9">Magnetoestrictivo</text>
+              </>)}
+            </svg>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-function TankViz({pct}){
-  const h=pct*2.4;
-  return(
-    <svg width={160} height={280}>
-      <rect x={30} y={20} width={100} height={240} rx={8} fill={CARD} stroke={CYAN} strokeWidth={2}/>
-      <rect x={32} y={260-h} width={96} height={h} rx={0} fill={`${CYAN}44`} style={{transition:'height 0.1s,y 0.1s'}}/>
-      {/* level indicator */}
-      <line x1={130} y1={260-h} x2={145} y2={260-h} stroke={CYAN} strokeWidth={2} style={{transition:'y1 0.1s'}}/>
-      <text x={148} y={264-h} fill={CYAN} fontSize={10}>{pct}%</text>
-      {/* P arrow */}
-      <line x1={80} y1={250} x2={80} y2={270} stroke={GOLD} strokeWidth={2}/>
-      <text x={80} y={278} fill={GOLD} fontSize={9} textAnchor='middle'>P↓</text>
-    </svg>
-  );
-}
 
-/* SCENE 2 — HIDROSTÁTICO / DP */
-function S2(){
+function Scene2(){
+  const [h,setH]=useState(2.0);
   const [rho,setRho]=useState(1000);
-  const [Hmax,setHmax]=useState(5);
-  const [pct,setPct]=useState(60);
-  const h=(pct/100)*Hmax;
-  const P=h*rho*9.81;
-  const mA=4+(pct/100)*16;
+  const [tipo,setTipo]=useState('dp');
+  const P=(h*rho*9.81/1000).toFixed(3);
+  const mbar=(h*rho*9.81/100).toFixed(2);
+  const mwc=(h*rho/1000).toFixed(3);
+  const fluidos=[['Agua',1000],['Petróleo crudo',850],['Ácido sulfúrico',1835],['Keroseno',800],['Acetona',790],['Mercurio',13600]];
   return(
-    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
-      <Title icon='📐' color={CYAN} title='Nivel por Presión Hidrostática' sub='P = h·ρ·g — transmisor DP en fondo de tanque'/>
-      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
-        <div style={{flex:1}}>
-          <IB color={CYAN} title='Principio'>La presión en el fondo de un tanque es proporcional a la altura de líquido: <b style={{color:CYAN}}>P = h·ρ·g</b>. Un transmisor de presión montado en el fondo convierte esta presión en una señal 4-20 mA. El span del transmisor se configura igual al rango de presión esperado.</IB>
-          <div style={{marginTop:14,background:'#0a1628',border:`1px solid ${CYAN}33`,borderRadius:8,padding:'12px 14px'}}>
-            <div style={{fontSize:11,color:CYAN,fontWeight:700,marginBottom:6}}>INSTALACIONES TÍPICAS</div>
-            {[
-              {t:'Tanque abierto',d:'Transmisor de presión manométrica en el fondo. Simple y económico.'},
-              {t:'Tanque cerrado (presurizado)',d:'Transmisor DP: H=alta (fondo), L=baja (espacio vapor). Compensación automática de presión de vapor.'},
-              {t:'Supresión de cero',d:'Cuando el transmisor está por debajo del nivel mínimo: restar la columna estática fija mediante el ajuste LRV.'},
-              {t:'Wet leg / Dry leg',d:'Tanques con condensados: línea húmeda llena de líquido de referencia para compensar la presión superior.'},
-            ].map((r,i)=>(
-              <div key={i} style={{borderBottom:'1px solid #1e3a5f',padding:'6px 0',fontSize:12}}>
-                <div style={{color:CYAN,fontWeight:700}}>{r.t}</div>
-                <div style={{color:'#94a3b8',marginTop:2}}>{r.d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div style={{width:380}}>
-          <div style={{background:CARD,border:`2px solid ${CYAN}`,borderRadius:12,padding:18,marginBottom:14}}>
-            <div style={{fontSize:12,color:CYAN,fontWeight:700,marginBottom:12,textTransform:'uppercase'}}>Calculadora Interactiva</div>
-            {[
-              {l:'Densidad fluido (kg/m³)',val:rho,set:setRho,min:500,max:2000,step:50},
-              {l:'Altura máxima tanque (m)',val:Hmax,set:setHmax,min:1,max:20,step:0.5},
-              {l:'Nivel actual (%)',val:pct,set:setPct,min:0,max:100,step:1},
-            ].map((f,i)=>(
-              <div key={i} style={{marginBottom:12}}>
-                <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:3}}>
-                  <span>{f.l}</span><span style={{color:CYAN,fontWeight:700}}>{f.val}</span>
-                </div>
-                <input type='range' min={f.min} max={f.max} step={f.step} value={f.val}
-                  onChange={e=>f.set(+e.target.value)} style={{width:'100%',accentColor:CYAN}}/>
-              </div>
-            ))}
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            {[
-              {l:'Altura h',v:`${h.toFixed(2)} m`,c:CYAN},
-              {l:'Presión',v:`${(P/1000).toFixed(2)} kPa`,c:GOLD},
-              {l:'En bar',v:`${(P/100000).toFixed(4)} bar`,c:GREEN},
-              {l:'Señal salida',v:`${mA.toFixed(1)} mA`,c:VIOLET},
-            ].map((r,i)=>(
-              <div key={i} style={{background:'#0a1628',border:`1px solid ${r.c}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
-                <div style={{fontSize:10,color:'#64748b'}}>{r.l}</div>
-                <div style={{fontSize:18,fontWeight:800,color:r.c,marginTop:4}}>{r.v}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* SCENE 3 — FLOTADOR / DESPLAZAMIENTO */
-function S3(){
-  const [lvl,setLvl]=useState(50);
-  const empuje=(lvl/100)*0.5*1000*9.81; // N (simplified)
-  return(
-    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
-      <Title icon='🔵' color={GREEN} title='Flotador y Desplazador' sub='Principio de Arquímedes — empuje = ρ·g·V_sumergido'/>
-      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
-        <div style={{flex:1}}>
-          <IB color={GREEN} title='Principio de Arquímedes'>El flotador sube o baja con el nivel. El desplazador (buoy) permanece fijo — el nivel cambia el empuje sobre él: <b style={{color:GREEN}}>F = S·H·ρ·g</b>. Un tubo de torsión convierte este empuje en señal. Exactitud: ±0.5%.</IB>
-          <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            {[
-              {t:'Flotador directo',d:'Tubo guía vertical. Sigue el nivel. Transmisión mecánica o magnética.'},
-              {t:'Indicador magnético',d:'Flotador con imán. Cintas de colores en tubo externo. Visual + transmisión.'},
-              {t:'Desplazador (Buoy)',d:'Flotador sumergido largo. Barra de torsión detecta variación de empuje.'},
-              {t:'Magnetoestrictivo',d:'Pulso torsional por campo magnético. Exactitud ±0.01 mm. Sin partes críticas.'},
-            ].map((r,i)=>(
-              <div key={i} style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:8,padding:'10px 12px'}}>
-                <div style={{fontSize:11,fontWeight:700,color:GREEN}}>{r.t}</div>
-                <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{r.d}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{marginTop:14,background:'#0a1628',border:`1px solid ${GREEN}33`,borderRadius:8,padding:'12px 14px'}}>
-            <div style={{fontSize:11,color:GREEN,fontWeight:700,marginBottom:4}}>ECUACIÓN DESPLAZADOR</div>
-            <div style={{fontFamily:'monospace',fontSize:13,color:'#e2e8f0',lineHeight:1.8}}>
-              M_torsión = (S · H · ρ · g - P_flotador) · L_brazo<br/>
-              Al subir el nivel → mayor empuje → menor torsión<br/>
-              Al bajar el nivel → menor empuje → mayor torsión
-            </div>
-          </div>
-        </div>
-        <div style={{width:380,display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
-          <FloatTankViz pct={lvl} empuje={empuje}/>
-          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)} style={{width:'100%',accentColor:GREEN}}/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,width:'100%'}}>
-            <div style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
-              <div style={{fontSize:10,color:'#64748b'}}>Nivel</div>
-              <div style={{fontSize:22,fontWeight:800,color:GREEN}}>{lvl}%</div>
-            </div>
-            <div style={{background:CARD,border:`1px solid ${GOLD}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
-              <div style={{fontSize:10,color:'#64748b'}}>Empuje relativo</div>
-              <div style={{fontSize:22,fontWeight:800,color:GOLD}}>{(empuje/4905*100).toFixed(0)}%</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-function FloatTankViz({pct,empuje}){
-  const h=pct*2;
-  const fY=260-h-20;
-  return(
-    <svg width={220} height={300}>
-      <rect x={40} y={20} width={120} height={240} rx={6} fill={CARD} stroke={GREEN} strokeWidth={2}/>
-      <rect x={42} y={260-h} width={116} height={h} rx={0} fill={`${CYAN}33`} style={{transition:'all 0.1s'}}/>
-      {/* float */}
-      <ellipse cx={100} cy={fY} rx={30} ry={14} fill={GREEN} opacity={0.9} style={{transition:'cy 0.1s'}}/>
-      <line x1={100} y1={fY} x2={100} y2={20} stroke='#94a3b8' strokeWidth={1} strokeDasharray='3,3'/>
-      {/* level line */}
-      <line x1={160} y1={260-h} x2={175} y2={260-h} stroke={CYAN} strokeWidth={2} style={{transition:'y1 0.1s'}}/>
-      <text x={178} y={264-h} fill={CYAN} fontSize={10}>{pct}%</text>
-    </svg>
-  );
-}
-
-/* SCENE 4 — ULTRASÓNICO Y RADAR */
-function S4(){
-  const [sel,setSel]=useState(0);
-  const [lvl,setLvl]=useState(60);
-  const v_air=343; // m/s sound in air
-  const v_radio=3e8; // m/s EM
-  const H=10; // m tank height
-  const dist=H*(1-lvl/100); // m from sensor to surface
-  const t_us=2*dist/v_air*1000; // ms
-  const t_radar=2*dist/v_radio*1e9; // ns
-  return(
-    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
-      <Title icon='📡' color={VIOLET} title='Ultrasónico y Radar (Microondas)' sub='Tiempo de vuelo — h = v·t/2 — sin contacto con el fluido'/>
-      <div style={{display:'flex',gap:10,marginTop:14}}>
-        {['🔊 Ultrasónico','📡 Radar (FMCW)'].map((t,i)=>(
-          <button key={i} onClick={()=>setSel(i)}
-            style={{padding:'8px 20px',borderRadius:20,border:`2px solid ${i===0?VIOLET:GOLD}`,
-              background:sel===i?(i===0?VIOLET:GOLD):'transparent',color:sel===i?BG:(i===0?VIOLET:GOLD),fontWeight:700,fontSize:12,cursor:'pointer'}}>
-            {t}
-          </button>
+    <div>
+      <div className="sec-title">Medición por Presión Hidrostática</div>
+      <div className="sec-sub">Manométrico sumergido · Burbujeo (purga) · Transmisor ΔP — P = h·ρ·g</div>
+      <div style={{display:'flex',gap:6,marginBottom:10}}>
+        {[['dp','ΔP Transmitter'],['bubbler','Burbujeo'],['sub','Manométrico sumergido']].map(([k,v])=>(
+          <button key={k} className={`btn-outline${tipo===k?' active':''}`} onClick={()=>setTipo(k)}>{v}</button>
         ))}
       </div>
-      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
-        <div style={{flex:1}}>
-          {sel===0?(
-            <>
-              <IB color={VIOLET} title='Principio Ultrasónico'>Transductor en la parte superior emite un pulso de sonido (20-200 kHz). El pulso se refleja en la superficie del líquido y regresa. <b style={{color:VIOLET}}>h = v·t/2</b>. El nivel = altura tanque − distancia medida. Sin contacto con el fluido.</IB>
-              <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                {[
-                  {k:'Exactitud',v:'±0.1% a ±0.5%'},{k:'Velocidad sonido (aire)',v:'343 m/s (varía con T°)'},
-                  {k:'Compensación T°',v:'Sensor temperatura integrado'},{k:'Limitación',v:'Espuma, niebla, polvo absorbentes'},
-                  {k:'Rango',v:'0.5 m a 70 m'},{k:'Fluidos',v:'Líquidos y sólidos granulados'},
-                ].map((r,i)=>(
-                  <div key={i} style={{background:CARD,border:`1px solid ${VIOLET}33`,borderRadius:8,padding:'8px 10px'}}>
-                    <div style={{fontSize:10,color:VIOLET,fontWeight:700}}>{r.k}</div>
-                    <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{r.v}</div>
-                  </div>
-                ))}
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h">Calculadora hidrostática</div>
+            <div className="formula-box">P = h · ρ · g</div>
+            <div style={{margin:'8px 0'}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:4}}>
+                <span>Nivel h (m):</span><b className="gold">{h.toFixed(2)} m</b>
               </div>
-            </>
-          ):(
-            <>
-              <IB color={GOLD} title='Principio Radar FMCW'>Emite ondas electromagnéticas (6-80 GHz). No afectado por temperatura, vapor, espuma. La diferencia de frecuencia entre señal emitida y reflejada da el tiempo de vuelo: <b style={{color:GOLD}}>Δf ∝ distancia</b>. Ideal para fluidos agresivos y presiones elevadas.</IB>
-              <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                {[
-                  {k:'Exactitud',v:'±1 mm (FMCW guiado)'},{k:'Frecuencia',v:'6-80 GHz (microondas)'},
-                  {k:'No afectado por',v:'T°, vapor, espuma, color'},{k:'Aplicación',v:'Tanques proceso, agitados'},
-                  {k:'Tipos',v:'De antena libre / guiado en cable'},{k:'Ventaja',v:'Funciona en vacío y presión'},
-                ].map((r,i)=>(
-                  <div key={i} style={{background:CARD,border:`1px solid ${GOLD}33`,borderRadius:8,padding:'8px 10px'}}>
-                    <div style={{fontSize:10,color:GOLD,fontWeight:700}}>{r.k}</div>
-                    <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{r.v}</div>
-                  </div>
-                ))}
+              <input type="range" min="0.1" max="10" step="0.1" value={h} onChange={e=>setH(+e.target.value)}/>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:4,marginTop:8}}>
+                <span>Densidad ρ (kg/m³):</span><b className="gold">{rho} kg/m³</b>
               </div>
-            </>
-          )}
+              <input type="range" min="500" max="2000" step="10" value={rho} onChange={e=>setRho(+e.target.value)}/>
+            </div>
+            <div style={{background:'#060a14',borderRadius:8,padding:10,display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
+              {[['kPa',`${P} kPa`,'#22c55e'],['mbar',`${mbar} mbar`,'#60a5fa'],['m.c.a.',`${mwc} m`,'#fcd34d'],['psi',`${(P*0.145).toFixed(3)} psi`,'#f97316']].map(([n,v,c],i)=>(
+                <div key={i} style={{textAlign:'center',padding:'6px',background:'#0f1729',borderRadius:6}}>
+                  <div style={{fontSize:9,color:'#64748b'}}>{n}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:c}}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div className="card-h">Fluidos comunes (clic para usar)</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+              {fluidos.map(([f,r],i)=>(
+                <span key={i} className="tag tag-blue" style={{cursor:'pointer'}} onClick={()=>setRho(r)}>{f}: {r}</span>
+              ))}
+            </div>
+            <div style={{marginTop:10,fontSize:11,color:'#94a3b8',lineHeight:1.5}}>
+              {tipo==='dp'?'ΔP transmitter: HP al fondo, LP al vapor/atmósfera. Supresión/elevación via HART digital.':
+               tipo==='bubbler'?'Burbujeo: aire constante ~150 L/h (rotámetro+regulador). Ideal para líquidos corrosivos, viscosos o con sólidos. NO para fluidos que reaccionen con el aire.':
+               'Sensor piezoresistivo sumergido en cápsula sellada. Puente Wheatstone en aceite de silicona. P = h·ρ·g. Exactitud ±0.25%.'}
+            </div>
+          </div>
         </div>
-        <div style={{width:380,display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
-          <UltraTankViz pct={lvl} sel={sel}/>
-          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)}
-            style={{width:'100%',accentColor:sel===0?VIOLET:GOLD}}/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,width:'100%'}}>
-            {sel===0?[
-              {l:'Distancia sensor',v:`${dist.toFixed(2)} m`,c:VIOLET},
-              {l:'Tiempo vuelo',v:`${t_us.toFixed(2)} ms`,c:CYAN},
-              {l:'Nivel calculado',v:`${(H-dist).toFixed(2)} m`,c:GREEN},
-              {l:'Nivel %',v:`${lvl}%`,c:GOLD},
-            ]:[
-              {l:'Distancia sensor',v:`${dist.toFixed(2)} m`,c:GOLD},
-              {l:'Tiempo vuelo',v:`${t_radar.toFixed(2)} ns`,c:CYAN},
-              {l:'Nivel calculado',v:`${(H-dist).toFixed(2)} m`,c:GREEN},
-              {l:'Nivel %',v:`${lvl}%`,c:VIOLET},
-            ].map((r,i)=>(
-              <div key={i} style={{background:CARD,border:`1px solid ${r.c}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
-                <div style={{fontSize:10,color:'#64748b'}}>{r.l}</div>
-                <div style={{fontSize:16,fontWeight:800,color:r.c,marginTop:4}}>{r.v}</div>
-              </div>
-            ))}
+        <div>
+          <div className="card">
+            <div className="card-h">Diagrama — {tipo==='dp'?'Transmisor ΔP':tipo==='bubbler'?'Sistema Burbujeo':'Sensor sumergido'}</div>
+            <svg width="100%" viewBox="0 0 280 270">
+              <rect x="60" y="20" width="140" height="200" rx="6" fill="#0f1729" stroke="#1e2d4a" strokeWidth="2"/>
+              <rect x="62" y={20+(200*(1-h/10))} width="136" height={200*h/10} rx="3" fill="#3b82f622"/>
+              <line x1="60" y1={20+(200*(1-h/10))} x2="200" y2={20+(200*(1-h/10))} stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4,3"/>
+              <line x1="210" y1={20+(200*(1-h/10))} x2="210" y2="220" stroke="#f59e0b" strokeWidth="1"/>
+              <text x="222" y={20+(200*(1-h/10))+(200*h/10)/2} fill="#f59e0b" fontSize="10" fontWeight="bold">h={h.toFixed(1)}m</text>
+              {tipo==='dp'&&(<>
+                <rect x="8" y="200" width="52" height="36" rx="4" fill="#0d1425" stroke="#22c55e55"/>
+                <text x="34" y="213" textAnchor="middle" fill="#22c55e" fontSize="8">ΔP Tx</text>
+                <text x="34" y="226" textAnchor="middle" fill="#fcd34d" fontSize="9" fontWeight="bold">{mbar} mb</text>
+                <line x1="60" y1="218" x2="60" y2="218" stroke="#22c55e" strokeWidth="0"/>
+                <line x1="60" y1="218" x2="60" y2="218" stroke="#22c55e" strokeWidth="0"/>
+                <line x1="8" y1="218" x2="60" y2="218" stroke="#22c55e" strokeWidth="2"/>
+                <line x1="60" y1="28" x2="8" y2="28" stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="4,3"/>
+                <text x="65" y="25" fill="#94a3b8" fontSize="8">LP (atm)</text>
+                <text x="65" y="215" fill="#22c55e" fontSize="8">HP</text>
+                <text x="34" y="248" textAnchor="middle" fill="#64748b" fontSize="8">4–20 mA HART</text>
+              </>)}
+              {tipo==='bubbler'&&(<>
+                <rect x="8" y="8" width="46" height="30" rx="4" fill="#0d1425" stroke="#3b82f655"/>
+                <text x="31" y="20" textAnchor="middle" fill="#3b82f6" fontSize="7">Aire</text>
+                <text x="31" y="30" textAnchor="middle" fill="#64748b" fontSize="7">150 L/h</text>
+                <rect x="8" y="55" width="46" height="28" rx="4" fill="#0d1425" stroke="#f59e0b55"/>
+                <text x="31" y="67" textAnchor="middle" fill="#f59e0b" fontSize="7">Manóm.</text>
+                <text x="31" y="77" textAnchor="middle" fill="#fcd34d" fontSize="8">{mbar}mb</text>
+                <line x1="31" y1="38" x2="31" y2="55" stroke="#f59e0b" strokeWidth="1.5"/>
+                <line x1="31" y1="38" x2="60" y2="38" stroke="#3b82f6" strokeWidth="2"/>
+                <line x1="60" y1="38" x2="60" y2="218" stroke="#3b82f6" strokeWidth="2"/>
+                {[0,1,2].map(i=><circle key={i} cx={62+i*9} cy={216-i*18} r="3" fill="none" stroke="#3b82f666" strokeWidth="1"/>)}
+                <text x="130" y="258" textAnchor="middle" fill="#64748b" fontSize="8">Tubo sumergido → P = h·ρ·g en manómetro</text>
+              </>)}
+              {tipo==='sub'&&(<>
+                <rect x="108" y="205" width="44" height="20" rx="5" fill="#f97316" stroke="#f97316" strokeWidth="1.5"/>
+                <text x="130" y="218" textAnchor="middle" fill="#fff" fontSize="8">Sensor piezores.</text>
+                <line x1="130" y1="200" x2="130" y2={20+(200*(1-h/10))+10} stroke="#94a3b8" strokeWidth="1.5"/>
+                <rect x="8" y="18" width="52" height="34" rx="4" fill="#0d1425" stroke="#f97316aa"/>
+                <text x="34" y="31" textAnchor="middle" fill="#f97316" fontSize="8">Transmisor</text>
+                <text x="34" y="43" textAnchor="middle" fill="#fcd34d" fontSize="9">{mbar}mb</text>
+                <line x1="108" y1="215" x2="60" y2="35" stroke="#f97316" strokeWidth="1.5" strokeDasharray="3,2"/>
+                <text x="130" y="258" textAnchor="middle" fill="#64748b" fontSize="8">Piezoresistivo — ±0.25% — Puente Wheatstone</text>
+              </>)}
+            </svg>
           </div>
         </div>
       </div>
     </div>
   );
 }
-function UltraTankViz({pct,sel}){
-  const h=pct*2;
-  const col=sel===0?VIOLET:GOLD;
-  const pulseY=260-h-10;
+
+function Scene3(){
+  const [modo,setModo]=useState('sup');
+  const [ha,setHa]=useState(1.5);
+  const [hs,setHs]=useState(0.8);
+  const [rho1,setRho1]=useState(1000);
+  const [rho2,setRho2]=useState(800);
+  const [hT,setHT]=useState(3.0);
   return(
-    <svg width={220} height={300}>
-      {/* sensor at top */}
-      <rect x={75} y={8} width={50} height={20} rx={4} fill={CARD} stroke={col} strokeWidth={2}/>
-      <text x={100} y={22} fill={col} fontSize={9} textAnchor='middle'>{sel===0?'US':'RADAR'}</text>
-      {/* beam */}
-      <line x1={100} y1={28} x2={100} y2={pulseY} stroke={col} strokeWidth={1.5} strokeDasharray='5,3' opacity={0.7}/>
-      <polygon points={`95,${pulseY} 105,${pulseY} 100,${pulseY+8}`} fill={col} opacity={0.8}/>
-      {/* tank */}
-      <rect x={40} y={30} width={120} height={230} rx={6} fill={CARD} stroke='#1e3a5f' strokeWidth={2}/>
-      <rect x={42} y={260-h} width={116} height={h} rx={0} fill={`${CYAN}33`} style={{transition:'all 0.1s'}}/>
-      {/* labels */}
-      <line x1={160} y1={260-h} x2={175} y2={260-h} stroke={CYAN} strokeWidth={1.5}/>
-      <text x={178} y={264-h} fill={CYAN} fontSize={9}>{pct}%</text>
-      <text x={100} y={290} fill='#64748b' fontSize={9} textAnchor='middle'>h = v·t/2</text>
-    </svg>
+    <div>
+      <div className="sec-title">Supresión/Elevación de Cero e Interfase</div>
+      <div className="sec-sub">Tanques abiertos y cerrados — corrección de cero — medición de interfase entre fases inmiscibles</div>
+      <div style={{display:'flex',gap:6,marginBottom:10}}>
+        {[['sup','Supresión de cero'],['elev','Elevación de cero'],['iface','Interfase líquidos']].map(([k,v])=>(
+          <button key={k} className={`btn-outline${modo===k?' active':''}`} onClick={()=>setModo(k)}>{v}</button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {modo==='sup'&&<div className="card">
+            <div className="card-h">Supresión de cero (Zero Suppression)</div>
+            <p style={{fontSize:12,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+              El transmisor está <b style={{color:'#fcd34d'}}>por debajo</b> del punto cero del tanque. La columna adicional hs·ρ·g añade un offset positivo. El tornillo de supresión o calibración HART digital desplaza el cero a la derecha para compensar.
+            </p>
+            <div className="formula-box">P_real = P_leída − hs·ρ·g</div>
+            <div style={{margin:'8px 0'}}>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4}}>Nivel h (m): <b className="gold">{ha.toFixed(1)}</b></div>
+              <input type="range" min="0" max="5" step="0.1" value={ha} onChange={e=>setHa(+e.target.value)}/>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4,marginTop:8}}>Supresión hs (m): <b className="gold">{hs.toFixed(1)}</b></div>
+              <input type="range" min="0.1" max="3" step="0.1" value={hs} onChange={e=>setHs(+e.target.value)}/>
+            </div>
+            <div style={{background:'#060a14',borderRadius:8,padding:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+                <span style={{color:'#94a3b8'}}>P sin corregir:</span><span style={{color:'#ef4444',fontWeight:700}}>{((ha+hs)*9.81).toFixed(1)} kPa</span>
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginTop:4}}>
+                <span style={{color:'#94a3b8'}}>P corregida:</span><span style={{color:'#22c55e',fontWeight:700}}>{(ha*9.81).toFixed(1)} kPa</span>
+              </div>
+              <div style={{fontSize:10,color:'#64748b',marginTop:6}}>Error sin corrección: {(hs/ha*100).toFixed(1)}%</div>
+            </div>
+          </div>}
+          {modo==='elev'&&<div className="card">
+            <div className="card-h">Elevación de cero (Zero Elevation)</div>
+            <p style={{fontSize:12,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+              En tanques cerrados con <b style={{color:'#fcd34d'}}>pata húmeda</b> (wet leg), el líquido de sellado en la línea LP genera mayor presión en ese lado → ΔP negativo con tanque vacío. El resorte de elevación o HART digital corrige desplazando el cero a la izquierda.
+            </p>
+            <div className="formula-box">ΔP = P_HP − P_LP = h·ρ·g − hs·ρₛ·g</div>
+            <div style={{margin:'8px 0'}}>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4}}>Nivel h (m): <b className="gold">{ha.toFixed(1)}</b></div>
+              <input type="range" min="0" max="4" step="0.1" value={ha} onChange={e=>setHa(+e.target.value)}/>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4,marginTop:8}}>Pata húmeda hs (m): <b className="gold">{hs.toFixed(1)}</b></div>
+              <input type="range" min="0.1" max="3" step="0.1" value={hs} onChange={e=>setHs(+e.target.value)}/>
+            </div>
+            <div style={{background:'#060a14',borderRadius:8,padding:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
+                <span style={{color:'#94a3b8'}}>ΔP (vacío):</span><span style={{color:'#ef4444',fontWeight:700}}>−{(hs*9.81).toFixed(1)} kPa</span>
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginTop:4}}>
+                <span style={{color:'#94a3b8'}}>ΔP (lleno h={ha.toFixed(1)}m):</span><span style={{color:'#22c55e',fontWeight:700}}>{((ha-hs)*9.81).toFixed(1)} kPa</span>
+              </div>
+              <div style={{fontSize:10,color:'#64748b',marginTop:6}}>Elevación = hs·ρ·g = {(hs*9.81).toFixed(1)} kPa</div>
+            </div>
+          </div>}
+          {modo==='iface'&&<div className="card">
+            <div className="card-h">Medición de Interfase entre dos líquidos</div>
+            <p style={{fontSize:12,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+              Dos líquidos inmiscibles: <b style={{color:'#60a5fa'}}>denso (ρ₁)</b> en fondo, <b style={{color:'#22c55e'}}>ligero (ρ₂)</b> arriba. ΔP varía según altura de interfase y densidades conocidas.
+            </p>
+            <div className="formula-box" style={{fontSize:11}}>Interfase = [(ΔP − P₀%) / Span] × h_total</div>
+            <div style={{margin:'8px 0'}}>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4}}>Altura fase densa ha (m): <b className="gold">{ha.toFixed(1)}</b></div>
+              <input type="range" min="0" max={hT} step="0.1" value={ha} onChange={e=>setHa(+e.target.value)}/>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4,marginTop:6}}>ρ₁ (kg/m³): <b className="gold">{rho1}</b> &nbsp; ρ₂: <b className="gold">{rho2}</b></div>
+              <input type="range" min="800" max="2000" step="10" value={rho1} onChange={e=>setRho1(+e.target.value)}/>
+              <input type="range" min="500" max={rho1-50} step="10" value={rho2} onChange={e=>setRho2(+e.target.value)} style={{marginTop:6}}/>
+            </div>
+            <div style={{background:'#060a14',borderRadius:8,padding:10}}>
+              <div style={{fontSize:13,color:'#fcd34d',fontWeight:700}}>Interfase: {(ha/hT*100).toFixed(1)}% — {ha.toFixed(2)} m</div>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>
+                Span: {(hT*(rho1-rho2)*9.81/1000).toFixed(3)} kPa (Δρ = {rho1-rho2} kg/m³)
+              </div>
+            </div>
+          </div>}
+        </div>
+        <div>
+          <div className="card">
+            <div className="card-h">Diagrama esquemático</div>
+            <svg width="100%" viewBox="0 0 280 290">
+              {modo==='sup'&&(<>
+                <rect x="70" y="20" width="120" height="180" rx="6" fill="#0f1729" stroke="#1e2d4a"/>
+                <rect x="72" y={20+180*(1-ha/5)} width="116" height={180*ha/5} rx="3" fill="#3b82f622"/>
+                <line x1="68" y1="200" x2="190" y2="200" stroke="#64748b" strokeWidth="1" strokeDasharray="4,3"/>
+                <text x="56" y="203" textAnchor="end" fill="#64748b" fontSize="8">0%</text>
+                <rect x="80" y="228" width="70" height="34" rx="4" fill="#0d1425" stroke="#22c55e55"/>
+                <text x="115" y="242" textAnchor="middle" fill="#22c55e" fontSize="9">Tx ΔP</text>
+                <text x="115" y="254" textAnchor="middle" fill="#94a3b8" fontSize="8">Supr: {hs.toFixed(1)}m</text>
+                <line x1="115" y1="200" x2="115" y2="228" stroke="#22c55e" strokeWidth="2"/>
+                <line x1="55" y1="200" x2="55" y2="250" stroke="#f59e0b" strokeWidth="1.5"/>
+                <polygon points="52,250 55,260 58,250" fill="#f59e0b"/>
+                <text x="40" y="228" textAnchor="middle" fill="#f59e0b" fontSize="9">hs</text>
+                <line x1="205" y1={20+180*(1-ha/5)} x2="205" y2="200" stroke="#60a5fa" strokeWidth="1.5"/>
+                <text x="218" y={20+180*(1-ha/5)+90*(ha/5)} fill="#60a5fa" fontSize="9">h</text>
+                <text x="130" y="278" textAnchor="middle" fill="#94a3b8" fontSize="9">Tx por debajo del cero → Supresión</text>
+              </>)}
+              {modo==='elev'&&(<>
+                <rect x="60" y="20" width="120" height="160" rx="6" fill="#0f1729" stroke="#1e2d4a"/>
+                <rect x="62" y={20+160*(1-ha/4)} width="116" height={160*ha/4} rx="3" fill="#3b82f622"/>
+                <rect x="60" y="14" width="120" height="8" fill="#1e2d4a"/>
+                <text x="120" y="20" textAnchor="middle" fill="#64748b" fontSize="7">Tanque cerrado</text>
+                <line x1="60" y1="26" x2="20" y2="26" stroke="#60a5fa" strokeWidth="3"/>
+                <line x1="20" y1="26" x2="20" y2="200" stroke="#60a5fa" strokeWidth="3"/>
+                <rect x="5" y="195" width="30" height="10" fill="#60a5fa33" stroke="#60a5fa"/>
+                <text x="20" y="220" textAnchor="middle" fill="#60a5fa" fontSize="8">Pata húmeda</text>
+                <text x="20" y="230" textAnchor="middle" fill="#64748b" fontSize="7">P_LP alta</text>
+                <rect x="90" y="202" width="60" height="28" rx="4" fill="#0d1425" stroke="#a78bfa55"/>
+                <text x="120" y="215" textAnchor="middle" fill="#a78bfa" fontSize="8">Tx ΔP</text>
+                <text x="120" y="225" textAnchor="middle" fill="#64748b" fontSize="7">Elevación ={hs.toFixed(1)}m·ρ·g</text>
+                <line x1="62" y1="180" x2="120" y2="202" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="3,2"/>
+                <line x1="20" y1="195" x2="90" y2="215" stroke="#60a5fa" strokeWidth="1.5" strokeDasharray="3,2"/>
+                <text x="120" y="275" textAnchor="middle" fill="#94a3b8" fontSize="9">Pata húmeda → P_LP elevada → cero negativo</text>
+              </>)}
+              {modo==='iface'&&(<>
+                <rect x="55" y="20" width="150" height="210" rx="6" fill="#0f1729" stroke="#1e2d4a"/>
+                <rect x="57" y={20+210*(1-ha/hT)} width="146" height={210*ha/hT} rx="3" fill="#60a5fa22"/>
+                <rect x="57" y="22" width="146" height={210*(1-ha/hT)-2} rx="3" fill="#22c55e22"/>
+                <line x1="55" y1={20+210*(1-ha/hT)} x2="205" y2={20+210*(1-ha/hT)} stroke="#f59e0b" strokeWidth="2"/>
+                <text x="210" y={20+210*(1-ha/hT)+4} fill="#f59e0b" fontSize="9">⬅ Interfase</text>
+                <text x="130" y={20+210*(1-ha/hT)+55} textAnchor="middle" fill="#60a5fa" fontSize="9">ρ₁={rho1} kg/m³</text>
+                <text x="130" y={20+210*(1-ha/hT)/2+10} textAnchor="middle" fill="#22c55e" fontSize="9">ρ₂={rho2} kg/m³</text>
+                <rect x="75" y="242" width="90" height="26" rx="4" fill="#0d1425" stroke="#f59e0b55"/>
+                <text x="120" y="254" textAnchor="middle" fill="#f59e0b" fontSize="8">ΔP Transmisor</text>
+                <text x="120" y="264" textAnchor="middle" fill="#fcd34d" fontSize="8">Interfase: {(ha/hT*100).toFixed(0)}%</text>
+                <line x1="57" y1="230" x2="120" y2="242" stroke="#22c55e" strokeWidth="1.5"/>
+              </>)}
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-/* SCENE 5 — CAPACITIVO Y CONDUCTIVO */
-function S5(){
-  const [lvl,setLvl]=useState(55);
-  const K_liquid=80; // water
-  const K_air=1;
-  const A=0.01; // m²
-  const D=0.01; // m
-  const C_total=((K_liquid-K_air)*lvl/100+K_air)*8.854e-12*A/D*1e12; // pF
+function Scene4(){
+  const [lvl,setLvl]=useState(60);
+  const [K,setK]=useState(2.5);
+  const C0=5.0;
+  const Cliq=C0*K;
+  const Cread=(C0+(Cliq-C0)*lvl/100).toFixed(2);
+  const dielectrics=[['Agua',80],['Ácido H₂SO₄',84],['Etanol',25],['Acetona',21],['Hexano',1.9],['Petróleo crudo',2.5],['Glicerina',43]];
   return(
-    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
-      <Title icon='⚡' color={ORANGE} title='Capacitivo y Conductivo' sub='Propiedades eléctricas del fluido para detectar nivel'/>
-      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
-        <div style={{flex:1}}>
-          <div style={{display:'flex',flexDirection:'column',gap:14}}>
-            <IB color={ORANGE} title='Medidor Capacitivo'>El electrodo y la pared del tanque forman un condensador. La capacitancia varía con el nivel porque la constante dieléctrica del líquido (K) es diferente a la del gas: <b style={{color:ORANGE}}>ΔC = (K₂-K₁)·A/D</b>. Válido para líquidos y sólidos.</IB>
-            <IB color={RED} title='Medidor Conductivo / Resistivo'>Electrodos sumergidos. Cuando el líquido conductor los toca, se cierra el circuito y activa un relé. Uso como alarma de nivel alto/bajo. Impedancia mínima del fluido: 25 MΩ/cm. Alimentación alterna para evitar electrólisis.</IB>
-            <div style={{background:'#0a1628',border:`1px solid ${ORANGE}33`,borderRadius:8,padding:'12px 14px'}}>
-              <div style={{fontSize:11,color:ORANGE,fontWeight:700,marginBottom:6}}>CONSTANTES DIELÉCTRICAS</div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,fontSize:11}}>
-                {[['Fluido','K aprox.','Tipo'],['Vacío / Aire','1.0','Ref'],['Agua','80','Alta'],['Petróleo','2.0','Baja'],['Etanol','25','Media'],['Ácido HCl','4.6','Media']].map((r,i)=>(
-                  <React.Fragment key={i}>
-                    {r.map((c,j)=><div key={j} style={{color:i===0?ORANGE:j===0?'#e2e8f0':j===1?CYAN:'#64748b',padding:'3px 4px',borderBottom:'1px solid #1e3a5f',fontWeight:i===0?700:400}}>{c}</div>)}
-                  </React.Fragment>
-                ))}
+    <div>
+      <div className="sec-title">Capacitivo RF y Flotador de Desplazamiento</div>
+      <div className="sec-sub">C = K·A/D (RF Admittance) — Tubo de torsión (±9°) — LVDT — Medición de densidad</div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h">Sensor capacitivo RF — Simulador</div>
+            <div className="formula-box">ΔC = (K₂ − K₁) · A / D</div>
+            <div style={{margin:'8px 0'}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:4}}>
+                <span>Nivel: <b className="gold">{lvl}%</b></span>
+                <span>C leída: <b style={{color:'#22c55e'}}>{Cread} pF</b></span>
               </div>
+              <input type="range" min="0" max="100" step="1" value={lvl} onChange={e=>setLvl(+e.target.value)}/>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:8,marginBottom:4}}>Constante dieléctrica K: <b className="gold">{K.toFixed(1)}</b></div>
+              <input type="range" min="1.5" max="84" step="0.5" value={K} onChange={e=>setK(+e.target.value)}/>
+            </div>
+            <svg width="100%" viewBox="0 0 250 130">
+              <rect x="50" y="10" width="150" height="110" rx="5" fill="#0f1729" stroke="#1e2d4a"/>
+              <rect x="52" y={10+110*(1-lvl/100)} width="146" height={110*lvl/100} rx="3" fill="#3b82f622"/>
+              <rect x="110" y="10" width="10" height="110" rx="3" fill="#0f1729" stroke="#f59e0b" strokeWidth="2"/>
+              <line x1="52" y1={10+110*(1-lvl/100)} x2="198" y2={10+110*(1-lvl/100)} stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="3,2"/>
+              <text x="125" y="95" textAnchor="middle" fill="#22c55e" fontSize="12" fontWeight="bold">{Cread} pF</text>
+              <text x="125" y="108" textAnchor="middle" fill="#64748b" fontSize="8">Capacitancia leída</text>
+              <rect x="170" y="40" width="46" height="26" rx="4" fill="#0d1425" stroke="#22c55e55"/>
+              <text x="193" y="52" textAnchor="middle" fill="#22c55e" fontSize="8">RF Tx</text>
+              <text x="193" y="62" textAnchor="middle" fill="#fcd34d" fontSize="8">{lvl}%</text>
+              <line x1="120" y1="10" x2="170" y2="53" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="3,2"/>
+            </svg>
+            <div className="card-h" style={{marginTop:6}}>Constantes dieléctricas (clic para usar)</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:4}}>
+              {dielectrics.map(([n,k],i)=>(
+                <span key={i} onClick={()=>setK(k)} className="tag tag-blue" style={{cursor:'pointer'}}>{n}: {k}</span>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:'#64748b',marginTop:6}}>K{'>'} 2.5 recomendado. Electrodos con Teflon para fluidos conductivos ({'>'} 100 μS/cm). Exactitud ±0.25%.</div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{marginBottom:8}}>
+            <div className="card-h">Flotador de Desplazamiento — Tubo de Torsión</div>
+            <svg width="100%" viewBox="0 0 280 160">
+              <rect x="30" y="20" width="100" height="130" rx="5" fill="#0f1729" stroke="#1e2d4a"/>
+              <rect x="32" y={20+130*(1-lvl/100)} width="96" height={130*lvl/100} rx="3" fill="#3b82f622"/>
+              <rect x="50" y={20+130*(1-lvl/100)-25} width="55" height="45" rx="5" fill="#f97316" stroke="#f97316" opacity="0.8"/>
+              <text x="77" y={20+130*(1-lvl/100)-5} textAnchor="middle" fill="#fff" fontSize="8">Flotador</text>
+              <line x1="105" y1={20+130*(1-lvl/100)+8} x2="175" y2={20+130*(1-lvl/100)+8} stroke="#a78bfa" strokeWidth="2.5"/>
+              <rect x="175" y={20+130*(1-lvl/100)-2} width="55" height="20" rx="4" fill="#0d1425" stroke="#a78bfa55"/>
+              <text x="202" y={20+130*(1-lvl/100)+11} textAnchor="middle" fill="#a78bfa" fontSize="8">Tubo torsión ±9°</text>
+              <rect x="185" y="25" width="50" height="32" rx="4" fill="#0d1425" stroke="#22c55e55"/>
+              <text x="210" y="38" textAnchor="middle" fill="#22c55e" fontSize="8">LVDT</text>
+              <text x="210" y="49" textAnchor="middle" fill="#fcd34d" fontSize="9">{lvl}%</text>
+              <line x1="205" y1={20+130*(1-lvl/100)-2} x2="205" y2="57" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="3,2"/>
+            </svg>
+            <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.5}}>Empuje de Arquímedes: <b className="gold">F_útil = S·h·ρ·g − P</b>. Flotador parcialmente sumergido transmite fuerza vía tubo de torsión (ángulo ≈9°) al LVDT externo hermético. Rango hasta 2000 mm. Exactitud ±0.5–1%.</p>
+          </div>
+          <div className="card">
+            <div className="card-h">Sensor conductivo (interruptor de nivel)</div>
+            <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.5}}>Electrodos a 12–24 VAC evitan electrólisis. Relé temporizador evita falsas alarmas por oleaje. Sensibilidad ajustable (detecta espuma). Mínimo conductividad ≈ 25 μS/cm. Solo ON/OFF.</p>
+            <table style={{marginTop:6}}>
+              <tbody>{[['Conductividad mínima','25 μS/cm'],['Exactitud','±5–25 mm'],['Salida','Relé / NAMUR'],['Tensión electrodo','12–24 VAC']].map(([k,v],i)=>(
+                <tr key={i}><td style={{color:'#64748b'}}>{k}</td><td style={{color:'#fcd34d'}}>{v}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene5(){
+  const [tech,setTech]=useState('us');
+  const [dist,setDist]=useState(3.0);
+  const [hT,setHT]=useState(6.0);
+  const tUS=(2*dist/343*1000).toFixed(2);
+  const tRadar=(2*dist/3e8*1e9).toFixed(4);
+  const level=hT-dist;
+  return(
+    <div>
+      <div className="sec-title">Ultrasonidos, Radar FMCW y GWR</div>
+      <div className="sec-sub">TOF ultrasónico · Modulación FM con onda continua · TDR (Onda Guiada) — sin contacto</div>
+      <div style={{display:'flex',gap:6,marginBottom:10}}>
+        {[['us','Ultrasonidos'],['fmcw','Radar FMCW'],['gwr','GWR (TDR)']].map(([k,v])=>(
+          <button key={k} className={`btn-outline${tech===k?' active':''}`} onClick={()=>setTech(k)}>{v}</button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <div className="card-h">Simulador — Tiempo de vuelo</div>
+            <div className="formula-box">{tech==='us'?'h = v_sonido · t / 2':tech==='fmcw'?'d = c·Δt/2  (FMCW: Δf → Δt)':'TDR: 200k pulsos/s → Δt → nivel'}</div>
+            <div style={{margin:'8px 0'}}>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4}}>Distancia sensor→superficie (m): <b className="gold">{dist.toFixed(1)} m</b></div>
+              <input type="range" min="0.2" max={hT-0.1} step="0.1" value={dist} onChange={e=>setDist(+e.target.value)}/>
+              <div style={{fontSize:11,color:'#94a3b8',marginBottom:4,marginTop:8}}>Altura total tanque (m): <b className="gold">{hT.toFixed(1)} m</b></div>
+              <input type="range" min="1" max="20" step="0.5" value={hT} onChange={e=>setHT(+e.target.value)}/>
+            </div>
+            <div style={{background:'#060a14',borderRadius:8,padding:12,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+              <div style={{textAlign:'center',background:'#0f1729',borderRadius:6,padding:8}}>
+                <div style={{fontSize:9,color:'#64748b'}}>Nivel medido</div>
+                <div style={{fontSize:20,fontWeight:700,color:'#22c55e'}}>{level.toFixed(2)} m</div>
+                <div style={{fontSize:9,color:'#64748b'}}>{(level/hT*100).toFixed(1)}%</div>
+              </div>
+              <div style={{textAlign:'center',background:'#0f1729',borderRadius:6,padding:8}}>
+                <div style={{fontSize:9,color:'#64748b'}}>TOF de vuelo</div>
+                <div style={{fontSize:14,fontWeight:700,color:'#f59e0b'}}>{tech==='us'?`${tUS} ms`:`${tRadar} ns`}</div>
+                <div style={{fontSize:9,color:'#64748b'}}>{tech==='us'?'v=343 m/s':'v≈c (luz)'}</div>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Característica</th><th style={{color:'#3b82f6'}}>US</th><th style={{color:'#22c55e'}}>FMCW</th><th style={{color:'#a78bfa'}}>GWR</th></tr></thead>
+              <tbody>
+                {[['Exactitud','±5 mm','±1 mm','±1–5 mm'],
+                  ['Espuma','Absorbe ✗','Transparente ✓','Transparente ✓'],
+                  ['K min. diel.','N/A','2.5','1.7'],
+                  ['Rango','0–60 m','0–100 m','0.2–25 m'],
+                  ['Temperatura','Afecta (compensar)','No afecta','No afecta'],
+                  ['Contacto proceso','No','No','Sí (sonda)'],
+                ].map(([p,u,r,g],i)=>(
+                  <tr key={i}><td style={{color:'#64748b'}}>{p}</td><td style={{color:'#3b82f6'}}>{u}</td><td style={{color:'#22c55e'}}>{r}</td><td style={{color:'#a78bfa'}}>{g}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <div className="card-h">Principio — {tech==='us'?'Ultrasonidos (TOF)':tech==='fmcw'?'Radar FMCW (10 GHz)':'GWR / TDR'}</div>
+            <svg width="100%" viewBox="0 0 280 280">
+              <rect x="50" y="80" width="160" height="180" rx="6" fill="#0f1729" stroke="#1e2d4a" strokeWidth="2"/>
+              <rect x="52" y={80+180*dist/hT} width="156" height={180*(1-dist/hT)} rx="3" fill="#3b82f622"/>
+              <line x1="50" y1={80+180*dist/hT} x2="210" y2={80+180*dist/hT} stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4,3"/>
+              {tech==='us'&&(<>
+                <rect x="105" y="52" width="50" height="28" rx="4" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="2"/>
+                <text x="130" y="65" textAnchor="middle" fill="#93c5fd" fontSize="9">US Sensor</text>
+                <text x="130" y="75" textAnchor="middle" fill="#64748b" fontSize="7">20–200 kHz</text>
+                {[1,2,3].map(i=>(
+                  <path key={i} d={`M${130-i*8},${80+i*4} Q130,${84+i*4} ${130+i*8},${80+i*4}`}
+                    fill="none" stroke="#3b82f6" strokeWidth="1" opacity={1-i*0.25} strokeDasharray="2,2"/>
+                ))}
+                <text x="222" y={80+90*dist/hT} fill="#fcd34d" fontSize="9">d={dist.toFixed(1)}m</text>
+                <line x1="218" y1="82" x2="218" y2={80+180*dist/hT} stroke="#fcd34d" strokeWidth="1"/>
+              </>)}
+              {tech==='fmcw'&&(<>
+                <rect x="105" y="44" width="50" height="36" rx="4" fill="#0d1425" stroke="#22c55e" strokeWidth="2"/>
+                <text x="130" y="57" textAnchor="middle" fill="#22c55e" fontSize="8">Radar FMCW</text>
+                <text x="130" y="67" textAnchor="middle" fill="#64748b" fontSize="7">10 GHz</text>
+                <text x="130" y="76" textAnchor="middle" fill="#fcd34d" fontSize="7">Antena cónica</text>
+                <polygon points={`130,80 ${130-14},${80+180*dist/hT-5} ${130+14},${80+180*dist/hT-5}`} fill="#22c55e11" stroke="#22c55e" strokeWidth="1" strokeDasharray="3,2"/>
+                <text x="222" y={80+90*dist/hT} fill="#fcd34d" fontSize="9">Δf→d</text>
+              </>)}
+              {tech==='gwr'&&(<>
+                <rect x="105" y="44" width="50" height="36" rx="4" fill="#0d1425" stroke="#a78bfa" strokeWidth="2"/>
+                <text x="130" y="57" textAnchor="middle" fill="#a78bfa" fontSize="8">GWR/TDR</text>
+                <text x="130" y="67" textAnchor="middle" fill="#64748b" fontSize="7">200k pulsos/s</text>
+                <text x="130" y="76" textAnchor="middle" fill="#fcd34d" fontSize="7">TDR</text>
+                <line x1="130" y1="80" x2="130" y2="255" stroke="#94a3b8" strokeWidth="3"/>
+                <rect x="124" y={80+180*dist/hT-6} width="12" height="12" fill="#a78bfa" rx="2"/>
+                <text x="155" y={80+180*dist/hT+4} fill="#a78bfa" fontSize="8">Reflexión</text>
+                <text x="222" y={80+90*dist/hT} fill="#fcd34d" fontSize="9">TDR→d</text>
+              </>)}
+              <text x="30" y={80+180*dist/hT+4} textAnchor="middle" fill="#22c55e" fontSize="9">{(level/hT*100).toFixed(0)}%</text>
+            </svg>
+            <div style={{fontSize:11,color:'#94a3b8',marginTop:4,lineHeight:1.5}}>
+              {tech==='us'?'Compensación temperatura (+0.17%/°C en v_sonido) obligatoria. La espuma absorbe la energía ultrasónica. Algoritmos de amortiguamiento para oleaje. Exactitud ±5 mm.':
+               tech==='fmcw'?'FMCW: diferencia de frecuencia Δf entre emitida y recibida → d. Corrección Doppler: Δf₁+Δf₂=2K·T elimina movimiento. La espuma es transparente a las microondas. Exactitud ±1 mm con FFT.':
+               'TDR: >200.000 pulsos EM/s por sonda. Mide K mínimo ≈ 1.7. Inmune a espuma, turbulencia, depósitos, composición del gas. Ideal para asfaltos, parafinas, líquidos viscosos.'}
             </div>
           </div>
         </div>
-        <div style={{width:380,display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
-          <CapTankViz pct={lvl}/>
-          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)} style={{width:'100%',accentColor:ORANGE}}/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,width:'100%'}}>
-            <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
-              <div style={{fontSize:10,color:'#64748b'}}>Nivel</div>
-              <div style={{fontSize:24,fontWeight:800,color:ORANGE}}>{lvl}%</div>
+      </div>
+    </div>
+  );
+}
+
+function Scene6(){
+  return(
+    <div>
+      <div className="sec-title">Radiación, Láser y Medición Másica HTG</div>
+      <div className="sec-sub">Gamma (Cs-137/Co-60) · Láser TOF · Hydrostatic Tank Gauging — sin contacto con el proceso</div>
+      <div className="grid2">
+        <div>
+          <div className="card" style={{marginBottom:8}}>
+            <div className="card-h">Medidor por Radiación Gamma</div>
+            <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.5,marginBottom:6}}>Fuente gamma exterior (Cs-137: 30 años; Co-60: 5.3 años; Am-241: 458 años). Detector Geiger o fibra de centelleo opuesto. Intensidad inversamente proporcional al nivel (más líquido = más absorción).</p>
+            <div className="formula-box" style={{fontSize:11}}>I = I₀ · e^(−μ·ρ·L)</div>
+            <table style={{marginTop:6}}>
+              <tbody>{[['Exactitud','±0.5–2%'],['Presión/Temp.','Sin límite (exterior)'],['Fuente típica','Cs-137 (30 años vida media)'],['Regulación','CSN/NRC — licencia requerida'],['Aplicación','Difícil acceso, alta P/T°, materiales corrosivos']].map(([k,v],i)=>(
+                <tr key={i}><td style={{color:'#64748b'}}>{k}</td><td style={{color:'#fcd34d'}}>{v}</td></tr>
+              ))}</tbody>
+            </table>
+            <div style={{marginTop:8,fontSize:10,color:'#ef4444',background:'#7f1d1d22',borderRadius:6,padding:7}}>⚠️ Requiere aprobación de diseño, certificados de hermeticidad/actividad y señalización obligatoria.</div>
+          </div>
+          <div className="card">
+            <div className="card-h">Medidor Láser (TOF / fase)</div>
+            <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.5,marginBottom:6}}>Pulso láser vía tubo de acero + espejo. d = v_luz × t_vuelo / 2. Divergencia 0.2° → pasa por apertura de 50 mm. 3 medidas/segundo. Completamente independiente de T°, P, vapor y dieléctrico.</p>
+            <table>
+              <tbody>{[['Exactitud','±1 mm (gral) / ±0.1 mm (fiscal)'],['Rango','hasta 50 m'],['Vs. Ultrasonidos','No afecta espuma ni turbulencia'],['Vs. Radar','Pasa por aperturas ≥50 mm'],['Costo','Mayor que radar; menor que radiación']].map(([k,v],i)=>(
+                <tr key={i}><td style={{color:'#64748b'}}>{k}</td><td style={{color:'#86efac'}}>{v}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <div className="card-h">HTG — Hydrostatic Tank Gauging (Medición Másica)</div>
+            <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.5,marginBottom:6}}>Dos transmisores de alta exactitud (P₁ inferior, P₂ intermedio) a distancia fija + Pt100. Tercer transmisor P₃ para vapor en tanques cerrados. Comunicación digital en un único par de hilos.</p>
+            <div className="formula-box" style={{fontSize:11,lineHeight:1.9}}>
+              ρ = (P_inf − P_med) / (h · g)<br/>
+              Nivel = (P₁ − Pₛ) / (ρ · g) + hᵢ<br/>
+              Masa = (P₁ − Pₛ) × Área_media
             </div>
-            <div style={{background:CARD,border:`1px solid ${CYAN}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
-              <div style={{fontSize:10,color:'#64748b'}}>Capacitancia</div>
-              <div style={{fontSize:24,fontWeight:800,color:CYAN}}>{C_total.toFixed(1)} pF</div>
+            <svg width="100%" viewBox="0 0 280 195">
+              <rect x="65" y="10" width="140" height="170" rx="6" fill="#0f1729" stroke="#1e2d4a" strokeWidth="2"/>
+              <rect x="67" y="60" width="136" height="118" rx="3" fill="#3b82f622"/>
+              <circle cx="65" cy="168" r="8" fill="#f59e0b" stroke="#f59e0b"/>
+              <text x="47" y="171" textAnchor="end" fill="#f59e0b" fontSize="8">P₁</text>
+              <circle cx="65" cy="108" r="8" fill="#22c55e" stroke="#22c55e"/>
+              <text x="47" y="111" textAnchor="end" fill="#22c55e" fontSize="8">P₂</text>
+              <circle cx="65" cy="18" r="8" fill="#a78bfa" stroke="#a78bfa"/>
+              <text x="47" y="21" textAnchor="end" fill="#a78bfa" fontSize="8">P₃</text>
+              <rect x="120" y="18" width="40" height="14" rx="3" fill="#0d1425" stroke="#f9731655"/>
+              <text x="140" y="28" textAnchor="middle" fill="#f97316" fontSize="8">Pt100</text>
+              <line x1="222" y1="108" x2="222" y2="168" stroke="#64748b" strokeWidth="1"/>
+              <text x="238" y="141" fill="#64748b" fontSize="8">h fijo</text>
+              <rect x="160" y="58" width="75" height="66" rx="4" fill="#060a14" stroke="#1e2d4a"/>
+              <text x="197" y="72" textAnchor="middle" fill="#fcd34d" fontSize="8">Nivel: ±0.1%</text>
+              <text x="197" y="84" textAnchor="middle" fill="#22c55e" fontSize="8">Masa: ±0.01%</text>
+              <text x="197" y="96" textAnchor="middle" fill="#a78bfa" fontSize="8">ρ: automática</text>
+              <text x="197" y="108" textAnchor="middle" fill="#94a3b8" fontSize="7">1 par de hilos</text>
+              <text x="197" y="116" textAnchor="middle" fill="#f97316" fontSize="7">+Pt100 T°</text>
+            </svg>
+            <table style={{marginTop:6}}>
+              <thead><tr><th>Método</th><th>Exactitud vol.</th><th>Exactitud masa</th></tr></thead>
+              <tbody>{[['DP clásico','±0.3%','—'],['HTG (2 sensores)','±0.1%','±0.01%'],['Híbrido Radar+HTG','±0.05%','±0.005%']].map(([m,v,ma],i)=>(
+                <tr key={i}><td>{m}</td><td style={{color:'#22c55e'}}>{v}</td><td style={{color:'#fcd34d'}}>{ma}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene7(){
+  const [tipo,setTipo]=useState('punto');
+  return(
+    <div>
+      <div className="sec-title">Medición de Nivel de Sólidos</div>
+      <div className="sec-sub">Detección de punto fijo · Medición continua — graneles, polvos, carbón, cereales, cemento</div>
+      <div style={{display:'flex',gap:6,marginBottom:10}}>
+        {[['punto','Detección punto fijo'],['continuo','Medición continua']].map(([k,v])=>(
+          <button key={k} className={`btn-outline${tipo===k?' active':''}`} onClick={()=>setTipo(k)}>{v}</button>
+        ))}
+      </div>
+      {tipo==='punto'?
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <div className="card-h">Detectores de punto fijo para sólidos</div>
+              <table>
+                <thead><tr><th>Sensor</th><th>Principio</th><th>Exactitud</th><th>Aplicación</th></tr></thead>
+                <tbody>{[
+                  ['Diafragma','Presión sobre membrana flexible→microswitch','±50 mm','Silo graneles, bajo costo'],
+                  ['Paletas rotativas','Motor síncrono; bloqueo → disparo relé','±25 mm','Grano, carbón, cemento'],
+                  ['Vibratorio (diapasón)','Piezo excita diapasón; masa amortigua frecuencia','±1%','Polvos, antiincrustante'],
+                  ['Capacitivo RF','RC oscilador; cambio K dieléctrico','±25 mm','Plásticos, materias primas'],
+                  ['Radar de barrera','Microondas bloqueadas por material','±5 mm','Polvo, vapor, transparente'],
+                ].map(([s,p,e,a],i)=>(
+                  <tr key={i}><td style={{color:'#f59e0b',fontWeight:600}}>{s}</td><td style={{color:'#94a3b8',fontSize:10}}>{p}</td><td style={{color:'#22c55e'}}>{e}</td><td style={{color:'#64748b',fontSize:10}}>{a}</td></tr>
+                ))}</tbody>
+              </table>
+            </div>
+            <div className="card" style={{marginTop:8}}>
+              <div className="card-h">Paletas Rotativas — Principio de funcionamiento</div>
+              <svg width="100%" viewBox="0 0 260 120">
+                <circle cx="60" cy="60" r="34" fill="#0f1729" stroke="#f59e0b" strokeWidth="2"/>
+                <text x="60" y="57" textAnchor="middle" fill="#f59e0b" fontSize="9">Motor</text>
+                <text x="60" y="68" textAnchor="middle" fill="#64748b" fontSize="8">síncrono</text>
+                <line x1="94" y1="60" x2="128" y2="60" stroke="#94a3b8" strokeWidth="3"/>
+                <circle cx="138" cy="60" r="8" fill="#f97316" stroke="#f97316"/>
+                {[0,60,120,180,240,300].map(a=>(
+                  <line key={a} x1={138+8*Math.cos(a*Math.PI/180)} y1={60+8*Math.sin(a*Math.PI/180)}
+                    x2={138+26*Math.cos(a*Math.PI/180)} y2={60+26*Math.sin(a*Math.PI/180)}
+                    stroke="#f97316" strokeWidth="3.5"/>
+                ))}
+                <rect x="155" y="18" width="85" height="84" rx="4" fill="#0f1729" stroke="#1e2d4a" strokeWidth="2"/>
+                <rect x="157" y="70" width="81" height="30" rx="3" fill="#94a3b855"/>
+                <text x="197" y="89" textAnchor="middle" fill="#94a3b8" fontSize="8">Sólido bloquea</text>
+                <text x="197" y="100" textAnchor="middle" fill="#ef4444" fontSize="8">→ relé dispara</text>
+                <text x="138" y="112" textAnchor="middle" fill="#64748b" fontSize="8">Muelle devuelve al bajar nivel</text>
+              </svg>
             </div>
           </div>
-          <div style={{background:CARD,border:`1px solid ${RED}33`,borderRadius:8,padding:'12px 14px',width:'100%'}}>
-            <div style={{fontSize:11,color:RED,fontWeight:700,marginBottom:6}}>ALARMA CONDUCTIVA — ON/OFF</div>
-            <div style={{display:'flex',gap:8}}>
-              {[{p:25,l:'Nivel bajo'},{p:50,l:'Nivel medio'},{p:75,l:'Nivel alto'}].map((a,i)=>(
-                <div key={i} style={{flex:1,background:'#0a1628',border:`2px solid ${lvl>=a.p?GREEN:BORDER}`,borderRadius:8,padding:'8px',textAlign:'center'}}>
-                  <div style={{fontSize:18}}>{lvl>=a.p?'🔴':'⚫'}</div>
-                  <div style={{fontSize:9,color:lvl>=a.p?RED:'#64748b'}}>{a.l}</div>
+          <div>
+            <div className="card">
+              <div className="card-h">Sensor Vibratorio — Diapasón Piezoeléctrico</div>
+              <svg width="100%" viewBox="0 0 260 150">
+                <rect x="105" y="18" width="16" height="38" rx="3" fill="#0f1729" stroke="#3b82f6" strokeWidth="2"/>
+                <rect x="90" y="56" width="15" height="58" rx="3" fill="#0f1729" stroke="#3b82f6" strokeWidth="2"/>
+                <rect x="121" y="56" width="15" height="58" rx="3" fill="#0f1729" stroke="#3b82f6" strokeWidth="2"/>
+                <rect x="107" y="25" width="12" height="10" fill="#f59e0b" opacity="0.7"/>
+                <text x="128" y="32" fill="#f59e0b" fontSize="8">Piezo</text>
+                <path d="M90,95 Q80,90 90,85" fill="none" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="2,1"/>
+                <path d="M136,95 Q146,90 136,85" fill="none" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="2,1"/>
+                <text x="60" y="130" textAnchor="middle" fill="#22c55e" fontSize="9">Sin material</text>
+                <text x="60" y="142" textAnchor="middle" fill="#22c55e" fontSize="8">↔ vibra libre</text>
+                <text x="200" y="100" textAnchor="middle" fill="#ef4444" fontSize="9">Con material:</text>
+                <text x="200" y="112" textAnchor="middle" fill="#ef4444" fontSize="8">amortiguado</text>
+                <text x="200" y="124" textAnchor="middle" fill="#ef4444" fontSize="8">→ relé dispara</text>
+                <rect x="100" y="8" width="26" height="12" fill="#1e2d4a"/>
+              </svg>
+              <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.5}}>Excitación piezoeléctrica. Material amortigua la vibración → circuito dispara relé con retardo ajustable. Opción de auto-limpieza. Exactitud ±1%. Antiincrustante para materiales pegajosos.</p>
+            </div>
+          </div>
+        </div>
+        :
+        <div>
+          <div className="card">
+            <div className="card-h">Instrumentos continuos para medición de nivel de sólidos</div>
+            <table>
+              <thead><tr><th>Instrumento</th><th>Principio</th><th>Exactitud</th><th>Condiciones especiales</th><th>Aplicación típica</th></tr></thead>
+              <tbody>{[
+                ['Sondeo electromecánico','Plomada desciende; cuerda afloja → inversión','±1%','Velocidad deposición ≤1 m/min','Silos grandes: cemento, grano'],
+                ['Báscula / celda de carga','Pesaje total silo + producto; galgas ext.','±0.5–1%','Vibración afecta → amortiguadores','Dosificación, inventario preciso'],
+                ['Capacitivo (continuo)','Sonda vertical; C varía con nivel sólido','±15 mm','Solo sólidos no conductivos','Granulados, polvos, hasta 50 bar/150°C'],
+                ['Ultrasonidos','Haz vertical; TOF; almacena perfil EM','±0.15–1%','Temperatura máx. 150°C','Silos abiertos, multirango'],
+                ['Radar microondas','Haz descendente; reflexión superficie sólida','±2 mm','Ideal para asfalto caliente','Hasta 40 m, alta temperatura'],
+                ['Radiación gamma','Fuente exterior; I inversamente proporcional','±1%','Hasta 1300°C y 130 bar','Sólidos opacos, alta T°/P'],
+                ['Láser','Pulso a superficie; divergencia 0.2°','±1%','Apertura mínima 25 cm²','Silos hasta 75 m, materiales abrasivos'],
+              ].map(([i,p,e,c,a],j)=>(
+                <tr key={j}><td style={{color:'#f59e0b',fontWeight:600,fontSize:10}}>{i}</td><td style={{color:'#94a3b8',fontSize:9}}>{p}</td><td style={{color:'#22c55e'}}>{e}</td><td style={{color:'#64748b',fontSize:9}}>{c}</td><td style={{color:'#93c5fd',fontSize:9}}>{a}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+          <div className="card" style={{marginTop:8,padding:'10px 14px'}}>
+            <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
+              {[
+                {icon:'⚖️',t:'Selección por densidad aparente',d:'Alta densidad (>1.5 t/m³): preferir radar o láser. Baja densidad (polvos <0.5 t/m³): capacitivo o vibratorio.'},
+                {icon:'🌡️',t:'Alta temperatura (>150°C)',d:'Solo radiación gamma o radar de microondas con antena resistente. El láser necesita protección térmica.'},
+                {icon:'💨',t:'Polvo en suspensión',d:'Radar de microondas y láser son inmunes al polvo. Ultrasonidos puede fallar. Vibratorio con auto-limpieza.'},
+                {icon:'📦',t:'Inventario fiscal',d:'Solo báscula (celda de carga) o radiación gamma dan exactitud de masa. Resto miden volumen → necesitan densidad.'},
+              ].map((item,i)=>(
+                <div key={i} style={{flex:'1 1 200px'}}>
+                  <div style={{fontSize:12,marginBottom:4}}>{item.icon} <b className="gold">{item.t}</b></div>
+                  <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5}}>{item.d}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-function CapTankViz({pct}){
-  const h=pct*2;
-  return(
-    <svg width={220} height={280}>
-      <rect x={40} y={20} width={120} height={240} rx={6} fill={CARD} stroke={ORANGE} strokeWidth={2}/>
-      <rect x={42} y={260-h} width={116} height={h} fill={`${ORANGE}33`} style={{transition:'all 0.1s'}}/>
-      {/* electrode */}
-      <line x1={100} y1={30} x2={100} y2={250} stroke={ORANGE} strokeWidth={4}/>
-      <text x={100} y={16} fill={ORANGE} fontSize={9} textAnchor='middle'>Electrodo</text>
-      {/* alarm points */}
-      {[25,50,75].map(p=>(
-        <circle key={p} cx={155} cy={260-p*2} r={5} fill={pct>=p?RED:BORDER}/>
-      ))}
-      <text x={100} y={275} fill='#64748b' fontSize={9} textAnchor='middle'>C = ε·K·A/D</text>
-    </svg>
-  );
-}
-
-/* SCENE 6 — SELECCIÓN Y COMPARATIVA */
-function S6(){
-  const rows=[
-    {m:'DP Hidrostático',p:'P=h·ρ·g',acc:'±0.2%',cont:'Sí',fluid:'Líquidos',cost:'Bajo',c:CYAN},
-    {m:'Flotador directo',p:'Arquímedes',acc:'±0.5%',cont:'Sí',fluid:'Líquidos limpios',cost:'Bajo',c:GREEN},
-    {m:'Desplazador',p:'Empuje variable',acc:'±0.5%',cont:'Sí',fluid:'Líq/interfases',cost:'Medio',c:GREEN},
-    {m:'Magnetoestrictivo',p:'Pulso torsional',acc:'±0.01mm',cont:'Sí (flotador)',fluid:'Líquidos',cost:'Medio',c:VIOLET},
-    {m:'Ultrasónico',p:'Tiempo vuelo',acc:'±0.1-0.5%',cont:'No',fluid:'Líq/sólidos',cost:'Medio',c:VIOLET},
-    {m:'Radar FMCW',p:'Microondas',acc:'±1 mm',cont:'No',fluid:'Cualquiera',cost:'Alto',c:GOLD},
-    {m:'Capacitivo',p:'ΔC = f(nivel)',acc:'±0.25%',cont:'Sí',fluid:'Líq/sólidos',cost:'Medio',c:ORANGE},
-    {m:'Conductivo',p:'Resistencia',acc:'On/Off',cont:'Sí',fluid:'Conductores',cost:'Muy bajo',c:RED},
-  ];
-  return(
-    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 60px'}}>
-      <Title icon='📊' color={GOLD} title='Comparativa de Medidores de Nivel' sub='Selección según fluido, exactitud, contacto y costo'/>
-      <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginTop:16}}>
-        <thead>
-          <tr>{['Medidor','Principio','Exactitud','Contacto','Fluidos','Costo'].map((h,i)=>(
-            <th key={i} style={{background:'#0a1628',padding:'9px 8px',textAlign:'left',color:GOLD,fontSize:10,textTransform:'uppercase',letterSpacing:0.8,borderBottom:`2px solid ${GOLD}44`}}>{h}</th>
-          ))}</tr>
-        </thead>
-        <tbody>
-          {rows.map((r,i)=>(
-            <tr key={i} style={{background:i%2===0?CARD:'#0a1628'}}>
-              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:r.c,fontWeight:700}}>{r.m}</td>
-              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:'#94a3b8'}}>{r.p}</td>
-              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:'#e2e8f0',fontFamily:'monospace'}}>{r.acc}</td>
-              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:r.cont==='No'?GREEN:GOLD,fontWeight:600}}>{r.cont}</td>
-              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:'#94a3b8'}}>{r.fluid}</td>
-              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:r.cost.includes('Bajo')?GREEN:r.cost==='Alto'?RED:GOLD,fontWeight:600}}>{r.cost}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{display:'flex',gap:14,marginTop:16,width:'100%'}}>
-        {[
-          {icon:'💡',c:GOLD,t:'El transmisor DP es el más común y económico para tanques de proceso con líquidos limpios o moderadamente sucios.'},
-          {icon:'🏆',c:VIOLET,t:'El radar FMCW es el más exacto y versátil — ideal para condiciones severas: vapor, presión, temperatura y espuma.'},
-          {icon:'⚡',c:RED,t:'Los conductivos (on/off) son los más económicos para alarmas de nivel en agua, calderas y depósitos con líquidos conductores.'},
-        ].map((t,i)=>(
-          <div key={i} style={{flex:1,background:CARD,border:`1px solid ${t.c}33`,borderRadius:8,padding:'10px 12px',display:'flex',gap:8}}>
-            <span style={{fontSize:18}}>{t.icon}</span>
-            <div style={{fontSize:11,color:'#cbd5e1',lineHeight:1.6}}>{t.t}</div>
-          </div>
-        ))}
-      </div>
+      }
     </div>
   );
 }
 
-/* SCENE 7 — TEST */
-function S7(){
+const QS=[
+  {q:'¿Qué grandeza mide el magnetoestrictivo para determinar el nivel?',opts:['El tiempo entre el pulso de corriente emitido y la onda torsional de retorno del flotador magnético','La diferencia de presión hidrostática entre dos puntos','La capacitancia entre electrodo y líquido','La frecuencia de resonancia ultrasónica'],ans:0,exp:'El pulso de corriente crea campo magnético en el tubo guía; el imán del flotador genera onda torsional. Δt medido a 10⁻⁸ s → exactitud ±0.01%.'},
+  {q:'En el sistema de burbujeo para medición de nivel, la presión medida equivale a:',opts:['h·ρ·g — la contrapresión del aire al salir del tubo sumergido','La diferencia de presión entre HP y LP del tanque','El caudal de aire inyectado','La capacitancia del líquido en el tubo'],ans:0,exp:'El flujo de aire constante (~150 L/h) mantiene P = h·ρ·g en el manómetro. Ideal para líquidos corrosivos o con sólidos en suspensión.'},
+  {q:'La "elevación de cero" en un transmisor ΔP de nivel se corrige cuando:',opts:['Se usa pata húmeda (wet leg) en tanque cerrado → P_LP alta genera ΔP negativo en vacío','El transmisor está por debajo del punto cero del tanque','El rango del transmisor es menor que el span requerido','La densidad del fluido cambia con la temperatura'],ans:0,exp:'La pata húmeda genera P_LP > P_HP cuando el tanque está vacío → ΔP negativo. Se añade un offset de elevación = hs·ρ·g para corregir.'},
+  {q:'¿Por qué el radar FMCW es superior a los ultrasonidos en presencia de espuma?',opts:['Las microondas atraviesan la espuma; los ultrasonidos son absorbidos por ella','El radar es más exacto en todos los casos','Los ultrasonidos no funcionan en tanques cerrados','El radar mide temperatura simultáneamente'],ans:0,exp:'La espuma absorbe la energía ultrasónica (señal de retorno débil o nula). Las microondas la atraviesan sin atenuación significativa.'},
+  {q:'El GWR (Guided Wave Radar) ventaja principal sobre el radar libre es:',opts:['Mide líquidos con K < 1.7 (radar libre necesita K ≥ 2.5) y es inmune a espuma y turbulencia','Tiene mayor alcance que el radar FMCW','No necesita contacto con el proceso','Es más económico que el ultrasónico'],ans:0,exp:'GWR guía las microondas por sonda hasta la superficie. K mínimo ≈ 1.7 vs ≈ 2.5 del radar libre. Exactitud ±1 mm. Ideal para asfaltos y líquidos viscosos.'},
+  {q:'Para la medición de interfase entre agua (ρ=1000) y keroseno (ρ=800), ¿qué determina el span del transmisor ΔP?',opts:['La diferencia de densidades (ρ₁−ρ₂)·h_total·g','El rango total del tanque','La densidad media de ambos líquidos','La viscosidad del líquido más denso'],ans:0,exp:'Span = (ρ₁−ρ₂)·h·g. Con Δρ=200 kg/m³ y h=2m: Span = 200×2×9.81/1000 = 3.92 kPa. El transmisor se calibra con ese span mínimo.'},
+  {q:'¿Cuál es la ventaja del flotador de desplazamiento con tubo de torsión frente al flotador directo?',opts:['El tubo de torsión proporciona hermeticidad total al proceso sin soldaduras críticas','Es más exacto que el radar','Puede medir niveles mayores de 20 m','No requiere calibración en campo'],ans:0,exp:'El tubo de torsión transmite el movimiento angular (≈9°) al exterior herméticamente. No hay juntas mecánicas en contacto con el fluido, lo que permite alta presión (hasta 170 bar) y temperatura (hasta 450°C).'},
+  {q:'El HTG con dos transmisores de presión a distancia fija puede calcular simultáneamente:',opts:['Nivel, densidad del líquido Y masa con exactitud ±0.01%','Solo el nivel con exactitud ±0.1%','Solo la densidad del líquido','El perfil de temperatura en el tanque'],ans:0,exp:'ρ = (P₁−P₂)/(h·g); Nivel = (P₁−Pₛ)/(ρ·g); Masa = (P₁−Pₛ)×Área_media. El sistema híbrido con radar añade volumen para inventario fiscal.'},
+  {q:'Las paletas rotativas detectan nivel de sólidos cuando:',opts:['El material inmoviliza las paletas → el cuerpo del motor rota y activa microswitches','Las paletas vibran en resonancia con el material','El material cambia la capacitancia del rotor','El material bloquea la señal de radar'],ans:0,exp:'Motor síncrono de baja velocidad. Al bloquear las paletas, el motor (libre para girar) rota el cuerpo del instrumento activando microswitches. Un muelle devuelve al retroceder el nivel.'},
+  {q:'¿Cuál instrumento de nivel es completamente independiente de temperatura, presión, vapor y dieléctrico del líquido?',opts:['Medidor láser (TOF o por fase)','Radar FMCW','Ultrasonidos con compensación de temperatura','Capacitivo RF bien calibrado'],ans:0,exp:'El láser (TOF/fase) usa la velocidad de la luz (c = constante). No interactúa con propiedades fisicoquímicas del medio. Divergencia 0.2°, pasa por aperturas de 50 mm. Inmune a reflexiones de agitadores.'},
+];
+
+function Scene8(){
   const [idx,setIdx]=useState(0);
-  const [chosen,setChosen]=useState(null);
+  const [sel,setSel]=useState(null);
   const [score,setScore]=useState(0);
   const [done,setDone]=useState(false);
-  const q=QUIZ[idx];
-  const pick=(i)=>{
-    if(chosen!==null)return;
-    setChosen(i);
-    if(i===q.correct)setScore(s=>s+1);
-    setTimeout(()=>{if(idx+1<QUIZ.length){setIdx(i=>i+1);setChosen(null);}else setDone(true);},1400);
-  };
+  const [answers,setAnswers]=useState([]);
+  const q=QS[idx];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);const ok=i===q.ans;if(ok)setScore(s=>s+1);setAnswers(a=>[...a,ok]);};
+  const next=()=>{if(idx<QS.length-1){setIdx(i=>i+1);setSel(null);}else setDone(true);};
+  const restart=()=>{setIdx(0);setSel(null);setScore(0);setDone(false);setAnswers([]);};
   if(done){
-    const pct=Math.round(score/QUIZ.length*100);
-    return(<div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20}}>
-      <div style={{fontSize:72}}>{pct>=90?'🥇':pct>=70?'🥈':pct>=50?'🥉':'📚'}</div>
-      <div style={{fontSize:42,fontWeight:800,color:'#fff'}}>{score}/{QUIZ.length}</div>
-      <div style={{fontSize:22,color:GOLD}}>{pct}%</div>
-      <button onClick={()=>{setIdx(0);setChosen(null);setScore(0);setDone(false);}} style={{marginTop:16,padding:'12px 32px',borderRadius:24,background:GOLD,color:BG,fontWeight:800,fontSize:15,border:'none',cursor:'pointer'}}>Repetir</button>
+    const pct=Math.round(score/QS.length*100);
+    return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:500}}>
+      <div style={{fontSize:60,marginBottom:12}}>{pct>=80?'🏆':pct>=60?'📊':'📚'}</div>
+      <div style={{fontSize:26,fontWeight:700,color:'#f59e0b',marginBottom:4}}>{score}/{QS.length} — {pct}%</div>
+      <div style={{fontSize:14,color:'#94a3b8',marginBottom:20}}>{pct>=80?'¡Dominas la medición de nivel industrial!':pct>=60?'Buen nivel — repasa HTG y GWR':'Revisa los principios hidrostáticos y sin contacto'}</div>
+      <div style={{display:'flex',gap:5,marginBottom:20}}>{answers.map((ok,i)=><div key={i} style={{width:26,height:26,borderRadius:4,background:ok?'#14532d':'#7f1d1d',border:`1px solid ${ok?'#22c55e':'#ef4444'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>{ok?'✓':'✗'}</div>)}</div>
+      <button className="btn btn-gold" onClick={restart}>Reiniciar Quiz</button>
     </div>);
   }
-  return(
-    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 120px',gap:20}}>
-      <div style={{fontSize:13,color:GOLD,letterSpacing:3,textTransform:'uppercase'}}>Evaluación · Clase 2.3</div>
-      <div style={{width:'100%',height:6,background:'#1e3a5f',borderRadius:3}}><div style={{height:6,borderRadius:3,background:GOLD,width:`${(idx/QUIZ.length)*100}%`,transition:'width 0.4s'}}/></div>
-      <div style={{fontSize:11,color:'#475569',alignSelf:'flex-end'}}>{idx+1}/{QUIZ.length}</div>
-      <div style={{fontSize:20,fontWeight:700,color:'#fff',textAlign:'center',lineHeight:1.5,maxWidth:820}}>{q.q}</div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,width:'100%',maxWidth:820}}>
-        {q.opts.map((o,i)=>{
-          let bg=CARD,border=BORDER,color='#cbd5e1';
-          if(chosen!==null){if(i===q.correct){bg='#14532d';border=GREEN;color=GREEN;}else if(i===chosen){bg='#450a0a';border=RED;color=RED;}}
-          return(<div key={i} onClick={()=>pick(i)} style={{background:bg,border:`2px solid ${border}`,borderRadius:10,padding:'14px 18px',cursor:chosen===null?'pointer':'default',color,fontSize:13,transition:'all 0.2s'}}>
-            <span style={{color:GOLD,fontWeight:800,marginRight:8}}>{['A','B','C','D'][i]}.</span>{o}
-          </div>);
-        })}
-      </div>
-      <div style={{fontSize:12,color:'#475569'}}>Puntuación: {score} pts</div>
+  return(<div>
+    <div className="sec-title">Quiz — Medición de Nivel</div>
+    <div className="sec-sub">10 preguntas sobre principios directos, hidrostáticos, sin contacto y sólidos</div>
+    <div style={{display:'flex',gap:4,marginBottom:12}}>{QS.map((_,i)=><div key={i} style={{flex:1,height:4,borderRadius:2,background:i<idx?'#f59e0b':i===idx?'#f59e0b88':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{marginBottom:8,minHeight:72}}>
+      <div style={{fontSize:11,color:'#64748b',marginBottom:6}}>Pregunta {idx+1} de {QS.length}</div>
+      <div style={{fontSize:15,fontWeight:600,color:'#e2e8f0',lineHeight:1.5}}>{q.q}</div>
     </div>
-  );
+    <div style={{display:'flex',flexDirection:'column',gap:5,marginBottom:8}}>
+      {q.opts.map((o,i)=>{
+        let cls='quiz-opt';
+        if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel)cls+=' wrong';}
+        return(<div key={i} className={cls} onClick={()=>choose(i)}>
+          <div style={{width:22,height:22,borderRadius:'50%',background:'#1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+          <span style={{fontSize:12}}>{o}</span>
+        </div>);
+      })}
+    </div>
+    {sel!==null&&(<div className="card" style={{background:'#060a14',borderColor:'#f59e0b33',marginBottom:8}}>
+      <div style={{fontSize:11,color:'#fcd34d',marginBottom:2}}>💡 {sel===q.ans?'¡Correcto!':'Incorrecto'}</div>
+      <div style={{fontSize:12,color:'#cbd5e1'}}>{q.exp}</div>
+    </div>)}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <span style={{fontSize:12,color:'#64748b'}}>Puntuación: <b className="gold">{score}</b></span>
+      {sel!==null&&<button className="btn btn-gold" onClick={next}>{idx<QS.length-1?'Siguiente →':'Ver resultados'}</button>}
+    </div>
+  </div>);
 }
 
 const SCENES=[
-  {label:'Intro',comp:S1},{label:'Hidrostático DP',comp:S2},{label:'Flotador',comp:S3},
-  {label:'Ultrasónico/Radar',comp:S4},{label:'Capacitivo/Conductivo',comp:S5},
-  {label:'Comparativa',comp:S6},{label:'Test',comp:S7},
+  {id:1,label:'1. Medida Directa',short:'Directa'},
+  {id:2,label:'2. Presión Hidrostática',short:'Hidrost.'},
+  {id:3,label:'3. Supresión/Interfase',short:'Sup/Iface'},
+  {id:4,label:'4. Capacitivo/Desplaz.',short:'Cap/Despl'},
+  {id:5,label:'5. Ultrasonidos/Radar',short:'US/Radar'},
+  {id:6,label:'6. Radiación/Láser/HTG',short:'Rad/HTG'},
+  {id:7,label:'7. Nivel de Sólidos',short:'Sólidos'},
+  {id:8,label:'8. Quiz',short:'Quiz'},
 ];
+const SC={1:<Scene1/>,2:<Scene2/>,3:<Scene3/>,4:<Scene4/>,5:<Scene5/>,6:<Scene6/>,7:<Scene7/>,8:<Scene8/>};
+
 function App(){
-  const [scene,setScene]=useState(0);
-  const Comp=SCENES[scene].comp;
-  return(
-    <div style={{width:1280,height:720,background:BG,position:'relative',overflow:'hidden'}}>
-      <Comp/>
-      <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(8,12,24,0.95)',borderTop:`1px solid ${BORDER}`,display:'flex',alignItems:'center',justifyContent:'center',gap:4,padding:'6px 16px'}}>
-        <button onClick={()=>setScene(s=>Math.max(0,s-1))} disabled={scene===0} style={{padding:'5px 14px',borderRadius:6,background:scene===0?'#1e3a5f':GOLD,color:scene===0?'#475569':BG,border:'none',cursor:scene===0?'default':'pointer',fontWeight:700,fontSize:12}}>← Anterior</button>
-        <div style={{display:'flex',gap:4,flex:1,justifyContent:'center'}}>
-          {SCENES.map((s,i)=>(
-            <button key={i} onClick={()=>setScene(i)} style={{padding:'4px 10px',borderRadius:6,fontSize:10,background:scene===i?GOLD:'transparent',color:scene===i?BG:'#64748b',border:`1px solid ${scene===i?GOLD:BORDER}`,cursor:'pointer',fontWeight:scene===i?700:400,whiteSpace:'nowrap'}}>
-              {i+1}. {s.label}
-            </button>
-          ))}
-        </div>
-        <button onClick={()=>setScene(s=>Math.min(SCENES.length-1,s+1))} disabled={scene===SCENES.length-1} style={{padding:'5px 14px',borderRadius:6,background:scene===SCENES.length-1?'#1e3a5f':GOLD,color:scene===SCENES.length-1?'#475569':BG,border:'none',cursor:scene===SCENES.length-1?'default':'pointer',fontWeight:700,fontSize:12}}>Siguiente →</button>
+  const [scene,setScene]=useState(1);
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Medición de Nivel</div>
+        <div className="topbar-sub">Clase 2.3 · Directa · Hidrostática · Sin contacto · Sólidos — 8 tecnologías principales</div>
+      </div>
+      <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'flex-end'}}>
+        {SCENES.map(s=>(
+          <button key={s.id} onClick={()=>setScene(s.id)} className="scene-badge"
+            style={{background:scene===s.id?'#f59e0b22':'transparent',borderColor:scene===s.id?'#f59e0b':'#1e2d4a',color:scene===s.id?'#f59e0b':'#475569'}}>
+            {s.short}
+          </button>
+        ))}
       </div>
     </div>
-  );
+    <div className="content">
+      <div className="sidebar">
+        <div style={{padding:'8px 12px 4px',fontSize:9,color:'#334155',textTransform:'uppercase',letterSpacing:'1px',fontWeight:700}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+        <div style={{marginTop:'auto',padding:'10px 12px',borderTop:'1px solid #1e2d4a'}}>
+          <div style={{fontSize:9,color:'#334155',marginBottom:4}}>NORMAS</div>
+          {['ISA-5.1-2022','API MPMS Cap. 3','IEC 61511','OIML R 85','ISO 4267'].map(n=>(
+            <div key={n} style={{fontSize:9,color:'#475569',padding:'2px 0'}}>{n}</div>
+          ))}
+        </div>
+      </div>
+      <div className="main">{SC[scene]}</div>
+    </div>
+  </div>);
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
