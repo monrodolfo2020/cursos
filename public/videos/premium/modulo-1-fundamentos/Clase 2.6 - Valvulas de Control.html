@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 2.6 — Válvulas de Control</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080c18;color:#e2e8f0;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+  .slide{width:1280px;height:720px;display:flex;flex-direction:column}
+  .hdr{background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:3px solid #f59e0b;padding:18px 48px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .hdr-title{font-size:22px;font-weight:700;color:#f59e0b}
+  .hdr-sub{font-size:13px;color:#94a3b8}
+  .badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .content{flex:1;overflow:hidden;padding:24px 48px}
+  .nav{display:flex;gap:12px;justify-content:center;padding:14px;background:#0a0f1e;border-top:1px solid #1e293b;flex-shrink:0}
+  .btn{padding:10px 28px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+  .btn-gold{background:#f59e0b;color:#000}.btn-gold:hover{background:#fbbf24}.btn-gold:disabled{opacity:.4;cursor:not-allowed}
+  .btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8}.btn-outline:hover{border-color:#f59e0b;color:#f59e0b}.btn-outline:disabled{opacity:.3;cursor:not-allowed}
+  .dots{display:flex;gap:8px;align-items:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:#1e293b;transition:all .3s;cursor:pointer}
+  .dot.active{background:#f59e0b;width:24px;border-radius:4px}
+  .card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px}
+  .card-gold{border-color:#f59e0b44;background:#f59e0b08}
+  .card h3{color:#f59e0b;font-size:14px;margin-bottom:10px}
+  .formula{background:#020817;border:1px solid #f59e0b44;border-radius:8px;padding:8px 14px;font-family:monospace;font-size:14px;color:#fbbf24;text-align:center;margin:6px 0}
+  .tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin:2px}
+  .tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+  .tag-green{background:#15803d33;color:#4ade80;border:1px solid #15803d55}
+  .tag-red{background:#991b1b33;color:#f87171;border:1px solid #991b1b55}
+  .tag-yellow{background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44}
+  .slider-row{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .slider-row label{width:120px;font-size:12px;color:#94a3b8;flex-shrink:0}
+  .slider-row input[type=range]{flex:1;accent-color:#f59e0b}
+  .slider-row span{width:80px;text-align:right;font-size:12px;color:#fbbf24;font-weight:600;flex-shrink:0}
+  svg text{font-family:'Segoe UI',sans-serif}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:#0a0f1e;color:#f59e0b;padding:7px 10px;text-align:left;border-bottom:2px solid #f59e0b44}
+  td{padding:6px 10px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+  tr:hover td{background:#0f172a}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect}=React;
+
+/* SCENE 1 — Partes y tipos de válvula */
+function Scene1(){
+  const [tipo,setTipo]=useState('globo');
+  const tipos={
+    globo:{name:'Globo (Globe)',color:'#f59e0b',desc:'Asiento con tapón. Control preciso y throttling continuo. Alta ΔP. Carrera lineal o igual porcentaje.',uso:'Control preciso de líquidos y gases. Industria química.'},
+    mariposa:{name:'Mariposa (Butterfly)',color:'#60a5fa',desc:'Disco giratorio 0–90°. Bajo ΔP, alta capacidad de flujo. Compacta y económica. Característica igual porcentaje.',uso:'Agua, gases limpios. Grandes diámetros ≥6".'},
+    bola:{name:'Bola (Ball)',color:'#4ade80',desc:'Esfera perforada. Acción ON/OFF o control. Baja pérdida, alta Cv. Apertura/cierre rápido.',uso:'Servicio severo, fluidos viscosos, lodo.'},
+    diafragma:{name:'Diafragma',color:'#c084fc',desc:'Membrana flexible contra asiento. Sin prensaestopas → sin fugas. Control suave.',uso:'Fluidos corrosivos, farmacéutico, alimentos.'},
+  };
+  const t=tipos[tipo];
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>⚙️ Las 3 partes de una válvula de control</h3>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:4}}>
+          {[
+            {n:'Cuerpo',desc:'Contiene el fluido. Determina la presión máxima, temperatura y material de construcción. ANSI Clase 150–2500.',c:'#f59e0b'},
+            {n:'Obturador/Tapón',desc:'Elemento de cierre variable. Su posición determina el flujo. Material según fluido (acero, Hastelloy, etc.).',c:'#60a5fa'},
+            {n:'Actuador',desc:'Posiciona el tapón. Neumático (más común), eléctrico o hidráulico. Convierte señal 4-20 mA en movimiento.',c:'#4ade80'},
+          ].map(x=>(
+            <div key={x.n} style={{background:'#020817',border:`1px solid ${x.c}44`,borderRadius:8,padding:10}}>
+              <div style={{fontWeight:700,color:x.c,marginBottom:4,fontSize:13}}>{x.n}</div>
+              <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.5}}>{x.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:10,fontSize:12,color:'#94a3b8'}}>
+          <strong style={{color:'#f59e0b'}}>Posicionador:</strong> lazo de control de posición del vástago.
+          Convierte 4-20 mA → señal neumática 3-15 psi. Elimina histéresis y fricción.
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔩 Tipos de válvulas</h3>
+        <div style={{display:'flex',gap:8,marginBottom:12}}>
+          {Object.entries(tipos).map(([k,v])=>(
+            <button key={k} onClick={()=>setTipo(k)}
+              style={{padding:'5px 12px',borderRadius:6,border:`2px solid ${tipo===k?v.color:'#1e293b'}`,
+                background:tipo===k?v.color+'22':'#0a0f1e',color:tipo===k?v.color:'#64748b',cursor:'pointer',fontSize:12,fontWeight:600}}>
+              {v.name.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+        <div style={{borderLeft:`3px solid ${t.color}`,paddingLeft:14}}>
+          <div style={{fontSize:14,fontWeight:700,color:t.color,marginBottom:6}}>{t.name}</div>
+          <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>{t.desc}</div>
+          <div style={{background:'#020817',padding:8,borderRadius:6}}>
+            <span style={{fontSize:11,color:'#64748b'}}>Aplicación: </span>
+            <span style={{fontSize:12,color:'#cbd5e1'}}>{t.uso}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+      {[
+        {t:'Fail Close (FC)',s:'Falla → cierra. Aire actúa para abrir (ATO). Si pierde señal o aire: válvula cierra. Uso: seguridad, corte de emergencia.',c:'#f87171'},
+        {t:'Fail Open (FO)',s:'Falla → abre. Aire actúa para cerrar (ATC). Si pierde señal o aire: válvula abre. Uso: enfriamiento, protección proceso.',c:'#60a5fa'},
+        {t:'Fail Lock (FL)',s:'Falla → bloquea en posición. Actuador con volumen de reserva. Raro. Uso: procesos muy estables.',c:'#4ade80'},
+        {t:'ANSI/ISA 75.01',s:'Norma de capacidad Cv, trim, materiales. Define clases de cierre I-VI. Clase VI: metal-metal, 0,00015% del Cv.',c:'#c084fc'},
+      ].map(x=>(
+        <div key={x.t} style={{background:'#0a0f1e',border:`1px solid ${x.c}44`,borderRadius:8,padding:10}}>
+          <div style={{fontWeight:700,color:x.c,fontSize:12,marginBottom:4}}>{x.t}</div>
+          <div style={{fontSize:11,color:'#64748b',lineHeight:1.5}}>{x.s}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 2 — Coeficiente Cv */
+function Scene2(){
+  const [Q,setQ]=useState(50);
+  const [dP,setDP]=useState(1.5);
+  const [SG,setSG]=useState(1.0);
+  const Cv=(Q*Math.sqrt(SG/dP)).toFixed(2);
+  const Q_back=(+Cv*Math.sqrt(dP/SG)).toFixed(1);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>📐 Coeficiente de Caudal Cv</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6}}>
+          <p>El Cv es la capacidad de flujo de la válvula: <strong style={{color:'#f59e0b'}}>caudal en GPM de agua a 60°F que pasa con ΔP=1 psi</strong>.</p>
+          <br/>
+          <div className="formula">Q = Cv · √(ΔP / SG)</div>
+          <p style={{fontSize:11,color:'#64748b',textAlign:'center'}}>Q en GPM, ΔP en psi, SG relativo al agua</p>
+          <br/>
+          <div className="formula">Cv = Q · √(SG / ΔP)</div>
+          <br/>
+          <p><strong>Para gases e ISA:</strong></p>
+          <div className="formula" style={{fontSize:13}}>Cv = Q · √(SG · T / (ΔP · P₁))</div>
+          <p style={{fontSize:11,color:'#64748b',textAlign:'center'}}>T en °R, P₁ presión entrada (psia)</p>
+          <br/>
+          <p>Unidad SI equivalente: <strong style={{color:'#fbbf24'}}>Kv (m³/h con ΔP=1 bar)</strong></p>
+          <div className="formula">Kv = 0.865 · Cv</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎚️ Calculadora Cv</h3>
+        <div className="slider-row">
+          <label>Q (GPM)</label>
+          <input type="range" min={1} max={500} value={Q} onChange={e=>setQ(+e.target.value)}/>
+          <span>{Q} GPM</span>
+        </div>
+        <div className="slider-row">
+          <label>ΔP (psi)</label>
+          <input type="range" min={0.1} max={50} step={0.1} value={dP} onChange={e=>setDP(+e.target.value)}/>
+          <span>{dP.toFixed(1)} psi</span>
+        </div>
+        <div className="slider-row">
+          <label>SG (relativo)</label>
+          <input type="range" min={0.5} max={2} step={0.01} value={SG} onChange={e=>setSG(+e.target.value)}/>
+          <span>{SG.toFixed(2)}</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:14}}>
+          <div style={{background:'#020817',border:'2px solid #f59e0b',borderRadius:10,padding:14,textAlign:'center'}}>
+            <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{Cv}</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Cv requerido (GPM/√psi)</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #60a5fa',borderRadius:10,padding:14,textAlign:'center'}}>
+            <div style={{fontSize:28,fontWeight:700,color:'#60a5fa'}}>{(+Cv*0.865).toFixed(2)}</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Kv equivalente (m³/h/√bar)</div>
+          </div>
+        </div>
+        <div style={{marginTop:10,background:'#0a0f1e',padding:10,borderRadius:8,fontSize:12,color:'#94a3b8'}}>
+          <strong style={{color:'#4ade80'}}>Selección:</strong> El Cv de catálogo debe ser ≥ Cv calculado.
+          Se trabaja al <strong style={{color:'#fbbf24'}}>50–80% de apertura</strong> en condiciones normales
+          para mantener rangeabilidad y control estable.
+        </div>
+      </div>
+    </div>
+    <div className="card" style={{flex:1}}>
+      <h3>📊 Cavitación y Flashing</h3>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14,marginTop:4}}>
+        <div style={{background:'#020817',padding:10,borderRadius:8}}>
+          <div style={{fontWeight:700,color:'#f87171',marginBottom:4}}>⚡ Cavitación</div>
+          <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+            Presión local cae bajo Pv (presión de vapor). Burbujas de vapor se forman y <strong style={{color:'#f87171'}}>colapsan violentamente</strong> al recuperar presión.
+            Daño mecánico severo, ruido y vibración. Índice sigma: σ = (P₁-Pv)/(ΔP).
+          </div>
+        </div>
+        <div style={{background:'#020817',padding:10,borderRadius:8}}>
+          <div style={{fontWeight:700,color:'#f59e0b',marginBottom:4}}>💨 Flashing</div>
+          <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+            La presión de salida P₂ permanece por debajo de Pv: el líquido queda como vapor a la salida.
+            El fluido no recupera líquido. Flujo sónico (choked flow). No hay daño mecánico pero limita Cv efectivo.
+          </div>
+        </div>
+        <div style={{background:'#020817',padding:10,borderRadius:8}}>
+          <div style={{fontWeight:700,color:'#4ade80',marginBottom:4}}>🛡️ Prevención</div>
+          <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+            <div>• Elevar P₂ aumentando contrapresión</div>
+            <div>• Reducir ΔP con válvulas en serie</div>
+            <div>• Usar trim anticavitación (etapas)</div>
+            <div>• Material duro (stellite, carburo de tungsteno)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 3 — Características de flujo */
+function Scene3(){
+  const [tipo,setTipo]=useState('lineal');
+  const pts=[0,10,20,30,40,50,60,70,80,90,100];
+  const caracs={
+    lineal:{fn:x=>x,color:'#60a5fa',desc:'Q proporcional a apertura. Usada cuando la caída de presión en la válvula es constante (fuente de presión constante).'},
+    igualPct:{fn:x=>Math.pow(50,x/100-1)*100,color:'#f59e0b',desc:'Igual % de incremento de Cv por igual % de apertura. La más usada en control de proceso (ΔP variable).'},
+    opening:{fn:x=>Math.sqrt(x)*10,color:'#4ade80',desc:'Abre rápido al inicio, luego saturación. Para sistemas de presión variable con alta ΔP en la línea.'},
+    parabola:{fn:x=>Math.pow(x/100,2)*100,color:'#c084fc',desc:'Variante de igual porcentaje. Control fino a bajas aperturas.'},
+  };
+  const c=caracs[tipo];
+  const W=320,H=180;
+  const px=v=>(v/100)*W;
+  const py=v=>H-(v/100)*H;
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>📈 Características de flujo intrínsecas</h3>
+        <p style={{fontSize:13,color:'#94a3b8',lineHeight:1.6,marginBottom:12}}>
+          Relacionan apertura del tapón vs Cv cuando ΔP es constante (condición de laboratorio).
+          En la planta, la característica instalada difiere por la caída de presión variable.
+        </p>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+          {Object.entries(caracs).map(([k,v])=>(
+            <button key={k} onClick={()=>setTipo(k)}
+              style={{padding:'5px 12px',borderRadius:6,border:`2px solid ${tipo===k?v.color:'#1e293b'}`,
+                background:tipo===k?v.color+'22':'#0a0f1e',color:tipo===k?v.color:'#64748b',cursor:'pointer',fontSize:12,fontWeight:600}}>
+              {k==='lineal'?'Lineal':k==='igualPct'?'Igual %':k==='opening'?'Apertura rápida':'Parábola'}
+            </button>
+          ))}
+        </div>
+        <div style={{borderLeft:`3px solid ${c.color}`,paddingLeft:12,fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+          {c.desc}
+        </div>
+        <div style={{marginTop:12,background:'#020817',padding:8,borderRadius:6,fontSize:12,color:'#94a3b8'}}>
+          <strong style={{color:'#f59e0b'}}>Rangeabilidad (R):</strong> relación entre Cv máx y Cv mínimo útil.
+          Válvula globo: R≈50:1. Mariposa: R≈10:1. Bola: R≈100:1.
+        </div>
+      </div>
+      <div className="card">
+        <h3>📊 Curva característica</h3>
+        <svg width="100%" viewBox={`0 0 ${W+40} ${H+40}`}>
+          <rect x={30} y={0} width={W} height={H} fill="#020817" rx={4}/>
+          {/* Grid */}
+          {[0,25,50,75,100].map(v=>(
+            <g key={v}>
+              <line x1={30} y1={py(v)} x2={30+W} y2={py(v)} stroke="#1e293b" strokeWidth={1}/>
+              <text x={24} y={py(v)+4} textAnchor="end" fill="#475569" fontSize={9}>{v}%</text>
+              <line x1={30+px(v)} y1={0} x2={30+px(v)} y2={H} stroke="#1e293b" strokeWidth={1}/>
+              <text x={30+px(v)} y={H+16} textAnchor="middle" fill="#475569" fontSize={9}>{v}%</text>
+            </g>
+          ))}
+          {/* Todas las curvas atenuadas */}
+          {Object.entries(caracs).map(([k,v])=>(
+            <path key={k} d={pts.map((p,i)=>`${i===0?'M':'L'}${(30+px(p)).toFixed(1)},${py(v.fn(p)).toFixed(1)}`).join(' ')}
+              fill="none" stroke={v.color} strokeWidth={k===tipo?2.5:1} opacity={k===tipo?1:0.2}/>
+          ))}
+          {/* Labels */}
+          <text x={30+W/2} y={H+32} textAnchor="middle" fill="#475569" fontSize={10}>Apertura (%)</text>
+          <text x={10} y={H/2} textAnchor="middle" fill="#475569" fontSize={10} transform={`rotate(-90,10,${H/2})`}>Cv (%)</text>
+        </svg>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
+      <div className="card">
+        <h3>⚖️ Lineal vs Igual%</h3>
+        <table><thead><tr><th>Condición</th><th>Usar</th></tr></thead>
+        <tbody>
+          <tr><td>ΔP constante en válvula</td><td style={{color:'#60a5fa'}}>Lineal</td></tr>
+          <tr><td>ΔP variable (mayoría)</td><td style={{color:'#f59e0b'}}>Igual %</td></tr>
+          <tr><td>Control de presión</td><td style={{color:'#f59e0b'}}>Igual %</td></tr>
+          <tr><td>Control de nivel</td><td style={{color:'#60a5fa'}}>Lineal</td></tr>
+          <tr><td>ΔP &gt;50% del sistema</td><td style={{color:'#60a5fa'}}>Lineal</td></tr>
+        </tbody></table>
+      </div>
+      <div className="card">
+        <h3>🎯 Característica instalada</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+          <p>Con el proceso real, la ΔP en la válvula cambia con el caudal.</p>
+          <br/>
+          <p>La característica instalada = intrínseca + hidráulica del sistema.</p>
+          <br/>
+          <p><strong style={{color:'#f59e0b'}}>Distorsión:</strong> igual% → lineal cuando ΔP aumenta con flujo.</p>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔊 Ruido y vibración</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+          <div>• ΔP alta → flujo turbulento → ruido acústico</div>
+          <div>• Velocidad de fluido &gt;15 m/s → cavitación</div>
+          <div>• Solución: trim de bajo ruido (cage, multi-etapa)</div>
+          <div>• Usar material insonorizante en tuberías adyacentes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 4 — Actuadores */
+function Scene4(){
+  const [psi,setPsi]=useState(9);
+  const apertura=((psi-3)/(15-3)*100).toFixed(0);
+  const mA=(4+(psi-3)/(15-3)*16).toFixed(1);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🔧 Actuadores neumáticos</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <p>El actuador más común en la industria. Convierte señal neumática <strong style={{color:'#f59e0b'}}>3-15 psi</strong> en desplazamiento del vástago.</p>
+          <br/>
+          <p><strong>Tipos:</strong></p>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:6}}>
+            {[
+              ['Diafragma + resorte','Más común. Simple, económico. Carrera 1–2". ATO o ATC.','#60a5fa'],
+              ['Pistón','Alta fuerza. Carrera hasta 12". Gases hasta 150 psi.','#4ade80'],
+              ['Diafragma doble','Sin resorte. Mayor carrera. Posicionador obligatorio.','#c084fc'],
+              ['Cilindro rotativo','Mariposa y bola. Palanca de leva. Alta fuerza torsional.','#f59e0b'],
+            ].map(([t,d,c])=>(
+              <div key={t} style={{background:'#020817',padding:8,borderRadius:6}}>
+                <div style={{fontWeight:600,color:c,fontSize:12,marginBottom:3}}>{t}</div>
+                <div style={{fontSize:11,color:'#64748b'}}>{d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎚️ Posicionador — Señal neumática</h3>
+        <div className="slider-row">
+          <label>Señal neumática (psi)</label>
+          <input type="range" min={3} max={15} step={0.1} value={psi} onChange={e=>setPsi(+e.target.value)}/>
+          <span>{psi.toFixed(1)} psi</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:12}}>
+          <div style={{background:'#020817',border:'2px solid #f59e0b',borderRadius:10,padding:12,textAlign:'center'}}>
+            <div style={{fontSize:26,fontWeight:700,color:'#f59e0b'}}>{apertura}%</div>
+            <div style={{fontSize:10,color:'#64748b'}}>Apertura ATO</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #4ade80',borderRadius:10,padding:12,textAlign:'center'}}>
+            <div style={{fontSize:26,fontWeight:700,color:'#4ade80'}}>{(100-+apertura)}%</div>
+            <div style={{fontSize:10,color:'#64748b'}}>Apertura ATC</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #60a5fa',borderRadius:10,padding:12,textAlign:'center'}}>
+            <div style={{fontSize:26,fontWeight:700,color:'#60a5fa'}}>{mA} mA</div>
+            <div style={{fontSize:10,color:'#64748b'}}>4-20 mA equivalente</div>
+          </div>
+        </div>
+        <div style={{marginTop:14,background:'#0a0f1e',padding:10,borderRadius:8,fontSize:12,color:'#94a3b8'}}>
+          <div style={{marginBottom:4}}>
+            <strong style={{color:'#f59e0b'}}>Posicionador electro-neumático HART:</strong> recibe 4-20 mA del controlador,
+            genera señal neumática proporcional al vástago. Diagnóstico en línea (histéresis, firma de válvula, tiempo de respuesta).
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14}}>
+      <div className="card">
+        <h3>⚡ Actuadores eléctricos</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <div style={{marginBottom:6}}><span className="tag tag-blue">Motor DC/AC</span> Control de posición angular. Alta par. Lento. Válvula bola/mariposa.</div>
+          <div style={{marginBottom:6}}><span className="tag tag-green">Paso a paso</span> Precisión posicional alta. CNC, válvulas de laboratorio.</div>
+          <div><span className="tag tag-yellow">Lineal eléctrico</span> Tornillo sin fin. Carrera larga. Control ON/OFF o modulante.</div>
+          <div style={{marginTop:8,fontSize:11,color:'#64748b'}}>Ventaja: no requiere compresor de aire. Desventaja: más lento que neumático, falla eléctrica.</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>💧 Actuadores hidráulicos</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <p>Usan aceite hidráulico a alta presión (500–3000 psi). Mayor fuerza por área que neumáticos.</p>
+          <br/>
+          <div style={{color:'#4ade80'}}>✓ Altísima fuerza en pequeño tamaño</div>
+          <div style={{color:'#4ade80'}}>✓ Respuesta muy rápida</div>
+          <div style={{color:'#f87171'}}>✗ Contaminación de fluido</div>
+          <div style={{color:'#f87171'}}>✗ Mantenimiento complejo</div>
+          <div style={{color:'#f87171'}}>✗ Riesgo de incendio (aceite caliente)</div>
+          <div style={{fontSize:11,color:'#64748b',marginTop:6}}>Uso: turbinas de gas, válvulas de gran diámetro, offshore.</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔍 Diagnóstico de válvulas (HART)</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <div>• <strong style={{color:'#60a5fa'}}>Firma de válvula:</strong> curva posición vs presión de actuador</div>
+          <div>• <strong style={{color:'#f59e0b'}}>Histéresis:</strong> diferencia subida/bajada ≤3%</div>
+          <div>• <strong style={{color:'#4ade80'}}>Sensibilidad (deadband):</strong> mínima señal que genera movimiento</div>
+          <div>• <strong style={{color:'#c084fc'}}>Tiempo de respuesta:</strong> 0→63% de carrera</div>
+          <div style={{marginTop:8,background:'#020817',padding:6,borderRadius:6}}>
+            Diagnóstico en línea sin detener el proceso con posicionadores inteligentes (FDT/DTM).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* SCENE 5 — Tabla de selección + test */
+const QUIZ=[
+  {q:'¿Qué define el coeficiente Cv de una válvula?',opts:['Velocidad del fluido en m/s','Caudal en GPM con ΔP=1 psi y agua a 60°F','Presión máxima admisible','Material del cuerpo'],ans:1},
+  {q:'¿Cuál es la condición de falla FC (Fail Close)?',opts:['Abre al perder señal','Bloquea al perder señal','Cierra al perder señal o aire','Cierra al máximo caudal'],ans:2},
+  {q:'¿Qué característica de flujo es la más usada en control de proceso?',opts:['Lineal','Apertura rápida','Igual porcentaje','Parabólica'],ans:2},
+  {q:'ATO significa en actuadores neumáticos:',opts:['Air To Open','Air To Output','Actuador Tipo Óptico','Actuador Transmisor Neumático'],ans:0},
+  {q:'¿Qué fenómeno destruye mecánicamente el obturador por colapso de burbujas de vapor?',opts:['Flashing','Golpe de ariete','Cavitación','Turbulencia'],ans:2},
+  {q:'¿Para qué sirve el posicionador de una válvula?',opts:['Medir el caudal','Convertir 4-20mA en posición precisa del vástago','Calcular el Cv','Ajustar la presión de entrada'],ans:1},
+  {q:'¿Cuál es el rango típico de señal neumática de un posicionador?',opts:['0-10 psi','3-15 psi','1-5 psi','0-20 psi'],ans:1},
+  {q:'¿Qué tipo de válvula es más adecuada para fluidos corrosivos y farmacéutica?',opts:['Globo','Mariposa','Diafragma','Bola'],ans:2},
+  {q:'La rangeabilidad de una válvula globo es típicamente:',opts:['5:1','10:1','50:1','500:1'],ans:2},
+  {q:'¿Qué información provee la "firma de válvula" en diagnóstico HART?',opts:['Temperatura del fluido','Curva de posición vs presión de actuador','Nivel de ruido','Coeficiente Cv en tiempo real'],ans:1},
+];
+function Scene5(){
+  const [ans,setAns]=useState(Array(QUIZ.length).fill(null));
+  const [show,setShow]=useState(false);
+  const score=ans.filter((a,i)=>a===QUIZ[i].ans).length;
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+    <div style={{flex:1,overflowY:'auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingRight:4}}>
+      {!show?QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:12}}>
+          <div style={{fontSize:11,color:'#64748b',marginBottom:4}}>P.{i+1}</div>
+          <div style={{fontSize:12,color:'#cbd5e1',marginBottom:8,lineHeight:1.4}}>{q.q}</div>
+          {q.opts.map((o,j)=>(
+            <button key={j} onClick={()=>{const a=[...ans];a[i]=j;setAns(a);}}
+              style={{display:'block',width:'100%',textAlign:'left',padding:'5px 10px',borderRadius:5,
+                border:`1px solid ${ans[i]===j?'#f59e0b':'#1e293b'}`,
+                background:ans[i]===j?'#f59e0b22':'#0a0f1e',
+                color:ans[i]===j?'#fbbf24':'#64748b',cursor:'pointer',fontSize:11,marginBottom:3}}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )):QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:12,borderColor:ans[i]===q.ans?'#4ade8044':'#f8717144'}}>
+          <div style={{fontSize:11,color:ans[i]===q.ans?'#4ade80':'#f87171',marginBottom:3}}>{ans[i]===q.ans?'✅':'❌'}</div>
+          <div style={{fontSize:11,color:'#cbd5e1',marginBottom:4}}>{q.q}</div>
+          <div style={{fontSize:11,color:'#4ade80'}}>✓ {q.opts[q.ans]}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0 0'}}>
+      <div style={{fontSize:13,color:'#94a3b8'}}>
+        Respondidas: <strong style={{color:'#fbbf24'}}>{ans.filter(a=>a!==null).length}/10</strong>
+        {show&&<span style={{marginLeft:16,color:score>=8?'#4ade80':'#f87171',fontWeight:700}}>Puntuación: {score}/10</span>}
+      </div>
+      {!show?(<button className="btn btn-gold" disabled={ans.filter(a=>a!==null).length<10} onClick={()=>setShow(true)}>Ver resultados</button>)
+        :(<button className="btn btn-outline" onClick={()=>{setAns(Array(QUIZ.length).fill(null));setShow(false);}}>Reintentar</button>)}
+    </div>
+  </div>
+  );
+}
+
+const SCENES=[
+  {id:1,title:'Partes y Tipos de Válvula',sub:'Cuerpo, obturador, actuador — globo, mariposa, bola, diafragma — FC/FO',comp:Scene1},
+  {id:2,title:'Coeficiente Cv — Dimensionamiento',sub:'Q=Cv·√(ΔP/SG) — calculadora, Kv, cavitación, flashing',comp:Scene2},
+  {id:3,title:'Características de Flujo',sub:'Lineal, igual%, apertura rápida — característica instalada',comp:Scene3},
+  {id:4,title:'Actuadores y Posicionadores',sub:'Neumático, eléctrico, hidráulico — 3-15 psi — diagnóstico HART',comp:Scene4},
+  {id:5,title:'Test de Evaluación',sub:'10 preguntas sobre válvulas de control',comp:Scene5},
+];
+
+function App(){
+  const [sc,setSc]=useState(0);
+  const S=SCENES[sc];
+  const Comp=S.comp;
+  return(
+  <div className="slide">
+    <div className="hdr">
+      <div>
+        <div className="hdr-title">2.6 — Válvulas de Control</div>
+        <div className="hdr-sub">{S.title} · {S.sub}</div>
+      </div>
+      <div style={{display:'flex',gap:12,alignItems:'center'}}>
+        <span className="badge">PRO</span>
+        <span style={{fontSize:12,color:'#64748b'}}>{sc+1}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content"><Comp/></div>
+    <div className="nav">
+      <button className="btn btn-outline" disabled={sc===0} onClick={()=>setSc(s=>s-1)}>← Anterior</button>
+      <div className="dots">{SCENES.map((_,i)=>(<div key={i} className={`dot${sc===i?' active':''}`} onClick={()=>setSc(i)}/>))}</div>
+      <button className="btn btn-gold" disabled={sc===SCENES.length-1} onClick={()=>setSc(s=>s+1)}>Siguiente →</button>
+    </div>
+  </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

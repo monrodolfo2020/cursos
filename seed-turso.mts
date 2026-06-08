@@ -815,6 +815,30 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.3 - Medicion de Nivel.html`,
   },
+  {
+    order: 8,
+    title: "Medición de Temperatura — RTD, Termopares, Termistores y Pirometría",
+    description:
+      "Domina todos los sensores de temperatura industriales: RTD Pt100/Pt1000/Ni100 (tabla de resistencias, conexiones 2/3/4 hilos), termopares J/K/T/E/R/S (efecto Seebeck, compensación de junta fría), termistores NTC/PTC (calculadora con constante B), pirometría IR (Stefan-Boltzmann E=ε·σ·T⁴, emisividades) y sensores mecánicos bimetálicos. Tabla de selección completa.",
+    durationSec: 960,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.4 - Medicion de Temperatura.html`,
+  },
+  {
+    order: 9,
+    title: "Control PID — Proporcional, Integral, Derivativo y Sintonización",
+    description:
+      "Domina el control PID desde cero: lazo de control cerrado animado, acción P (Kp, banda proporcional, offset), acción I (Ti, eliminación de offset, anti-windup), acción D (Td, filtro, kick de SP), simulador PID interactivo de proceso de 1er orden, sintonización Ziegler-Nichols lazo cerrado y abierto, método IMC, modos manual/automático/cascada, y tabla de parámetros por variable.",
+    durationSec: 1020,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.5 - Control PID.html`,
+  },
+  {
+    order: 10,
+    title: "Válvulas de Control — Tipos, Cv, Actuadores y Diagnóstico",
+    description:
+      "Domina las válvulas de control industriales: tipos (globo, mariposa, bola, diafragma), condiciones de falla FC/FO/FL, coeficiente Cv (calculadora Q=Cv·√ΔP/SG, cavitación, flashing), características de flujo (lineal, igual%, apertura rápida), actuadores neumáticos/eléctricos/hidráulicos, posicionadores 3-15 psi, diagnóstico HART y firma de válvula.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.6 - Valvulas de Control.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);

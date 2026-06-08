@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 2.5 — Control PID</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080c18;color:#e2e8f0;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+  .gold{color:#f59e0b}
+  .slide{width:1280px;height:720px;position:relative;display:flex;flex-direction:column}
+  .hdr{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-bottom:3px solid #f59e0b;padding:18px 48px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .hdr-title{font-size:22px;font-weight:700;color:#f59e0b}
+  .hdr-sub{font-size:13px;color:#94a3b8}
+  .badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .content{flex:1;overflow:hidden;padding:24px 48px}
+  .nav{display:flex;gap:12px;justify-content:center;padding:14px;background:#0a0f1e;border-top:1px solid #1e293b;flex-shrink:0}
+  .btn{padding:10px 28px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+  .btn-gold{background:#f59e0b;color:#000}
+  .btn-gold:hover{background:#fbbf24}
+  .btn-gold:disabled{opacity:.4;cursor:not-allowed}
+  .btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8}
+  .btn-outline:hover{border-color:#f59e0b;color:#f59e0b}
+  .btn-outline:disabled{opacity:.3;cursor:not-allowed}
+  .dots{display:flex;gap:8px;align-items:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:#1e293b;transition:all .3s;cursor:pointer}
+  .dot.active{background:#f59e0b;width:24px;border-radius:4px}
+  .card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:18px}
+  .card-gold{border-color:#f59e0b44;background:#f59e0b08}
+  .card h3{color:#f59e0b;font-size:14px;margin-bottom:10px}
+  .formula{background:#020817;border:1px solid #f59e0b44;border-radius:8px;padding:10px 16px;font-family:monospace;font-size:15px;color:#fbbf24;text-align:center;margin:6px 0}
+  .tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin:3px}
+  .tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+  .tag-green{background:#15803d33;color:#4ade80;border:1px solid #15803d55}
+  .tag-red{background:#991b1b33;color:#f87171;border:1px solid #991b1b55}
+  .tag-yellow{background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44}
+  .slider-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .slider-row label{width:100px;font-size:12px;color:#94a3b8;flex-shrink:0}
+  .slider-row input[type=range]{flex:1;accent-color:#f59e0b}
+  .slider-row span{width:70px;text-align:right;font-size:12px;color:#fbbf24;font-weight:600;flex-shrink:0}
+  svg text{font-family:'Segoe UI',sans-serif}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+/* ─── SCENE 1 — El lazo de control ─────────────────────────────── */
+function Scene1(){
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🔄 ¿Qué es el control de proceso?</h3>
+        <p style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          El control de proceso mantiene una <strong style={{color:'#f59e0b'}}>variable de proceso (PV)</strong> en un
+          valor deseado llamado <strong style={{color:'#60a5fa'}}>setpoint (SP)</strong> actuando sobre la
+          <strong style={{color:'#4ade80'}}> variable manipulada (MV)</strong>, a pesar de las perturbaciones externas.
+        </p>
+        <div style={{marginTop:12,display:'flex',gap:10,flexWrap:'wrap'}}>
+          {['Temperatura','Presión','Nivel','Caudal','pH','Velocidad'].map(v=>(
+            <span key={v} className="tag tag-yellow">{v}</span>
+          ))}
+        </div>
+      </div>
+      <div className="card">
+        <h3>📐 Variables del lazo ISA</h3>
+        <table style={{fontSize:13,width:'100%',borderCollapse:'collapse'}}>
+          <tbody>
+            <tr><td style={{color:'#f59e0b',fontWeight:700,padding:'6px 0'}}>PV</td><td style={{color:'#94a3b8'}}>Process Variable — lo que se mide (sensor/transmisor)</td></tr>
+            <tr><td style={{color:'#60a5fa',fontWeight:700,padding:'6px 0'}}>SP</td><td style={{color:'#94a3b8'}}>Setpoint — valor deseado del proceso</td></tr>
+            <tr><td style={{color:'#f87171',fontWeight:700,padding:'6px 0'}}>e(t)</td><td style={{color:'#94a3b8'}}>Error = SP − PV</td></tr>
+            <tr><td style={{color:'#4ade80',fontWeight:700,padding:'6px 0'}}>MV/CO</td><td style={{color:'#94a3b8'}}>Manipulated/Controller Output — señal al actuador</td></tr>
+            <tr><td style={{color:'#c084fc',fontWeight:700,padding:'6px 0'}}>d(t)</td><td style={{color:'#94a3b8'}}>Perturbación — disturbio externo (carga, fluido)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {/* Diagrama de bloques SVG */}
+    <svg width="100%" height="230" viewBox="0 0 1100 230" style={{flex:1}}>
+      <rect width={1100} height={230} fill="#020817" rx={10}/>
+      {/* SP */}
+      <circle cx={60} cy={115} r={28} fill="none" stroke="#60a5fa" strokeWidth={2}/>
+      <text x={60} y={110} textAnchor="middle" fill="#60a5fa" fontSize={12} fontWeight="bold">SP</text>
+      <text x={60} y={126} textAnchor="middle" fill="#60a5fa" fontSize={10}>+</text>
+      <text x={60} y={148} textAnchor="middle" fill="#f87171" fontSize={14}>−</text>
+      {/* Flecha SP→Controlador */}
+      <line x1={88} y1={115} x2={170} y2={115} stroke="#94a3b8" strokeWidth={1.5} markerEnd="url(#arr)"/>
+      <text x={128} y={108} textAnchor="middle" fill="#f87171" fontSize={11}>e(t)</text>
+      {/* Controlador */}
+      <rect x={170} y={80} width={130} height={70} rx={8} fill="#1e293b" stroke="#f59e0b" strokeWidth={2}/>
+      <text x={235} y={112} textAnchor="middle" fill="#f59e0b" fontSize={14} fontWeight="bold">PID</text>
+      <text x={235} y={130} textAnchor="middle" fill="#94a3b8" fontSize={11}>Controlador</text>
+      {/* Flecha→Actuador */}
+      <line x1={300} y1={115} x2={400} y2={115} stroke="#94a3b8" strokeWidth={1.5} markerEnd="url(#arr)"/>
+      <text x={350} y={108} textAnchor="middle" fill="#4ade80" fontSize={11}>MV/CO</text>
+      {/* Actuador */}
+      <rect x={400} y={80} width={130} height={70} rx={8} fill="#1e293b" stroke="#4ade80" strokeWidth={2}/>
+      <text x={465} y={112} textAnchor="middle" fill="#4ade80" fontSize={13} fontWeight="bold">Actuador</text>
+      <text x={465} y={130} textAnchor="middle" fill="#94a3b8" fontSize={11}>Válvula/VFD</text>
+      {/* Perturbación */}
+      <line x1={595} y1={30} x2={595} y2={80} stroke="#c084fc" strokeWidth={1.5} markerEnd="url(#arr)" strokeDasharray="4,3"/>
+      <text x={595} y={22} textAnchor="middle" fill="#c084fc" fontSize={11}>d(t)</text>
+      {/* Flecha→Proceso */}
+      <line x1={530} y1={115} x2={620} y2={115} stroke="#94a3b8" strokeWidth={1.5} markerEnd="url(#arr)"/>
+      {/* Proceso */}
+      <rect x={620} y={80} width={140} height={70} rx={8} fill="#1e293b" stroke="#60a5fa" strokeWidth={2}/>
+      <text x={690} y={112} textAnchor="middle" fill="#60a5fa" fontSize={13} fontWeight="bold">Proceso</text>
+      <text x={690} y={130} textAnchor="middle" fill="#94a3b8" fontSize={11}>Planta industrial</text>
+      {/* Flecha→Sensor */}
+      <line x1={760} y1={115} x2={860} y2={115} stroke="#94a3b8" strokeWidth={1.5} markerEnd="url(#arr)"/>
+      <text x={810} y={108} textAnchor="middle" fill="#fbbf24" fontSize={11}>PV</text>
+      {/* Sensor */}
+      <rect x={860} y={80} width={130} height={70} rx={8} fill="#1e293b" stroke="#fbbf24" strokeWidth={2}/>
+      <text x={925} y={112} textAnchor="middle" fill="#fbbf24" fontSize={13} fontWeight="bold">Sensor</text>
+      <text x={925} y={130} textAnchor="middle" fill="#94a3b8" fontSize={11}>Transmisor</text>
+      {/* Flecha retro inferior */}
+      <line x1={925} y1={150} x2={925} y2={195} stroke="#f87171" strokeWidth={1.5}/>
+      <line x1={925} y1={195} x2={60} y2={195} stroke="#f87171" strokeWidth={1.5}/>
+      <line x1={60} y1={195} x2={60} y2={143} stroke="#f87171" strokeWidth={1.5} markerEnd="url(#arr)"/>
+      <text x={490} y={210} textAnchor="middle" fill="#f87171" fontSize={11}>Retroalimentación (feedback)</text>
+      {/* Def flecha */}
+      <defs>
+        <marker id="arr" markerWidth={8} markerHeight={8} refX={6} refY={3} orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+  );
+}
+
+/* ─── SCENE 2 — Acción Proporcional ───────────────────────────── */
+function Scene2(){
+  const [Kp,setKp]=useState(2);
+  const [SP,setSP]=useState(50);
+  const [PV,setPV]=useState(30);
+  const err=SP-PV;
+  const CO=Math.min(100,Math.max(0,50+Kp*err));
+  const PB=(100/Kp).toFixed(1);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>📏 Acción Proporcional (P)</h3>
+        <div className="formula">CO(t) = bias + Kp · e(t)</div>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7,marginTop:10}}>
+          <p>La salida del controlador es <strong style={{color:'#f59e0b'}}>proporcional al error</strong>. Mayor error → mayor corrección.</p>
+          <br/>
+          <p><strong style={{color:'#fbbf24'}}>Kp (ganancia proporcional):</strong> cuánto actúa el controlador por unidad de error.</p>
+          <br/>
+          <p><strong style={{color:'#60a5fa'}}>Banda proporcional (PB):</strong></p>
+          <div className="formula">PB = 100 / Kp (%)</div>
+          <p style={{marginTop:8}}>⚠️ La acción P sola deja un <strong style={{color:'#f87171'}}>error en estado estacionario (offset)</strong>.</p>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎚️ Calculadora P</h3>
+        <div className="slider-row">
+          <label>Kp</label>
+          <input type="range" min={0.1} max={10} step={0.1} value={Kp} onChange={e=>setKp(+e.target.value)}/>
+          <span>{Kp.toFixed(1)}</span>
+        </div>
+        <div className="slider-row">
+          <label>SP (%)</label>
+          <input type="range" min={0} max={100} value={SP} onChange={e=>setSP(+e.target.value)}/>
+          <span>{SP}%</span>
+        </div>
+        <div className="slider-row">
+          <label>PV (%)</label>
+          <input type="range" min={0} max={100} value={PV} onChange={e=>setPV(+e.target.value)}/>
+          <span>{PV}%</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:12}}>
+          <div style={{background:'#020817',border:'1px solid #f87171',borderRadius:8,padding:10,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:'#f87171'}}>{err.toFixed(0)}</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Error e(t)</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #f59e0b',borderRadius:8,padding:10,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:'#f59e0b'}}>{CO.toFixed(1)}%</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Salida CO</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #60a5fa',borderRadius:8,padding:10,textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:'#60a5fa'}}>{PB}%</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Banda prop.</div>
+          </div>
+        </div>
+        <div style={{marginTop:10,background:'#0a0f1e',borderRadius:8,overflow:'hidden',height:14}}>
+          <div style={{height:'100%',background:'#f59e0b',width:CO+'%',transition:'width .3s'}}/>
+        </div>
+        <div style={{fontSize:11,color:'#64748b',textAlign:'center',marginTop:4}}>Salida controlador: {CO.toFixed(1)}%</div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14}}>
+      <div className="card">
+        <h3>📈 Kp alto</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+          <span className="tag tag-green">✓ Respuesta rápida</span>
+          <span className="tag tag-green">✓ Menor offset</span><br/>
+          <span className="tag tag-red">✗ Inestable / oscilatorio</span>
+          <span className="tag tag-red">✗ Overshoot alto</span>
+        </div>
+      </div>
+      <div className="card">
+        <h3>📉 Kp bajo</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+          <span className="tag tag-green">✓ Estable y amortiguado</span><br/>
+          <span className="tag tag-red">✗ Respuesta lenta</span>
+          <span className="tag tag-red">✗ Offset mayor</span>
+          <span className="tag tag-red">✗ Perturbaciones sin corregir</span>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎯 Offset (Error Residual)</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.6}}>
+          Con solo acción P, el proceso alcanza un equilibrio con un error permanente.
+          Para eliminarlo se necesita acción <strong style={{color:'#f59e0b'}}>Integral (I)</strong>.
+          <div className="formula" style={{fontSize:13,marginTop:8}}>
+            offset = SP - PV_∞ ≠ 0
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* ─── SCENE 3 — Acción Integral ─────────────────────────────── */
+function Scene3(){
+  const [Ti,setTi]=useState(60);
+  const [err,setErr]=useState(10);
+  const rate=(err/Ti).toFixed(3);
+  const after10=(err/Ti*10).toFixed(2);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>∫ Acción Integral (I)</h3>
+        <div className="formula">CO_I(t) = (Kp/Ti) · ∫e(t)dt</div>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7,marginTop:10}}>
+          <p>Integra el error en el tiempo: mientras haya error, la salida <strong style={{color:'#f59e0b'}}>sigue aumentando</strong>.
+          Garantiza <strong style={{color:'#4ade80'}}>error cero en estado estacionario</strong>.</p>
+          <br/>
+          <p><strong style={{color:'#fbbf24'}}>Ti (tiempo integral o reset):</strong> tiempo en segundos que tarda la acción I
+          en aportar la misma corrección que la acción P.</p>
+          <br/>
+          <p>Ti pequeño → acción I fuerte (riesgo de <span style={{color:'#f87171'}}>windup</span>)</p>
+          <p>Ti grande → acción I lenta (menos agresiva)</p>
+          <br/>
+          <p>⚠️ <strong style={{color:'#f87171'}}>Windup integral:</strong> si la válvula satura (0-100%), la integral
+          sigue acumulando → sobreimpulso al volver. Se usa <em>anti-windup</em>.</p>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎚️ Calculadora I</h3>
+        <div className="slider-row">
+          <label>Ti (seg)</label>
+          <input type="range" min={5} max={600} step={5} value={Ti} onChange={e=>setTi(+e.target.value)}/>
+          <span>{Ti}s</span>
+        </div>
+        <div className="slider-row">
+          <label>Error e (%)</label>
+          <input type="range" min={0.1} max={50} step={0.1} value={err} onChange={e=>setErr(+e.target.value)}/>
+          <span>{err.toFixed(1)}%</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:12}}>
+          <div style={{background:'#020817',border:'1px solid #60a5fa',borderRadius:8,padding:12,textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:700,color:'#60a5fa'}}>{rate}%/s</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Tasa integral</div>
+          </div>
+          <div style={{background:'#020817',border:'1px solid #4ade80',borderRadius:8,padding:12,textAlign:'center'}}>
+            <div style={{fontSize:20,fontWeight:700,color:'#4ade80'}}>+{after10}%</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Después de 10 s</div>
+          </div>
+        </div>
+        <div style={{marginTop:14,fontSize:12,color:'#94a3b8'}}>
+          <strong style={{color:'#f59e0b'}}>Repeticiones (repeats/min):</strong>
+          <div className="formula" style={{fontSize:14}}>Ri = 60/Ti = {(60/Ti).toFixed(2)} rep/min</div>
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14}}>
+      <div className="card">
+        <h3>✅ Ventajas de la I</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}}>
+          <div style={{color:'#4ade80'}}>✓ Elimina el offset</div>
+          <div style={{color:'#4ade80'}}>✓ Compensa perturbaciones lentas</div>
+          <div style={{color:'#4ade80'}}>✓ Sigue cambios de SP con cero error final</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>⚠️ Desventajas de la I</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}}>
+          <div style={{color:'#f87171'}}>✗ Introduce fase → inestabilidad</div>
+          <div style={{color:'#f87171'}}>✗ Windup con saturación de válvula</div>
+          <div style={{color:'#f87171'}}>✗ Respuesta más lenta que solo P</div>
+          <div style={{color:'#f87171'}}>✗ Mayor overshoot</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🛡️ Anti-Windup</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          Técnicas para evitar saturación integral:
+          <div style={{marginTop:8}}>
+            <div style={{background:'#020817',padding:6,borderRadius:4,marginBottom:6}}>
+              <strong style={{color:'#60a5fa'}}>Back-calculation:</strong> cuando CO satura, se descuenta la acumulación integral.
+            </div>
+            <div style={{background:'#020817',padding:6,borderRadius:4}}>
+              <strong style={{color:'#4ade80'}}>Clamping:</strong> congela la integral mientras CO está en límites.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* ─── SCENE 4 — Acción Derivativa ───────────────────────────── */
+function Scene4(){
+  const [Td,setTd]=useState(10);
+  const [dEdt,setDEdt]=useState(2);
+  const CO_D=(Td*dEdt*1).toFixed(2);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>d/dt Acción Derivativa (D)</h3>
+        <div className="formula">CO_D(t) = Kp · Td · de(t)/dt</div>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7,marginTop:10}}>
+          <p>Actúa sobre la <strong style={{color:'#f59e0b'}}>velocidad de cambio</strong> del error.
+          Predice el error futuro y actúa antes de que ocurra.</p>
+          <br/>
+          <p><strong style={{color:'#fbbf24'}}>Td (tiempo derivativo):</strong> horizonte de predicción en segundos.</p>
+          <br/>
+          <p>Td grande → acción D fuerte (anticipación)</p>
+          <p>Td=0 → sin acción derivativa</p>
+          <br/>
+          <p>⚠️ <strong style={{color:'#f87171'}}>Problema de derivada del SP:</strong>
+          Un cambio brusco de SP genera un impulso en D. Solución: derivar solo la PV, no el error.</p>
+          <p style={{marginTop:8}}>⚠️ <strong style={{color:'#f87171'}}>Ruido:</strong> la D amplifica el ruido de la señal.
+          Se usa un filtro de primer orden: <span style={{color:'#fbbf24'}}>τ_f = Td/N</span> (N≈5–20).</p>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎚️ Calculadora D</h3>
+        <div className="slider-row">
+          <label>Td (seg)</label>
+          <input type="range" min={0} max={120} step={1} value={Td} onChange={e=>setTd(+e.target.value)}/>
+          <span>{Td}s</span>
+        </div>
+        <div className="slider-row">
+          <label>de/dt (%/s)</label>
+          <input type="range" min={0} max={10} step={0.1} value={dEdt} onChange={e=>setDEdt(+e.target.value)}/>
+          <span>{dEdt.toFixed(1)}</span>
+        </div>
+        <div style={{background:'#020817',border:'2px solid #c084fc',borderRadius:10,padding:16,textAlign:'center',marginTop:14}}>
+          <div style={{fontSize:30,fontWeight:700,color:'#c084fc'}}>{CO_D}%</div>
+          <div style={{fontSize:12,color:'#64748b',marginTop:4}}>Aportación derivativa = Td × de/dt</div>
+        </div>
+        <div style={{marginTop:12,fontSize:12,color:'#94a3b8'}}>
+          <div style={{background:'#0a0f1e',padding:8,borderRadius:6}}>
+            <strong style={{color:'#f59e0b'}}>Tiempo predictivo:</strong> La D actúa con
+            <strong style={{color:'#c084fc'}}> {Td}s</strong> de anticipación.
+            Si de/dt = {dEdt.toFixed(1)} %/s, en {Td}s el error aumentaría {(dEdt*Td).toFixed(1)}%.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
+      <div className="card">
+        <h3>✅ Ventajas D</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}}>
+          <div style={{color:'#4ade80'}}>✓ Anticipa cambios</div>
+          <div style={{color:'#4ade80'}}>✓ Reduce overshoot</div>
+          <div style={{color:'#4ade80'}}>✓ Amortiguación rápida</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>⚠️ Limitaciones D</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}}>
+          <div style={{color:'#f87171'}}>✗ Amplifica ruido</div>
+          <div style={{color:'#f87171'}}>✗ Kick en cambio SP</div>
+          <div style={{color:'#f87171'}}>✗ Complica sintonía</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔇 Filtro derivativo</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <div className="formula" style={{fontSize:13}}>τ_f = Td / N</div>
+          N típico: 5 a 20<br/><br/>
+          Implementación práctica:
+          <span className="tag tag-blue">D sobre PV</span>
+          (no sobre error)
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎯 Cuándo usar D</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <div style={{color:'#4ade80'}}>✓ Procesos lentos (temperatura)</div>
+          <div style={{color:'#4ade80'}}>✓ Loops de temperatura de horno</div>
+          <div style={{color:'#f87171'}}>✗ Procesos rápidos (caudal)</div>
+          <div style={{color:'#f87171'}}>✗ Señales ruidosas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* ─── SCENE 5 — Simulador PID ─────────────────────────────── */
+function usePIDSim(Kp,Ti,Td,SP){
+  const [data,setData]=useState([]);
+  const ref=useRef({pv:20,integral:0,prevErr:0,t:0});
+  useEffect(()=>{
+    const s=ref.current;
+    s.pv=20; s.integral=0; s.prevErr=0; s.t=0;
+    setData([]);
+    const id=setInterval(()=>{
+      const dt=0.5;
+      const err=SP-s.pv;
+      s.integral+=err*dt;
+      s.integral=Math.max(-500,Math.min(500,s.integral));
+      const deriv=(err-s.prevErr)/dt;
+      s.prevErr=err;
+      let co=Kp*err+(Ti>0?Kp/Ti*s.integral:0)+Kp*Td*deriv;
+      co=Math.max(0,Math.min(100,co));
+      // Proceso de primer orden con ganancia Kp_proc=0.6 y τ=30s
+      const Kproc=0.6,tau=30;
+      s.pv+=(Kproc*co-s.pv+20)*(dt/tau);
+      s.t+=dt;
+      if(s.t>120) clearInterval(id);
+      setData(d=>{const n=[...d,{t:s.t,pv:+s.pv.toFixed(2),co:+co.toFixed(2)}];return n.slice(-200);});
+    },100);
+    return()=>clearInterval(id);
+  },[Kp,Ti,Td,SP]);
+  return data;
+}
+
+function Scene5(){
+  const [Kp,setKp]=useState(1.5);
+  const [Ti,setTi]=useState(60);
+  const [Td,setTd]=useState(8);
+  const [SP,setSP]=useState(70);
+  const [key,setKey]=useState(0);
+  const data=usePIDSim(Kp,Ti,Td,SP);
+
+  const W=700,H=160;
+  const maxT=120,minPV=0,maxPV=100;
+  function px(t){return(t/maxT)*W;}
+  function py(v){return H-(v/maxPV)*H;}
+
+  const pvPath=data.map((d,i)=>`${i===0?'M':'L'}${px(d.t).toFixed(1)},${py(d.pv).toFixed(1)}`).join(' ');
+  const coPath=data.map((d,i)=>`${i===0?'M':'L'}${px(d.t).toFixed(1)},${py(d.co).toFixed(1)}`).join(' ');
+  const last=data[data.length-1];
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'280px 1fr',gap:16}}>
+      <div className="card" style={{padding:14}}>
+        <h3>🎚️ Parámetros PID</h3>
+        <div className="slider-row">
+          <label>SP (%)</label>
+          <input type="range" min={20} max={95} value={SP} onChange={e=>setSP(+e.target.value)}/>
+          <span style={{color:'#60a5fa'}}>{SP}%</span>
+        </div>
+        <div className="slider-row">
+          <label>Kp</label>
+          <input type="range" min={0.1} max={5} step={0.1} value={Kp} onChange={e=>setKp(+e.target.value)}/>
+          <span>{Kp.toFixed(1)}</span>
+        </div>
+        <div className="slider-row">
+          <label>Ti (s)</label>
+          <input type="range" min={5} max={300} step={5} value={Ti} onChange={e=>setTi(+e.target.value)}/>
+          <span>{Ti}s</span>
+        </div>
+        <div className="slider-row">
+          <label>Td (s)</label>
+          <input type="range" min={0} max={60} step={1} value={Td} onChange={e=>setTd(+e.target.value)}/>
+          <span>{Td}s</span>
+        </div>
+        <button className="btn btn-gold" style={{width:'100%',marginTop:10,padding:8}} onClick={()=>setKey(k=>k+1)}>
+          ▶ Simular
+        </button>
+        {last&&<div style={{marginTop:10,display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+          <div style={{background:'#020817',borderRadius:6,padding:8,textAlign:'center'}}>
+            <div style={{fontSize:18,fontWeight:700,color:'#4ade80'}}>{last.pv}%</div>
+            <div style={{fontSize:10,color:'#64748b'}}>PV actual</div>
+          </div>
+          <div style={{background:'#020817',borderRadius:6,padding:8,textAlign:'center'}}>
+            <div style={{fontSize:18,fontWeight:700,color:'#f59e0b'}}>{last.co}%</div>
+            <div style={{fontSize:10,color:'#64748b'}}>CO actual</div>
+          </div>
+        </div>}
+      </div>
+      <div className="card" style={{padding:14}}>
+        <h3 style={{marginBottom:8}}>📈 Respuesta del lazo (proceso 1er orden: Kp=0.6, τ=30s)</h3>
+        <svg width="100%" viewBox={`0 0 ${W} ${H+30}`} style={{display:'block'}}>
+          <rect width={W} height={H} fill="#020817" rx={4}/>
+          {/* Grid */}
+          {[20,40,60,80,100].map(v=>(
+            <g key={v}>
+              <line x1={0} y1={py(v)} x2={W} y2={py(v)} stroke="#1e293b" strokeWidth={1}/>
+              <text x={4} y={py(v)-3} fill="#475569" fontSize={9}>{v}%</text>
+            </g>
+          ))}
+          {[30,60,90,120].map(t=>(
+            <g key={t}>
+              <line x1={px(t)} y1={0} x2={px(t)} y2={H} stroke="#1e293b" strokeWidth={1}/>
+              <text x={px(t)+2} y={H+14} fill="#475569" fontSize={9}>{t}s</text>
+            </g>
+          ))}
+          {/* SP */}
+          <line x1={0} y1={py(SP)} x2={W} y2={py(SP)} stroke="#60a5fa" strokeWidth={1.5} strokeDasharray="6,4"/>
+          <text x={W-30} y={py(SP)-4} fill="#60a5fa" fontSize={9}>SP</text>
+          {/* CO */}
+          {coPath&&<path d={coPath} fill="none" stroke="#f59e0b" strokeWidth={1.5} opacity={0.6}/>}
+          {/* PV */}
+          {pvPath&&<path d={pvPath} fill="none" stroke="#4ade80" strokeWidth={2}/>}
+          <text x={10} y={H+14} fill="#475569" fontSize={9}>0s</text>
+          {/* Leyenda */}
+          <line x1={W-120} y1={H+22} x2={W-105} y2={H+22} stroke="#4ade80" strokeWidth={2}/>
+          <text x={W-100} y={H+26} fill="#4ade80" fontSize={10}>PV</text>
+          <line x1={W-60} y1={H+22} x2={W-45} y2={H+22} stroke="#f59e0b" strokeWidth={2}/>
+          <text x={W-40} y={H+26} fill="#f59e0b" fontSize={10}>CO</text>
+        </svg>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+      {[
+        {t:'Solo P',d:'Offset permanente. Respuesta rápida pero error residual.',c:'#f59e0b'},
+        {t:'PI',d:'Elimina offset. Estándar en caudal y presión. Sin D.',c:'#60a5fa'},
+        {t:'PD',d:'Rápido sin offset. Para procesos ruidosos donde I no se usa.',c:'#4ade80'},
+        {t:'PID',d:'Combinación completa. Temperatura, nivel, proceso lento.',c:'#c084fc'},
+      ].map(x=>(
+        <div key={x.t} style={{background:'#0a0f1e',border:`1px solid ${x.c}44`,borderRadius:8,padding:10}}>
+          <div style={{fontWeight:700,color:x.c,marginBottom:4}}>{x.t}</div>
+          <div style={{fontSize:11,color:'#64748b'}}>{x.d}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
+}
+
+/* ─── SCENE 6 — Ziegler-Nichols ─────────────────────────────── */
+function Scene6(){
+  const [Ku,setKu]=useState(4);
+  const [Pu,setPu]=useState(60);
+  const zn={
+    P:{Kp:(0.5*Ku).toFixed(2),Ti:'∞',Td:'0'},
+    PI:{Kp:(0.45*Ku).toFixed(2),Ti:(0.83*Pu).toFixed(0),Td:'0'},
+    PID:{Kp:(0.6*Ku).toFixed(2),Ti:(0.5*Pu).toFixed(0),Td:(0.125*Pu).toFixed(1)},
+  };
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🔧 Método Ziegler-Nichols (lazo cerrado)</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          <p>Método empírico publicado en 1942. Procedimiento:</p>
+          <ol style={{marginLeft:18,marginTop:8,lineHeight:2}}>
+            <li>Desactivar acción I y D (solo P)</li>
+            <li>Aumentar Kp hasta que el proceso <strong style={{color:'#f87171'}}>oscile en forma sostenida</strong></li>
+            <li>Registrar: <strong style={{color:'#f59e0b'}}>Ku</strong> (ganancia última) y <strong style={{color:'#60a5fa'}}>Pu</strong> (período último)</li>
+            <li>Calcular Kp, Ti, Td según la tabla</li>
+          </ol>
+          <div style={{marginTop:10,background:'#020817',padding:8,borderRadius:6}}>
+            ⚠️ Resultado típico: amortiguación de ~25% (1/4 de decaimiento).
+            Puede ser agresivo. Se recomienda ajuste fino posterior.
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎚️ Calculadora Ziegler-Nichols</h3>
+        <div className="slider-row">
+          <label>Ku (ganancia última)</label>
+          <input type="range" min={0.5} max={20} step={0.1} value={Ku} onChange={e=>setKu(+e.target.value)}/>
+          <span>{Ku.toFixed(1)}</span>
+        </div>
+        <div className="slider-row">
+          <label>Pu (período último, s)</label>
+          <input type="range" min={5} max={300} step={5} value={Pu} onChange={e=>setPu(+e.target.value)}/>
+          <span>{Pu}s</span>
+        </div>
+        <table style={{marginTop:12,fontSize:13}}>
+          <thead><tr><th>Tipo</th><th>Kp</th><th>Ti (s)</th><th>Td (s)</th></tr></thead>
+          <tbody>
+            {Object.entries(zn).map(([t,v])=>(
+              <tr key={t}>
+                <td style={{color:'#f59e0b',fontWeight:700}}>{t}</td>
+                <td style={{color:'#4ade80'}}>{v.Kp}</td>
+                <td style={{color:'#60a5fa'}}>{v.Ti}</td>
+                <td style={{color:'#c084fc'}}>{v.Td}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14}}>
+      <div className="card">
+        <h3>📐 Método de la curva de reacción (Z-N lazo abierto)</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <p>Aplica un escalón a CO y mide la respuesta:</p>
+          <ol style={{marginLeft:14,lineHeight:1.8,marginTop:6}}>
+            <li>Mide la <strong style={{color:'#f59e0b'}}>tangente en el punto de inflexión</strong></li>
+            <li>Obtiene: L (tiempo muerto), T (constante de tiempo), K (ganancia)</li>
+            <li>Calcula Kp, Ti, Td</li>
+          </ol>
+          <div className="formula" style={{marginTop:8,fontSize:13}}>Kp = 1.2·T/(K·L)</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎯 Cohen-Coon</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <p>Alternativa para procesos con tiempo muerto significativo (L/T &gt; 0.2).</p><br/>
+          <p>Requiere los mismos parámetros que Z-N lazo abierto: K, L, T.</p><br/>
+          <p>Resultado más robusto con procesos de alta relación L/T.</p>
+        </div>
+      </div>
+      <div className="card">
+        <h3>💡 Ajuste manual (IMC)</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <p>IMC (Internal Model Control):</p>
+          <div className="formula" style={{fontSize:12}}>Kp = τ/(K·(λ+L))</div>
+          <div className="formula" style={{fontSize:12}}>Ti = τ + L/2</div>
+          <p style={{marginTop:4}}>λ = parámetro de agresividad (0.1L a 2L).</p>
+          <p>Método moderno: más robusto y sintonizable.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+/* ─── SCENE 7 — Modos y aplicaciones ──────────────────────── */
+function Scene7(){
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+      <div className="card card-gold">
+        <h3>🗂️ Modos de operación del controlador</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+          {[
+            ['Manual (M)','El operador fija CO directamente. Sin retroalimentación.','#f87171'],
+            ['Automático (A)','PID activo. La planta opera normalmente.','#4ade80'],
+            ['Cascade (C)','Lazo primario comanda el SP del lazo secundario.','#60a5fa'],
+            ['Ratio (R)','Mantiene proporción entre dos flujos: Q_A/Q_B = k.','#c084fc'],
+            ['Override','Selecciona automáticamente entre dos controladores.','#f59e0b'],
+          ].map(([m,d,c])=>(
+            <div key={m} style={{display:'flex',gap:10,alignItems:'flex-start',marginBottom:8}}>
+              <span className="tag" style={{background:c+'22',color:c,border:`1px solid ${c}44`,flexShrink:0}}>{m}</span>
+              <span style={{fontSize:12}}>{d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔄 Control en Cascada</h3>
+        <svg width="100%" height="160" viewBox="0 0 580 160">
+          <rect width={580} height={160} fill="#020817" rx={6}/>
+          <rect x={10} y={55} width={100} height={50} rx={6} fill="#1e293b" stroke="#f59e0b" strokeWidth={1.5}/>
+          <text x={60} y={78} textAnchor="middle" fill="#f59e0b" fontSize={11} fontWeight="bold">PID</text>
+          <text x={60} y={92} textAnchor="middle" fill="#94a3b8" fontSize={10}>Primario</text>
+          <text x={10} y={40} fill="#94a3b8" fontSize={10}>SP₁ (T=80°C)</text>
+          <line x1={110} y1={80} x2={180} y2={80} stroke="#94a3b8" strokeWidth={1.5} markerEnd="url(#a)"/>
+          <text x={140} y={73} fill="#fbbf24" fontSize={10}>SP₂</text>
+          <rect x={180} y={55} width={100} height={50} rx={6} fill="#1e293b" stroke="#60a5fa" strokeWidth={1.5}/>
+          <text x={230} y={78} textAnchor="middle" fill="#60a5fa" fontSize={11} fontWeight="bold">PID</text>
+          <text x={230} y={92} textAnchor="middle" fill="#94a3b8" fontSize={10}>Secundario</text>
+          <line x1={280} y1={80} x2={350} y2={80} stroke="#94a3b8" strokeWidth={1.5} markerEnd="url(#a)"/>
+          <text x={310} y={73} fill="#4ade80" fontSize={10}>CO</text>
+          <rect x={350} y={55} width={100} height={50} rx={6} fill="#1e293b" stroke="#4ade80" strokeWidth={1.5}/>
+          <text x={400} y={78} textAnchor="middle" fill="#4ade80" fontSize={11} fontWeight="bold">Proceso</text>
+          <text x={400} y={92} textAnchor="middle" fill="#94a3b8" fontSize={10}>Cañería/Horno</text>
+          <line x1={450} y1={80} x2={500} y2={80} stroke="#94a3b8" strokeWidth={1.5} markerEnd="url(#a)"/>
+          <text x={480} y={73} fill="#fbbf24" fontSize={10}>PV₁/PV₂</text>
+          {/* Retroalimentaciones */}
+          <line x1={490} y1={80} x2={490} y2={135} stroke="#60a5fa" strokeWidth={1} strokeDasharray="3"/>
+          <line x1={490} y1={135} x2={230} y2={135} stroke="#60a5fa" strokeWidth={1} strokeDasharray="3"/>
+          <line x1={230} y1={135} x2={230} y2={105} stroke="#60a5fa" strokeWidth={1} markerEnd="url(#a)"/>
+          <line x1={490} y1={80} x2={490} y2={148} stroke="#f59e0b" strokeWidth={1} strokeDasharray="3"/>
+          <line x1={490} y1={148} x2={60} y2={148} stroke="#f59e0b" strokeWidth={1} strokeDasharray="3"/>
+          <line x1={60} y1={148} x2={60} y2={105} stroke="#f59e0b" strokeWidth={1} markerEnd="url(#a)"/>
+          <defs><marker id="a" markerWidth={6} markerHeight={6} refX={5} refY={3} orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#94a3b8"/></marker></defs>
+        </svg>
+        <div style={{fontSize:11,color:'#64748b',marginTop:6}}>
+          El lazo secundario (rápido: caudal) responde a perturbaciones antes de que afecten el lazo primario (temperatura).
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:10}}>
+      {[
+        {v:'Temperatura',tipo:'PID',Kp:'1-5',Ti:'60-300s',Td:'10-60s',c:'#f59e0b'},
+        {v:'Presión',tipo:'PI',Kp:'2-8',Ti:'10-60s',Td:'0',c:'#60a5fa'},
+        {v:'Nivel',tipo:'PI / P',Kp:'1-3',Ti:'60-300s',Td:'0',c:'#4ade80'},
+        {v:'Caudal',tipo:'PI',Kp:'0.3-1',Ti:'3-20s',Td:'0',c:'#c084fc'},
+        {v:'pH',tipo:'PID',Kp:'0.5-2',Ti:'30-60s',Td:'5-20s',c:'#f87171'},
+      ].map(x=>(
+        <div key={x.v} style={{background:'#0a0f1e',border:`1px solid ${x.c}44`,borderRadius:8,padding:10,textAlign:'center'}}>
+          <div style={{color:x.c,fontWeight:700,marginBottom:4}}>{x.v}</div>
+          <div style={{fontSize:11,color:'#fbbf24',marginBottom:4}}>{x.tipo}</div>
+          <div style={{fontSize:10,color:'#64748b'}}>Kp: {x.Kp}</div>
+          <div style={{fontSize:10,color:'#60a5fa'}}>Ti: {x.Ti}</div>
+          <div style={{fontSize:10,color:'#c084fc'}}>Td: {x.Td}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
+}
+
+/* ─── SCENE 8 — Test ─────────────────────────────────────── */
+const QUIZ=[
+  {q:'¿Qué garantiza la acción Integral?',opts:['Respuesta más rápida','Error cero en estado estacionario','Menor overshoot','Más estabilidad'],ans:1},
+  {q:'¿Qué es el offset en un controlador solo Proporcional?',opts:['El error al inicio','El error en estado estacionario permanente','La ganancia del sistema','El tiempo de respuesta'],ans:1},
+  {q:'¿Qué hace la acción Derivativa con el ruido de señal?',opts:['Lo elimina','Lo filtra automáticamente','Lo amplifica','No tiene efecto'],ans:2},
+  {q:'En Ziegler-Nichols lazo cerrado, ¿qué es Ku?',opts:['Ganancia útil del proceso','Ganancia a la que el proceso oscila sostenidamente','Ganancia mínima de estabilidad','Ganancia integral'],ans:1},
+  {q:'Para un proceso de caudal ¿qué combinación es la más usada?',opts:['PID','Solo P','PI','PD'],ans:2},
+  {q:'¿Qué es el windup integral?',opts:['Cuando Ti es muy grande','Acumulación excesiva del integral con válvula saturada','Error inicial alto','Ruido en la señal PV'],ans:1},
+  {q:'¿Qué describe la Banda Proporcional (PB)?',opts:['El rango de error donde CO varía de 0 a 100%','La ganancia integral','El tiempo derivativo','El offset del controlador'],ans:0},
+  {q:'En control en cascada, ¿qué define el lazo primario?',opts:['La salida CO al actuador','El SP del lazo secundario','La variable de perturbación','El tiempo integral'],ans:1},
+  {q:'¿Cuál es el objetivo principal del control PID?',opts:['Minimizar el consumo eléctrico','Mantener PV = SP frente a perturbaciones','Abrir válvulas a máximo','Evitar cambios de SP'],ans:1},
+  {q:'Si Td=0 y Ti=∞, ¿qué tipo de controlador tenemos?',opts:['PI','PD','PID','Solo P'],ans:3},
+];
+function Scene8(){
+  const [ans,setAns]=useState(Array(QUIZ.length).fill(null));
+  const [show,setShow]=useState(false);
+  const score=ans.filter((a,i)=>a===QUIZ[i].ans).length;
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+    {!show?(
+    <div style={{flex:1,overflowY:'auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingRight:4}}>
+      {QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:14}}>
+          <div style={{fontSize:11,color:'#64748b',marginBottom:4}}>Pregunta {i+1}</div>
+          <div style={{fontSize:12,color:'#cbd5e1',marginBottom:8,lineHeight:1.4}}>{q.q}</div>
+          {q.opts.map((o,j)=>(
+            <button key={j} onClick={()=>{const a=[...ans];a[i]=j;setAns(a);}}
+              style={{display:'block',width:'100%',textAlign:'left',padding:'5px 10px',borderRadius:6,
+                border:`1px solid ${ans[i]===j?'#f59e0b':'#1e293b'}`,
+                background:ans[i]===j?'#f59e0b22':'#0a0f1e',
+                color:ans[i]===j?'#fbbf24':'#64748b',cursor:'pointer',fontSize:11,marginBottom:4}}>
+              {o}
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+    ):(
+    <div style={{flex:1,overflowY:'auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingRight:4}}>
+      {QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:12,borderColor:ans[i]===q.ans?'#4ade8044':'#f8717144'}}>
+          <div style={{fontSize:11,color:ans[i]===q.ans?'#4ade80':'#f87171',marginBottom:4}}>
+            {ans[i]===q.ans?'✅ Correcto':'❌ Incorrecto'}
+          </div>
+          <div style={{fontSize:11,color:'#cbd5e1',marginBottom:4}}>{q.q}</div>
+          <div style={{fontSize:11,color:'#4ade80'}}>✓ {q.opts[q.ans]}</div>
+        </div>
+      ))}
+    </div>
+    )}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 0 0'}}>
+      <div style={{fontSize:14,color:'#94a3b8'}}>
+        Respondidas: <strong style={{color:'#fbbf24'}}>{ans.filter(a=>a!==null).length}/{QUIZ.length}</strong>
+        {show&&<span style={{marginLeft:16,color:score>=8?'#4ade80':'#f87171',fontWeight:700}}>
+          Puntuación: {score}/10 {score>=8?'🏆':'📖'}
+        </span>}
+      </div>
+      {!show?(
+        <button className="btn btn-gold" disabled={ans.filter(a=>a!==null).length<QUIZ.length} onClick={()=>setShow(true)}>
+          Ver resultados
+        </button>
+      ):(
+        <button className="btn btn-outline" onClick={()=>{setAns(Array(QUIZ.length).fill(null));setShow(false);}}>
+          Reintentar
+        </button>
+      )}
+    </div>
+  </div>
+  );
+}
+
+const SCENES=[
+  {id:1,title:'El lazo de control cerrado',sub:'PV, SP, error, CO — diagrama de bloques animado',comp:Scene1},
+  {id:2,title:'Acción Proporcional (P)',sub:'CO = bias + Kp·e — calculadora y banda proporcional',comp:Scene2},
+  {id:3,title:'Acción Integral (I)',sub:'Elimina offset, anti-windup, calculadora',comp:Scene3},
+  {id:4,title:'Acción Derivativa (D)',sub:'Anticipa cambios, filtro, cuándo usar D',comp:Scene4},
+  {id:5,title:'Simulador PID',sub:'Proceso de 1er orden animado con ajuste de Kp, Ti, Td',comp:Scene5},
+  {id:6,title:'Sintonización — Ziegler-Nichols',sub:'Lazo cerrado, lazo abierto, Cohen-Coon, IMC',comp:Scene6},
+  {id:7,title:'Modos y aplicaciones',sub:'Manual, automático, cascada, ratio — tabla por variable',comp:Scene7},
+  {id:8,title:'Test de evaluación',sub:'10 preguntas sobre control PID',comp:Scene8},
+];
+
+function App(){
+  const [sc,setSc]=useState(0);
+  const S=SCENES[sc];
+  const Comp=S.comp;
+  return(
+  <div className="slide">
+    <div className="hdr">
+      <div>
+        <div className="hdr-title">2.5 — Control PID</div>
+        <div className="hdr-sub">{S.title} · {S.sub}</div>
+      </div>
+      <div style={{display:'flex',gap:12,alignItems:'center'}}>
+        <span className="badge">PRO</span>
+        <span style={{fontSize:12,color:'#64748b'}}>{sc+1}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content"><Comp/></div>
+    <div className="nav">
+      <button className="btn btn-outline" disabled={sc===0} onClick={()=>setSc(s=>s-1)}>← Anterior</button>
+      <div className="dots">
+        {SCENES.map((_,i)=>(
+          <div key={i} className={`dot${sc===i?' active':''}`} onClick={()=>setSc(i)}/>
+        ))}
+      </div>
+      <button className="btn btn-gold" disabled={sc===SCENES.length-1} onClick={()=>setSc(s=>s+1)}>Siguiente →</button>
+    </div>
+  </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

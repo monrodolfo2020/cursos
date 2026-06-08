@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 2.4 — Medición de Temperatura</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080c18;color:#e2e8f0;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+  .gold{color:#f59e0b}
+  .slide{width:1280px;height:720px;position:relative;display:flex;flex-direction:column}
+  .hdr{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-bottom:3px solid #f59e0b;padding:18px 48px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  .hdr-title{font-size:22px;font-weight:700;color:#f59e0b}
+  .hdr-sub{font-size:13px;color:#94a3b8}
+  .badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .content{flex:1;overflow:hidden;padding:28px 48px}
+  .nav{display:flex;gap:12px;justify-content:center;padding:14px;background:#0a0f1e;border-top:1px solid #1e293b;flex-shrink:0}
+  .btn{padding:10px 28px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
+  .btn-gold{background:#f59e0b;color:#000}
+  .btn-gold:hover{background:#fbbf24}
+  .btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8}
+  .btn-outline:hover{border-color:#f59e0b;color:#f59e0b}
+  .dots{display:flex;gap:8px;align-items:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:#1e293b;transition:all .3s;cursor:pointer}
+  .dot.active{background:#f59e0b;width:24px;border-radius:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:100%}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  .card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:18px}
+  .card-gold{border-color:#f59e0b44;background:#f59e0b08}
+  .card h3{color:#f59e0b;font-size:15px;margin-bottom:10px}
+  .formula{background:#020817;border:1px solid #f59e0b44;border-radius:8px;padding:12px 18px;font-family:monospace;font-size:16px;color:#fbbf24;text-align:center;margin:8px 0}
+  .tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin:3px}
+  .tag-blue{background:#1e40af33;color:#60a5fa;border:1px solid #1e40af55}
+  .tag-green{background:#15803d33;color:#4ade80;border:1px solid #15803d55}
+  .tag-red{background:#991b1b33;color:#f87171;border:1px solid #991b1b55}
+  .tag-yellow{background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44}
+  .tag-purple{background:#6d28d955;color:#c084fc;border:1px solid #6d28d955}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{background:#0a0f1e;color:#f59e0b;padding:8px 12px;text-align:left;border-bottom:2px solid #f59e0b44}
+  td{padding:7px 12px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+  tr:hover td{background:#0f172a}
+  .slider-row{display:flex;align-items:center;gap:12px;margin:8px 0}
+  .slider-row label{width:160px;font-size:12px;color:#94a3b8}
+  .slider-row input[type=range]{flex:1;accent-color:#f59e0b}
+  .slider-row span{width:80px;text-align:right;font-size:13px;color:#fbbf24;font-weight:600}
+  .result-box{background:#020817;border:2px solid #f59e0b;border-radius:10px;padding:14px;text-align:center;margin-top:10px}
+  .result-big{font-size:28px;font-weight:700;color:#f59e0b}
+  .result-label{font-size:12px;color:#64748b;margin-top:2px}
+  .tab-bar{display:flex;gap:4px;margin-bottom:16px}
+  .tab{padding:7px 18px;border-radius:6px 6px 0 0;border:1px solid #1e293b;border-bottom:none;cursor:pointer;font-size:13px;font-weight:600;background:#0a0f1e;color:#64748b;transition:all .2s}
+  .tab.active{background:#0f172a;color:#f59e0b;border-color:#f59e0b44}
+  .progress{height:6px;background:#1e293b;border-radius:3px;overflow:hidden;margin-top:6px}
+  .progress-bar{height:100%;background:#f59e0b;border-radius:3px;transition:width .4s}
+  .quiz-opt{display:block;width:100%;text-align:left;padding:10px 16px;border-radius:8px;border:1px solid #1e293b;background:#0a0f1e;color:#cbd5e1;cursor:pointer;margin-bottom:8px;font-size:13px;transition:all .2s}
+  .quiz-opt:hover{border-color:#f59e0b;color:#fbbf24}
+  .quiz-opt.correct{border-color:#4ade80;background:#15803d22;color:#4ade80}
+  .quiz-opt.wrong{border-color:#f87171;background:#991b1b22;color:#f87171}
+  svg text{font-family:'Segoe UI',sans-serif}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef} = React;
+
+/* ─── ESCENAS ─────────────────────────────────────────────────────── */
+
+function Scene1(){
+  const [temp,setTemp]=useState(25);
+  const r_ohm=(100*(1+0.00385*temp)).toFixed(2);
+  const mA=(4+(temp-0)/(400)*16).toFixed(2);
+  const pct=((temp+50)/(400+50)*100).toFixed(0);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:18}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🌡️ La Variable más medida</h3>
+        <p style={{fontSize:13,color:'#94a3b8',lineHeight:1.6}}>
+          La temperatura es la variable de proceso más medida en la industria. Afecta propiedades físicas,
+          químicas, velocidades de reacción, viscosidades y condiciones de seguridad.
+        </p>
+        <div style={{marginTop:12,display:'flex',flexWrap:'wrap',gap:6}}>
+          {['Petroquímica','Alimentos','Farmacia','Metalurgia','Energía'].map(s=>(
+            <span key={s} className="tag tag-yellow">{s}</span>
+          ))}
+        </div>
+      </div>
+      <div className="card">
+        <h3>📐 Escalas de temperatura</h3>
+        <table><tbody>
+          <tr><td>Celsius (°C)</td><td style={{color:'#60a5fa'}}>Referencia agua 0–100°C</td></tr>
+          <tr><td>Kelvin (K)</td><td style={{color:'#4ade80'}}>T(K) = T(°C) + 273.15</td></tr>
+          <tr><td>Fahrenheit (°F)</td><td style={{color:'#f87171'}}>T(°F) = T(°C)×9/5+32</td></tr>
+          <tr><td>Rankine (°R)</td><td style={{color:'#c084fc'}}>T(°R) = T(K)×9/5</td></tr>
+        </tbody></table>
+      </div>
+      <div className="card">
+        <h3>⚙️ Principios físicos</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.8}}>
+          <div><span className="tag tag-blue">Resistivo</span> R varía con T (RTD, termistor)</div>
+          <div><span className="tag tag-green">Termoeléctrico</span> FEM por unión de metales</div>
+          <div><span className="tag tag-red">Radiación</span> Energía IR emitida</div>
+          <div><span className="tag tag-yellow">Expansión</span> Bimetálico, líquido en tubo</div>
+          <div><span className="tag tag-purple">Óptico</span> Interferometría, fluorescencia</div>
+        </div>
+      </div>
+    </div>
+    <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:12,padding:18}}>
+      <div style={{marginBottom:10,fontSize:14,fontWeight:600,color:'#f59e0b'}}>⚡ Simulador RTD Pt100 — Ley de Callendar-Van Dusen simplificada</div>
+      <div className="slider-row">
+        <label>Temperatura (°C)</label>
+        <input type="range" min={-50} max={400} value={temp} onChange={e=>setTemp(+e.target.value)}/>
+        <span>{temp} °C</span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14,marginTop:12}}>
+        <div className="result-box">
+          <div className="result-big">{r_ohm} Ω</div>
+          <div className="result-label">Resistencia Pt100 (R = 100·(1 + α·T))</div>
+        </div>
+        <div className="result-box" style={{borderColor:'#60a5fa'}}>
+          <div className="result-big" style={{color:'#60a5fa'}}>{mA} mA</div>
+          <div className="result-label">Señal 4-20 mA (span -50…400 °C)</div>
+        </div>
+        <div className="result-box" style={{borderColor:'#4ade80'}}>
+          <div className="result-big" style={{color:'#4ade80'}}>{pct} %</div>
+          <div className="result-label">Porcentaje de rango</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function Scene2(){
+  const [tab,setTab]=useState('pt100');
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+    <div className="tab-bar">
+      {[['pt100','RTD Pt100'],['pt1000','Pt1000'],['ni100','Ni100'],['cu10','Cu10']].map(([k,l])=>(
+        <div key={k} className={`tab${tab===k?' active':''}`} onClick={()=>setTab(k)}>{l}</div>
+      ))}
+    </div>
+    <div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr',gap:18}}>
+      {tab==='pt100'&&<>
+        <div className="card card-gold">
+          <h3>🔬 RTD Pt100 — Platino</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p>El RTD (<em>Resistance Temperature Detector</em>) de platino es el sensor de temperatura
+            más preciso y estable de la industria. A 0 °C tiene exactamente <strong style={{color:'#fbbf24'}}>100 Ω</strong>.</p>
+            <br/>
+            <p><strong style={{color:'#f59e0b'}}>Coeficiente α = 0,00385 Ω/Ω/°C</strong> (norma IEC 60751)</p>
+            <br/>
+            <p>Rango: <strong style={{color:'#fbbf24'}}>-200 °C a +850 °C</strong></p>
+            <p>Exactitud típica: <strong style={{color:'#4ade80'}}>±0,1 °C clase A / ±0,3 °C clase B</strong></p>
+          </div>
+        </div>
+        <div className="card">
+          <h3>📊 Tabla de resistencias Pt100</h3>
+          <table><thead><tr><th>T (°C)</th><th>R (Ω)</th><th>Δ vs 0°C</th></tr></thead>
+          <tbody>
+            {[[-200,18.52],[-100,60.26],[0,100],[100,138.51],[200,175.86],[300,212.05],[400,247.09],[500,280.98],[600,313.71],[850,390.48]].map(([t,r])=>(
+              <tr key={t}><td>{t}</td><td style={{color:'#fbbf24'}}>{r}</td><td style={{color:t>=0?'#4ade80':'#f87171'}}>{(r-100).toFixed(2)}</td></tr>
+            ))}
+          </tbody></table>
+        </div>
+      </>}
+      {tab==='pt1000'&&<>
+        <div className="card card-gold">
+          <h3>🔬 RTD Pt1000</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p>Mismo platino, pero bobinado con mayor resistencia nominal: <strong style={{color:'#fbbf24'}}>1000 Ω a 0 °C</strong>.</p><br/>
+            <p><strong>Ventaja:</strong> Mayor señal de salida → menos sensible a ruido e impedancia de cable.</p><br/>
+            <p><strong>Uso típico:</strong> HVAC, climatización, refrigeración industrial donde el cable puede ser largo.</p><br/>
+            <p>α = 0,00385 Ω/Ω/°C (mismo que Pt100)</p><br/>
+            <p>R(T) = 1000 × (1 + 0,00385 × T)</p>
+          </div>
+        </div>
+        <div className="card">
+          <h3>⚖️ Pt100 vs Pt1000</h3>
+          <table><thead><tr><th>Parámetro</th><th>Pt100</th><th>Pt1000</th></tr></thead>
+          <tbody>
+            <tr><td>R a 0°C</td><td>100 Ω</td><td>1000 Ω</td></tr>
+            <tr><td>ΔR por °C</td><td>0,385 Ω</td><td>3,85 Ω</td></tr>
+            <tr><td>Error cable</td><td>Mayor</td><td><span className="tag tag-green">Menor</span></td></tr>
+            <tr><td>Resolución ADC</td><td>Estándar</td><td><span className="tag tag-green">Mayor</span></td></tr>
+            <tr><td>Aplicación</td><td>Proceso industrial</td><td>HVAC, Lab</td></tr>
+          </tbody></table>
+        </div>
+      </>}
+      {tab==='ni100'&&<>
+        <div className="card card-gold">
+          <h3>🔬 RTD Ni100 — Níquel</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p>Sensor de níquel: <strong style={{color:'#fbbf24'}}>100 Ω a 0 °C</strong>.</p><br/>
+            <p><strong style={{color:'#f59e0b'}}>α = 0,00617 Ω/Ω/°C</strong> — mayor sensibilidad que platino.</p><br/>
+            <p><strong>Rango:</strong> -60 °C a +180 °C (más limitado que Pt)</p><br/>
+            <p><strong>Ventaja:</strong> Mayor ΔR/°C → mejor resolución en rangos cortos.</p><br/>
+            <p><strong>Desventaja:</strong> Menos lineal, rango reducido, menor estabilidad.</p><br/>
+            <p><strong>Uso típico:</strong> Climatización, industria de proceso ligero.</p>
+          </div>
+        </div>
+        <div className="card">
+          <h3>📐 Comparativa de sensibilidad</h3>
+          {[['Pt100','0.385 Ω/°C','#60a5fa',38],['Pt1000','3.85 Ω/°C','#f59e0b',100],['Ni100','0.617 Ω/°C','#4ade80',62],['Cu10','0.043 Ω/°C','#f87171',10]].map(([n,v,c,w])=>(
+            <div key={n} style={{marginBottom:12}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}>
+                <span style={{color:'#cbd5e1'}}>{n}</span><span style={{color:c}}>{v}</span>
+              </div>
+              <div className="progress"><div className="progress-bar" style={{width:w+'%',background:c}}/></div>
+            </div>
+          ))}
+        </div>
+      </>}
+      {tab==='cu10'&&<>
+        <div className="card card-gold">
+          <h3>🔬 Cu10 — Cobre</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.7}}>
+            <p>Sensor de cobre con <strong style={{color:'#fbbf24'}}>10 Ω a 0 °C</strong>.</p><br/>
+            <p><strong style={{color:'#f59e0b'}}>α = 0,00427 Ω/Ω/°C</strong></p><br/>
+            <p><strong>Rango:</strong> -50 °C a +150 °C</p><br/>
+            <p><strong>Ventaja:</strong> Muy lineal en su rango, bajo costo.</p><br/>
+            <p><strong>Desventaja:</strong> Baja resistencia → muy sensible a resistencia de cable. Requiere conexión 3 ó 4 hilos.</p><br/>
+            <p><strong>Uso histórico:</strong> Devanados de motores, transformadores. Hoy reemplazado por Pt100.</p>
+          </div>
+        </div>
+        <div className="card">
+          <h3>🔌 Configuraciones de conexión RTD</h3>
+          <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.8}}>
+            <div style={{marginBottom:10,padding:8,background:'#020817',borderRadius:6}}>
+              <span className="tag tag-red">2 hilos</span> Error de cable incluido. Solo rangos cortos o cables &lt;3m. Error típico: 0,5–2°C.
+            </div>
+            <div style={{marginBottom:10,padding:8,background:'#020817',borderRadius:6}}>
+              <span className="tag tag-yellow">3 hilos</span> Compensa resistencia de cable (un hilo adicional de referencia). Estándar industrial.
+            </div>
+            <div style={{padding:8,background:'#020817',borderRadius:6}}>
+              <span className="tag tag-green">4 hilos</span> Eliminación total del efecto del cable. Laboratorio y alta precisión.
+            </div>
+          </div>
+        </div>
+      </>}
+    </div>
+  </div>
+  );
+}
+
+function Scene3(){
+  const tipos=[
+    {name:'J',mat:'Hierro/Constantán',rango:'-40 a 750°C',sens:'52 µV/°C',color:'#60a5fa',uso:'Ambientes reductores',nota:'Hierro se oxida >500°C'},
+    {name:'K',mat:'Cromega/Alumel',rango:'-200 a 1260°C',sens:'41 µV/°C',color:'#f59e0b',uso:'Uso general industrial',nota:'Más popular del mundo'},
+    {name:'T',mat:'Cobre/Constantán',rango:'-200 a 350°C',sens:'43 µV/°C',color:'#4ade80',uso:'Criógenica y alimentos',nota:'Muy estable y lineal'},
+    {name:'E',mat:'Cromega/Constantán',rango:'-200 a 900°C',sens:'68 µV/°C',color:'#c084fc',uso:'Mayor sensibilidad',nota:'Mejor para bajas T'},
+    {name:'R',mat:'Pt87Rh13/Platino',rango:'0 a 1600°C',sens:'10 µV/°C',color:'#f87171',uso:'Altas temperaturas',nota:'Laboratorio / patrón'},
+    {name:'S',mat:'Pt90Rh10/Platino',rango:'0 a 1600°C',sens:'10 µV/°C',color:'#fb923c',uso:'Horno fundición',nota:'Punto fijo del oro'},
+  ];
+  const [sel,setSel]=useState('K');
+  const t=tipos.find(x=>x.name===sel);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div className="card card-gold" style={{padding:14}}>
+      <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.5}}>
+        <strong style={{color:'#f59e0b'}}>Efecto Seebeck (1821): </strong>
+        Al unir dos metales distintos y calentar la unión, se genera una FEM proporcional a la temperatura.
+        <span className="tag tag-yellow" style={{marginLeft:8}}>E = α·ΔT</span>
+        donde α es el coeficiente termoeléctrico (µV/°C).
+        Requiere <strong style={{color:'#fbbf24'}}>compensación de junta fría</strong> (junta de referencia a temperatura conocida).
+      </div>
+    </div>
+    <div style={{flex:1,display:'grid',gridTemplateColumns:'2fr 1fr',gap:16}}>
+      <div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+          {tipos.map(x=>(
+            <button key={x.name} onClick={()=>setSel(x.name)}
+              style={{padding:'6px 14px',borderRadius:6,border:`2px solid ${sel===x.name?x.color:'#1e293b'}`,
+                background:sel===x.name?x.color+'22':'#0a0f1e',color:sel===x.name?x.color:'#64748b',cursor:'pointer',fontWeight:700,fontSize:13}}>
+              Tipo {x.name}
+            </button>
+          ))}
+        </div>
+        <div className="card" style={{borderColor:t.color+'55',background:t.color+'08'}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,fontSize:13}}>
+            <div><span style={{color:'#64748b'}}>Materiales:</span><br/><strong style={{color:t.color}}>{t.mat}</strong></div>
+            <div><span style={{color:'#64748b'}}>Rango:</span><br/><strong style={{color:'#fbbf24'}}>{t.rango}</strong></div>
+            <div><span style={{color:'#64748b'}}>Sensibilidad:</span><br/><strong style={{color:t.color}}>{t.sens}</strong></div>
+            <div><span style={{color:'#64748b'}}>Uso típico:</span><br/><strong style={{color:'#cbd5e1'}}>{t.uso}</strong></div>
+            <div style={{gridColumn:'1/-1',background:'#020817',padding:8,borderRadius:6}}>
+              <span style={{color:'#64748b'}}>Nota: </span><span style={{color:'#94a3b8'}}>{t.nota}</span>
+            </div>
+          </div>
+        </div>
+        <div className="card" style={{marginTop:12}}>
+          <h3>⚠️ Leyes fundamentales</h3>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,fontSize:12,color:'#94a3b8'}}>
+            <div style={{background:'#020817',padding:8,borderRadius:6}}>
+              <strong style={{color:'#f59e0b'}}>Ley de circuito homogéneo:</strong><br/>
+              Un termopar de metal uniforme no genera FEM aunque haya gradiente de T.
+            </div>
+            <div style={{background:'#020817',padding:8,borderRadius:6}}>
+              <strong style={{color:'#60a5fa'}}>Ley del metal intermedio:</strong><br/>
+              Un tercer metal en el circuito no afecta la FEM si sus dos uniones están a la misma T.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🌡️ Compensación junta fría</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.7}}>
+          <p>El instrumento mide:</p>
+          <div className="formula" style={{fontSize:14}}>E_total = E_hot - E_cold</div>
+          <p>Para obtener T_proceso necesitamos conocer T de la junta fría:</p>
+          <br/>
+          <div style={{background:'#020817',padding:8,borderRadius:6,marginBottom:8}}>
+            <strong style={{color:'#60a5fa'}}>Compensación electrónica:</strong><br/>
+            Sensor interno (NTC/Pt100) en el terminal del transmisor mide T ambiente y suma la corrección.
+          </div>
+          <div style={{background:'#020817',padding:8,borderRadius:6,marginBottom:8}}>
+            <strong style={{color:'#4ade80'}}>Cable de extensión:</strong><br/>
+            Cables con el mismo coeficiente termoeléctrico que llevan la junta fría al instrumento.
+          </div>
+          <div style={{background:'#020817',padding:8,borderRadius:6}}>
+            <strong style={{color:'#f59e0b'}}>Baño de hielo (lab):</strong><br/>
+            Junta de referencia en mezcla agua/hielo a 0 °C exacto. Patrón de calibración.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function Scene4(){
+  const [R0,setR0]=useState(10000);
+  const [B,setB]=useState(3977);
+  const [T,setT]=useState(25);
+  const T_K=T+273.15;
+  const Rt=(R0*Math.exp(B*(1/T_K - 1/298.15))).toFixed(0);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>🔬 Termistores NTC</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6}}>
+          <p><em>Negative Temperature Coefficient</em>: resistencia <strong style={{color:'#f87171'}}>disminuye</strong> al aumentar la temperatura.</p>
+          <br/>
+          <div className="formula">R(T) = R₀ · e^(B·(1/T - 1/T₀))</div>
+          <br/>
+          <p>Materiales: óxidos de metales (Mn, Ni, Co, Cu, Fe) sinterizados.</p>
+          <br/>
+          <p><strong>Sensibilidad:</strong> muy alta (10x mayor que Pt100) en rango estrecho.</p>
+          <br/>
+          <p><strong>Rango típico:</strong> -50 °C a +150 °C</p>
+          <p><strong>Exactitud:</strong> ±0,1 °C con calibración individual</p>
+          <p><strong>Aplicaciones:</strong> medicinal, HVAC, electrónica, automóvil</p>
+        </div>
+      </div>
+      <div className="card">
+        <h3>📊 Calculadora NTC</h3>
+        <div className="slider-row">
+          <label>R₀ a 25°C (Ω)</label>
+          <input type="range" min={1000} max={100000} step={1000} value={R0} onChange={e=>setR0(+e.target.value)}/>
+          <span>{(R0/1000).toFixed(0)}kΩ</span>
+        </div>
+        <div className="slider-row">
+          <label>Constante B (K)</label>
+          <input type="range" min={2000} max={6000} step={50} value={B} onChange={e=>setB(+e.target.value)}/>
+          <span>{B} K</span>
+        </div>
+        <div className="slider-row">
+          <label>Temperatura (°C)</label>
+          <input type="range" min={-50} max={150} value={T} onChange={e=>setT(+e.target.value)}/>
+          <span>{T} °C</span>
+        </div>
+        <div className="result-box">
+          <div className="result-big">{Rt} Ω</div>
+          <div className="result-label">Resistencia NTC a {T}°C</div>
+        </div>
+        <div style={{marginTop:8,fontSize:11,color:'#475569',textAlign:'center'}}>
+          R = {(R0/1000).toFixed(0)}k · e^({B}·(1/{T_K.toFixed(1)} - 1/298.15))
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card">
+        <h3>🔴 Termistores PTC</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6}}>
+          <p><em>Positive Temperature Coefficient</em>: resistencia <strong style={{color:'#4ade80'}}>aumenta</strong> con la temperatura.</p>
+          <br/>
+          <p>Dos tipos principales:</p>
+          <div style={{background:'#020817',padding:8,borderRadius:6,marginBottom:8,marginTop:4}}>
+            <strong style={{color:'#60a5fa'}}>PTC Silistor:</strong> semiconductor de silicio. Respuesta lineal. Rango -60°C a +150°C. Para medición.
+          </div>
+          <div style={{background:'#020817',padding:8,borderRadius:6}}>
+            <strong style={{color:'#f59e0b'}}>PTC Switching:</strong> cerámica de titanato de bario (BaTiO₃). Resistencia salta varios órdenes en temperatura de Curie (~120°C). Para <strong>protección de motores</strong>.
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>⚖️ Comparativa de sensores resistivos</h3>
+        <table><thead><tr><th>Sensor</th><th>Sensibilidad</th><th>Rango</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td style={{color:'#60a5fa'}}>Pt100</td><td>0.385 Ω/°C</td><td>-200→850°C</td><td>Proceso</td></tr>
+          <tr><td style={{color:'#4ade80'}}>Pt1000</td><td>3.85 Ω/°C</td><td>-200→850°C</td><td>HVAC</td></tr>
+          <tr><td style={{color:'#f87171'}}>NTC 10k</td><td>~500 Ω/°C</td><td>-50→150°C</td><td>Médico/Auto</td></tr>
+          <tr><td style={{color:'#c084fc'}}>PTC Si</td><td>~70 Ω/°C</td><td>-60→150°C</td><td>Control</td></tr>
+          <tr><td style={{color:'#f59e0b'}}>PTC BaTiO₃</td><td>Millones/°C</td><td>Curie±10°C</td><td>Protección</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function PirometerSVG({emis,T}){
+  const energy=(emis*5.67e-8*Math.pow(T+273.15,4)/1000).toFixed(1);
+  return(
+  <svg width="100%" height="220" viewBox="0 0 500 220">
+    <rect width={500} height={220} fill="#020817" rx={8}/>
+    {/* Objeto caliente */}
+    <rect x={20} y={60} width={80} height={120} rx={6}
+      fill={T>300?'#ef4444':T>100?'#f59e0b':'#3b82f6'} opacity={0.8}/>
+    <text x={60} y={125} textAnchor="middle" fill="#fff" fontSize={13} fontWeight="bold">{T}°C</text>
+    <text x={60} y={200} textAnchor="middle" fill="#94a3b8" fontSize={11}>Objeto</text>
+    {/* Ondas IR */}
+    {[0,1,2,3,4].map(i=>(
+      <path key={i} d={`M ${110+i*28} 100 Q ${115+i*28} 80, ${120+i*28} 100 Q ${125+i*28} 120, ${130+i*28} 100`}
+        fill="none" stroke="#f59e0b" strokeWidth={1.5} opacity={0.5+i*0.1}/>
+    ))}
+    <text x={225} y={60} textAnchor="middle" fill="#f59e0b" fontSize={11}>Radiación IR</text>
+    {/* Pirómetro */}
+    <rect x={250} y={70} width={150} height={90} rx={8} fill="#1e293b" stroke="#f59e0b" strokeWidth={1.5}/>
+    <text x={325} y={110} textAnchor="middle" fill="#f59e0b" fontSize={13} fontWeight="bold">PIRÓMETRO</text>
+    <text x={325} y={130} textAnchor="middle" fill="#94a3b8" fontSize={11}>IR</text>
+    {/* Display */}
+    <rect x={410} y={80} width={80} height={60} rx={6} fill="#020817" stroke="#4ade80" strokeWidth={1}/>
+    <text x={450} y={107} textAnchor="middle" fill="#4ade80" fontSize={18} fontWeight="bold">{T}</text>
+    <text x={450} y={127} textAnchor="middle" fill="#4ade80" fontSize={11}>°C</text>
+    <text x={450} y={158} textAnchor="middle" fill="#64748b" fontSize={10}>E={energy} kW/m²</text>
+  </svg>
+  );
+}
+
+function Scene5(){
+  const [emis,setEmis]=useState(0.85);
+  const [T,setT]=useState(200);
+  const SB=5.67e-8;
+  const P=(emis*SB*Math.pow(T+273.15,4)/1000).toFixed(2);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div className="card card-gold">
+        <h3>☀️ Pirometría de Radiación</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6}}>
+          <p>Medición de temperatura <strong style={{color:'#f59e0b'}}>sin contacto</strong> por la radiación infrarroja emitida por el cuerpo.</p>
+          <br/>
+          <div className="formula">E = ε · σ · T⁴</div>
+          <p style={{fontSize:11,color:'#64748b',textAlign:'center'}}>Ley de Stefan-Boltzmann</p>
+          <br/>
+          <p>Donde:</p>
+          <ul style={{marginLeft:16,lineHeight:1.8}}>
+            <li><strong style={{color:'#fbbf24'}}>ε</strong> = emisividad del material (0–1)</li>
+            <li><strong style={{color:'#60a5fa'}}>σ</strong> = 5.67×10⁻⁸ W/m²·K⁴ (cte. Stefan-Boltzmann)</li>
+            <li><strong style={{color:'#4ade80'}}>T</strong> = temperatura absoluta en Kelvin</li>
+          </ul>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🎚️ Simulador de Pirómetro</h3>
+        <div className="slider-row">
+          <label>Emisividad (ε)</label>
+          <input type="range" min={0.01} max={1} step={0.01} value={emis} onChange={e=>setEmis(+e.target.value)}/>
+          <span>{emis.toFixed(2)}</span>
+        </div>
+        <div className="slider-row">
+          <label>Temperatura (°C)</label>
+          <input type="range" min={0} max={1500} step={10} value={T} onChange={e=>setT(+e.target.value)}/>
+          <span>{T} °C</span>
+        </div>
+        <div className="result-box">
+          <div className="result-big">{P} kW/m²</div>
+          <div className="result-label">Potencia irradiada (ε={emis} · σ · {(T+273.15).toFixed(0)}⁴ K)</div>
+        </div>
+      </div>
+    </div>
+    <PirometerSVG emis={emis} T={T}/>
+    <div className="grid3">
+      <div className="card">
+        <h3>📋 Emisividades típicas</h3>
+        <table><tbody>
+          {[['Cuerpo negro',1.00,'#f59e0b'],['Piel humana',0.98,'#4ade80'],['Ladrillo',0.90,'#4ade80'],['Acero oxidado',0.85,'#60a5fa'],['Madera',0.90,'#60a5fa'],['Aluminio pulido',0.05,'#f87171'],['Acero pulido',0.07,'#f87171']].map(([m,v,c])=>(
+            <tr key={m}><td style={{fontSize:12}}>{m}</td><td style={{color:c,fontWeight:600}}>{v}</td></tr>
+          ))}
+        </tbody></table>
+      </div>
+      <div className="card">
+        <h3>📡 Tipos de pirómetros</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}}>
+          <div><span className="tag tag-yellow">Banda ancha</span> 8–14 µm. General. Económico.</div>
+          <div><span className="tag tag-blue">Banda estrecha</span> Para metales. Compensa emisividad.</div>
+          <div><span className="tag tag-green">Bicolor (ratio)</span> Independiente de ε. Llamas, metales.</div>
+          <div><span className="tag tag-purple">Cámara IR</span> Imagen térmica. Termografía.</div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>✅ Ventajas / ⚠️ Limitaciones</h3>
+        <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.8}}>
+          <div style={{color:'#4ade80'}}>✓ Sin contacto con objeto</div>
+          <div style={{color:'#4ade80'}}>✓ Alta temperatura (>1000°C)</div>
+          <div style={{color:'#4ade80'}}>✓ Medición rápida</div>
+          <div style={{color:'#4ade80'}}>✓ Objetos en movimiento</div>
+          <div style={{color:'#f87171'}}>✗ Emisividad debe conocerse</div>
+          <div style={{color:'#f87171'}}>✗ Gases entre sensor y objeto</div>
+          <div style={{color:'#f87171'}}>✗ Suciedad en lente/ventana</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function Scene6(){
+  const [T,setT]=useState(80);
+  const [alpha,setAlpha]=useState(12);
+  const expansion=(alpha*1e-6*(T-20)*1000).toFixed(3);
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:16}}>
+    <div className="card card-gold" style={{padding:14}}>
+      <div style={{display:'flex',gap:20,alignItems:'center',fontSize:13,color:'#94a3b8'}}>
+        <div style={{flex:1}}>
+          <strong style={{color:'#f59e0b'}}>Sensores mecánicos de temperatura:</strong> Basados en expansión diferencial de materiales.
+          Sin alimentación eléctrica, robustos y económicos. Utilizados como indicadores locales.
+        </div>
+        <div style={{display:'flex',gap:12}}>
+          {['Bimetálico','Bulbo+capilar','Cristal líquido'].map(t=>(
+            <span key={t} className="tag tag-yellow">{t}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:16,flex:1}}>
+      <div className="card">
+        <h3>🌡️ Termómetro Bimetálico</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6,marginBottom:12}}>
+          Dos metales con diferente coeficiente de expansión unidossoldados:
+          el compuesto se curva con la temperatura.
+          <br/><br/>
+          Par típico: <strong style={{color:'#fbbf24'}}>Invar + latón</strong><br/>
+          α_invar = 1.2×10⁻⁶/°C<br/>
+          α_latón = 19×10⁻⁶/°C<br/><br/>
+          <strong>Exactitud:</strong> ±1–2% del span
+        </div>
+        <svg width="100%" height="100" viewBox="0 0 220 100">
+          <rect x={10} y={30} width={180} height={12} rx={3} fill="#3b82f6"/>
+          <rect x={10} y={42} width={180} height={12} rx={3} fill="#f59e0b"/>
+          <path d={`M 10 30 Q 100 ${30-T/10} 190 30`} fill="none" stroke="#4ade80" strokeWidth={2} strokeDasharray="4,3"/>
+          <text x={110} y={80} textAnchor="middle" fill="#94a3b8" fontSize={11}>Deflexión a {T}°C</text>
+          <text x={110} y={93} textAnchor="middle" fill="#fbbf24" fontSize={12}>{(T/10*2).toFixed(1)} mm</text>
+        </svg>
+        <div className="slider-row" style={{marginTop:8}}>
+          <label>T (°C)</label>
+          <input type="range" min={0} max={200} value={T} onChange={e=>setT(+e.target.value)}/>
+          <span>{T}°C</span>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🫧 Bulbo y Capilar</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6}}>
+          <p>Un bulbo lleno de líquido (o gas) conectado por un tubo capilar a un tubo Bourdon o fuelle.</p><br/>
+          <p><strong style={{color:'#f59e0b'}}>Sistemas:</strong></p>
+          <div style={{marginTop:8}}>
+            {[['Clase I','Líquido','Mercurio o aceite silicona. -40→400°C'],
+              ['Clase II','Vapor sat.','Fluido de relleno evapora. No lineal'],
+              ['Clase III','Gas','Gas noble (N₂, He). Amplio rango'],
+              ['Clase V','Mercurio','Alta exactitud ±0,5%. Sin gases']].map(([c,t,d])=>(
+              <div key={c} style={{background:'#020817',padding:6,borderRadius:4,marginBottom:6}}>
+                <span className="tag tag-blue" style={{marginRight:6}}>{c}</span>
+                <strong style={{color:'#fbbf24',fontSize:11}}>{t}</strong>
+                <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <h3>🔍 Expansión térmica</h3>
+        <div style={{fontSize:13,color:'#94a3b8',lineHeight:1.6}}>
+          <div className="formula">ΔL = α · L₀ · ΔT</div>
+          <div className="slider-row" style={{marginTop:12}}>
+            <label>α (×10⁻⁶/°C)</label>
+            <input type="range" min={1} max={25} value={alpha} onChange={e=>setAlpha(+e.target.value)}/>
+            <span>{alpha}</span>
+          </div>
+          <div className="result-box" style={{marginTop:8}}>
+            <div className="result-big">{expansion} mm</div>
+            <div className="result-label">Expansión de 1m al pasar de 20°C a {T}°C</div>
+          </div>
+          <table style={{marginTop:10,fontSize:11}}>
+            <thead><tr><th>Material</th><th>α (×10⁻⁶/°C)</th></tr></thead>
+            <tbody>
+              {[['Invar',1.2],['Acero inox',16],['Latón',19],['Aluminio',23],['Cobre',17]].map(([m,a])=>(
+                <tr key={m}><td>{m}</td><td style={{color:'#fbbf24'}}>{a}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function Scene7(){
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%',gap:14}}>
+    <div className="card card-gold" style={{padding:14,fontSize:13,color:'#94a3b8'}}>
+      <strong style={{color:'#f59e0b'}}>Criterios de selección del sensor de temperatura:</strong> tipo de fluido/sólido,
+      rango de temperatura, exactitud requerida, tiempo de respuesta, vibración, distancia al instrumento y costo.
+    </div>
+    <div style={{overflow:'auto',flex:1}}>
+      <table style={{fontSize:12}}>
+        <thead>
+          <tr>
+            <th>Sensor</th><th>Principio</th><th>Rango</th><th>Exactitud</th><th>Respuesta</th><th>Costo</th><th>Aplicación ideal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            ['Pt100','Resistivo','−200→850°C','±0,1°C','Lento (s)','Alto','Industria proceso, laboratorio'],
+            ['Pt1000','Resistivo','−200→850°C','±0,1°C','Lento (s)','Alto','HVAC, cables largos'],
+            ['Ni100','Resistivo','−60→180°C','±0,5°C','Medio','Medio','Climatización'],
+            ['Termopar J','Seebeck','−40→750°C','±1°C','Rápido (ms)','Bajo','Ambientes reductores'],
+            ['Termopar K','Seebeck','−200→1260°C','±1°C','Rápido (ms)','Bajo','Uso general industrial'],
+            ['Termopar T','Seebeck','−200→350°C','±0,5°C','Rápido (ms)','Bajo','Criógenica, alimentos'],
+            ['Termopar R/S','Seebeck','0→1600°C','±1°C','Rápido (ms)','Muy alto','Hornos, metalurgia'],
+            ['NTC 10k','Resistivo','−50→150°C','±0,1°C','Muy rápido','Bajo','Médico, electrónica'],
+            ['PTC Silistor','Resistivo','−60→150°C','±1°C','Medio','Bajo','Control, HVAC'],
+            ['Pirómetro IR','Radiación','0→3000°C','±1°C','Inmediato','Alto','Sin contacto, objetos en movimiento'],
+            ['Bimetálico','Expansión','−50→500°C','±1-2%','Muy lento','Muy bajo','Indicador local, seguridad'],
+            ['Bulbo-capilar','Expansión','−50→400°C','±0,5%','Lento','Bajo','Indicador local, P&ID simple'],
+          ].map(([s,p,r,e,t,c,a])=>(
+            <tr key={s}>
+              <td style={{color:'#f59e0b',fontWeight:600}}>{s}</td>
+              <td>{p}</td><td style={{color:'#fbbf24'}}>{r}</td>
+              <td style={{color:'#4ade80'}}>{e}</td><td>{t}</td>
+              <td style={{color:c==='Muy alto'?'#f87171':c==='Alto'?'#fb923c':c==='Medio'?'#fbbf24':'#4ade80'}}>{c}</td>
+              <td style={{color:'#94a3b8'}}>{a}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12}}>
+      {[
+        {k:'¿Alta T?',v:'Termopar R/S o K',c:'#f59e0b'},
+        {k:'¿Alta exactitud?',v:'Pt100 / Pt1000',c:'#60a5fa'},
+        {k:'¿Sin contacto?',v:'Pirómetro IR',c:'#4ade80'},
+        {k:'¿Indicador local?',v:'Bimetálico',c:'#c084fc'},
+      ].map(x=>(
+        <div key={x.k} style={{background:'#0a0f1e',border:`1px solid ${x.c}44`,borderRadius:8,padding:10,textAlign:'center'}}>
+          <div style={{fontSize:12,color:'#64748b',marginBottom:4}}>{x.k}</div>
+          <div style={{fontSize:13,fontWeight:700,color:x.c}}>{x.v}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
+}
+
+const QUIZ=[
+  {q:'¿Cuál es la resistencia del Pt100 a 0 °C?',opts:['50 Ω','100 Ω','200 Ω','1000 Ω'],ans:1},
+  {q:'¿Qué ley física describe el funcionamiento de los termopares?',opts:['Ley de Ohm','Efecto Seebeck','Ley de Fourier','Efecto Hall'],ans:1},
+  {q:'¿Qué termopar es el más popular en la industria en general?',opts:['Tipo J','Tipo K','Tipo T','Tipo R'],ans:1},
+  {q:'Un sensor NTC tiene coeficiente de temperatura…',opts:['Positivo','Cero','Negativo','Variable no predecible'],ans:2},
+  {q:'¿Para qué sirve la compensación de junta fría en un termopar?',opts:['Aumentar la señal','Corregir el error por la temperatura en los terminales del instrumento','Evitar oxidación de los cables','Calibrar a 100°C'],ans:1},
+  {q:'¿Qué ley describe la radiación de un pirómetro IR?',opts:['Ley de Hooke','Ley de Stefan-Boltzmann','Ley de Faraday','Ley de Snell'],ans:1},
+  {q:'¿Cuántos hilos usa la conexión de mayor exactitud para un RTD?',opts:['1','2','3','4'],ans:3},
+  {q:'¿Cuál es el coeficiente α estándar del Pt100 según IEC 60751?',opts:['0,00385 Ω/Ω/°C','0,00617 Ω/Ω/°C','0,00427 Ω/Ω/°C','0,00521 Ω/Ω/°C'],ans:0},
+  {q:'¿Qué sensor es mejor para medir la temperatura de una pieza metálica en movimiento a 900°C?',opts:['Pt100','Termopar K','Pirómetro IR','Termistor NTC'],ans:2},
+  {q:'¿Cuál es el rango máximo del termopar tipo K?',opts:['400°C','750°C','1260°C','2000°C'],ans:2},
+];
+
+function Scene8(){
+  const [ans,setAns]=useState(Array(QUIZ.length).fill(null));
+  const [show,setShow]=useState(false);
+  const score=ans.filter((a,i)=>a===QUIZ[i].ans).length;
+
+  return(
+  <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+    {!show?(
+    <div style={{flex:1,overflowY:'auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingRight:4}}>
+      {QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:14}}>
+          <div style={{fontSize:12,color:'#64748b',marginBottom:6}}>Pregunta {i+1}</div>
+          <div style={{fontSize:13,color:'#cbd5e1',marginBottom:10,lineHeight:1.4}}>{q.q}</div>
+          {q.opts.map((o,j)=>(
+            <button key={j} onClick={()=>{const a=[...ans];a[i]=j;setAns(a);}}
+              style={{display:'block',width:'100%',textAlign:'left',padding:'6px 10px',borderRadius:6,
+                border:`1px solid ${ans[i]===j?'#f59e0b':'#1e293b'}`,
+                background:ans[i]===j?'#f59e0b22':'#0a0f1e',
+                color:ans[i]===j?'#fbbf24':'#64748b',cursor:'pointer',fontSize:12,marginBottom:4}}>
+              {o}
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+    ):(
+    <div style={{flex:1,overflowY:'auto',display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingRight:4}}>
+      {QUIZ.map((q,i)=>(
+        <div key={i} className="card" style={{padding:14,borderColor:ans[i]===q.ans?'#4ade8044':'#f8717144'}}>
+          <div style={{fontSize:12,marginBottom:4,color:ans[i]===q.ans?'#4ade80':'#f87171'}}>
+            {ans[i]===q.ans?'✅ Correcto':'❌ Incorrecto'}
+          </div>
+          <div style={{fontSize:12,color:'#cbd5e1',marginBottom:6}}>{q.q}</div>
+          <div style={{fontSize:12,color:'#4ade80'}}>Respuesta: {q.opts[q.ans]}</div>
+        </div>
+      ))}
+    </div>
+    )}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 0 0'}}>
+      <div style={{fontSize:14,color:'#94a3b8'}}>
+        Respondidas: <strong style={{color:'#fbbf24'}}>{ans.filter(a=>a!==null).length}/{QUIZ.length}</strong>
+        {show&&<span style={{marginLeft:16,color:score>=8?'#4ade80':'#f87171',fontWeight:700}}>
+          Puntuación: {score}/10 ({score>=8?'¡Aprobado!':'Repasar'})
+        </span>}
+      </div>
+      {!show?(
+        <button className="btn btn-gold" disabled={ans.filter(a=>a!==null).length<QUIZ.length}
+          onClick={()=>setShow(true)}>Ver resultados</button>
+      ):(
+        <button className="btn btn-outline" onClick={()=>{setAns(Array(QUIZ.length).fill(null));setShow(false);}}>
+          Reintentar
+        </button>
+      )}
+    </div>
+  </div>
+  );
+}
+
+const SCENES=[
+  {id:1,title:'Introducción y Simulador Pt100',sub:'Escalas, principios físicos y RTD básico',comp:Scene1},
+  {id:2,title:'RTDs — Pt100, Pt1000, Ni100, Cu10',sub:'Tipos, tablas, conexiones 2/3/4 hilos',comp:Scene2},
+  {id:3,title:'Termopares — J, K, T, E, R, S',sub:'Efecto Seebeck, tipos, compensación de junta fría',comp:Scene3},
+  {id:4,title:'Termistores NTC y PTC',sub:'Calculadora NTC, comparativa, protección de motores',comp:Scene4},
+  {id:5,title:'Pirometría de Radiación',sub:'Stefan-Boltzmann, emisividad, tipos de pirómetros',comp:Scene5},
+  {id:6,title:'Sensores Mecánicos',sub:'Bimetálico, bulbo-capilar, expansión térmica',comp:Scene6},
+  {id:7,title:'Tabla de Selección',sub:'Comparativa completa: rango, exactitud, costo, aplicación',comp:Scene7},
+  {id:8,title:'Test de Evaluación',sub:'10 preguntas sobre medición de temperatura',comp:Scene8},
+];
+
+function App(){
+  const [sc,setSc]=useState(0);
+  const S=SCENES[sc];
+  const Comp=S.comp;
+
+  return(
+  <div className="slide">
+    <div className="hdr">
+      <div>
+        <div className="hdr-title">2.4 — Medición de Temperatura</div>
+        <div className="hdr-sub">{S.title} · {S.sub}</div>
+      </div>
+      <div style={{display:'flex',gap:12,alignItems:'center'}}>
+        <span className="badge">PRO</span>
+        <span style={{fontSize:12,color:'#64748b'}}>{sc+1}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content"><Comp/></div>
+    <div className="nav">
+      <button className="btn btn-outline" disabled={sc===0} onClick={()=>setSc(s=>s-1)}>← Anterior</button>
+      <div className="dots">
+        {SCENES.map((_,i)=>(
+          <div key={i} className={`dot${sc===i?' active':''}`} onClick={()=>setSc(i)}/>
+        ))}
+      </div>
+      <button className="btn btn-gold" disabled={sc===SCENES.length-1} onClick={()=>setSc(s=>s+1)}>Siguiente →</button>
+    </div>
+  </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
