@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=1280"/>
+<title>Clase 2.3 — Medición de Nivel</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0}#root{width:1280px;height:720px}</style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect}=React;
+const BG='#080c18',CARD='#111827',BORDER='#1e3a5f';
+const GOLD='#f59e0b',CYAN='#22d3ee',GREEN='#4ade80',RED='#f87171',VIOLET='#a78bfa',ORANGE='#fb923c';
+
+const QUIZ=[
+  {q:'La fórmula de presión hidrostática para medición de nivel es:',opts:['P = h/ρ·g','P = h·ρ·g','P = ρ·g/h','P = h²·ρ'],correct:1},
+  {q:'¿Qué principio usa el medidor de nivel por desplazamiento (flotador)?',opts:['Presión hidrostática','Principio de Arquímedes — empuje','Capacitancia eléctrica','Ultrasonidos'],correct:1},
+  {q:'El medidor de nivel ultrasónico se instala:',opts:['En el fondo del tanque','En la parte superior del tanque, apuntando hacia abajo','En la mitad del tanque','En la línea de proceso'],correct:1},
+  {q:'¿Qué es la "supresión de cero" en un transmisor de nivel DP?',opts:['Calibrar el cero en fábrica','Restar la columna de líquido fija cuando el transmisor está debajo del tanque','Elevar la señal de salida','Reducir el rango de medida'],correct:1},
+  {q:'El medidor capacitivo de nivel funciona midiendo:',opts:['La presión del líquido','La capacitancia entre electrodo y pared, que varía con el nivel','La frecuencia de ultrasonidos','El empuje del flotador'],correct:1},
+  {q:'Para fluidos corrosivos con sólidos en suspensión, el mejor principio de nivel es:',opts:['Flotador mecánico','Burbujeo o DP con diafragma rasante','Capacitivo de electrodo estándar','Ultrasonido de contacto'],correct:1},
+  {q:'¿Cuál es la exactitud típica de un transmisor de nivel inteligente DP?',opts:['±5%','±2%','±0.2%','±10%'],correct:2},
+  {q:'El medidor de nivel por radar (microondas) mide:',opts:['La presión del vapor','El tiempo de tránsito de ondas electromagnéticas hacia la superficie','La capacitancia del líquido','La temperatura superficial'],correct:1},
+  {q:'En un tanque abierto con agua (ρ=1000 kg/m³) y nivel máximo 5 m, la presión máxima es:',opts:['5 Pa','4900 Pa','49000 Pa','490000 Pa'],correct:2},
+  {q:'El medidor resistivo/conductivo se usa principalmente como:',opts:['Medida continua de nivel','Alarma de nivel alto o bajo','Medida de interfase','Medidor de densidad'],correct:1},
+];
+
+function Title({icon,color,title,sub}){return(<div style={{textAlign:'center',marginBottom:4}}><div style={{fontSize:28}}>{icon}</div><div style={{fontSize:30,fontWeight:800,color:'#fff'}}>{title}</div><div style={{fontSize:13,color:'#64748b',marginTop:4}}>{sub}</div><div style={{width:50,height:3,background:color,borderRadius:2,margin:'8px auto 0'}}/></div>);}
+function IB({color,title,children}){return(<div style={{background:'#0a1628',border:`1px solid ${color}44`,borderRadius:10,padding:'12px 16px'}}><div style={{fontSize:11,color,fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:6}}>{title}</div><div style={{fontSize:12,color:'#cbd5e1',lineHeight:1.7}}>{children}</div></div>);}
+
+/* SCENE 1 — INTRO */
+function S1(){
+  const [lvl,setLvl]=useState(60);
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'relative'}}>
+      <div style={{position:'absolute',top:44,textAlign:'center'}}>
+        <div style={{fontSize:12,letterSpacing:4,color:GOLD,textTransform:'uppercase',marginBottom:6}}>Módulo 2 · Clase 2.3</div>
+        <div style={{fontSize:48,fontWeight:800,color:'#fff',lineHeight:1.1}}>Medición de Nivel</div>
+        <div style={{fontSize:16,color:'#94a3b8',marginTop:10}}>Hidrostático · Flotador · Ultrasónico · Radar · Capacitivo</div>
+      </div>
+      <div style={{display:'flex',gap:60,marginTop:60,alignItems:'flex-end'}}>
+        <TankViz pct={lvl}/>
+        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{fontSize:12,color:'#94a3b8'}}>Nivel del tanque</div>
+          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)} style={{accentColor:CYAN,width:200}}/>
+          <div style={{fontSize:32,fontWeight:800,color:CYAN}}>{lvl}%</div>
+          <div style={{fontSize:16,color:GOLD}}>P = {(lvl/100*5*1000*9.81/1000).toFixed(1)} kPa</div>
+          <div style={{fontSize:12,color:'#64748b'}}>P = h·ρ·g (h={((lvl/100)*5).toFixed(1)}m, ρ=1000 kg/m³)</div>
+        </div>
+      </div>
+      <div style={{position:'absolute',bottom:40,display:'flex',gap:16}}>
+        {[{icon:'📐',l:'Hidrostático',sub:'P=h·ρ·g',c:CYAN},{icon:'🔵',l:'Flotador',sub:'Arquímedes',c:GREEN},{icon:'🔊',l:'Ultrasónico',sub:'Tiempo vuelo',c:VIOLET},{icon:'📡',l:'Radar',sub:'Microondas',c:GOLD},{icon:'⚡',l:'Capacitivo',sub:'Constante K',c:ORANGE},{icon:'🔴',l:'Conductivo',sub:'Alarma on/off',c:RED}].map((t,i)=>(
+          <div key={i} style={{background:CARD,border:`1px solid ${t.c}33`,borderRadius:10,padding:'10px 14px',textAlign:'center',minWidth:120}}>
+            <div style={{fontSize:20}}>{t.icon}</div>
+            <div style={{fontSize:11,fontWeight:700,color:t.c,marginTop:4}}>{t.l}</div>
+            <div style={{fontSize:10,color:'#64748b'}}>{t.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+function TankViz({pct}){
+  const h=pct*2.4;
+  return(
+    <svg width={160} height={280}>
+      <rect x={30} y={20} width={100} height={240} rx={8} fill={CARD} stroke={CYAN} strokeWidth={2}/>
+      <rect x={32} y={260-h} width={96} height={h} rx={0} fill={`${CYAN}44`} style={{transition:'height 0.1s,y 0.1s'}}/>
+      {/* level indicator */}
+      <line x1={130} y1={260-h} x2={145} y2={260-h} stroke={CYAN} strokeWidth={2} style={{transition:'y1 0.1s'}}/>
+      <text x={148} y={264-h} fill={CYAN} fontSize={10}>{pct}%</text>
+      {/* P arrow */}
+      <line x1={80} y1={250} x2={80} y2={270} stroke={GOLD} strokeWidth={2}/>
+      <text x={80} y={278} fill={GOLD} fontSize={9} textAnchor='middle'>P↓</text>
+    </svg>
+  );
+}
+
+/* SCENE 2 — HIDROSTÁTICO / DP */
+function S2(){
+  const [rho,setRho]=useState(1000);
+  const [Hmax,setHmax]=useState(5);
+  const [pct,setPct]=useState(60);
+  const h=(pct/100)*Hmax;
+  const P=h*rho*9.81;
+  const mA=4+(pct/100)*16;
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
+      <Title icon='📐' color={CYAN} title='Nivel por Presión Hidrostática' sub='P = h·ρ·g — transmisor DP en fondo de tanque'/>
+      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
+        <div style={{flex:1}}>
+          <IB color={CYAN} title='Principio'>La presión en el fondo de un tanque es proporcional a la altura de líquido: <b style={{color:CYAN}}>P = h·ρ·g</b>. Un transmisor de presión montado en el fondo convierte esta presión en una señal 4-20 mA. El span del transmisor se configura igual al rango de presión esperado.</IB>
+          <div style={{marginTop:14,background:'#0a1628',border:`1px solid ${CYAN}33`,borderRadius:8,padding:'12px 14px'}}>
+            <div style={{fontSize:11,color:CYAN,fontWeight:700,marginBottom:6}}>INSTALACIONES TÍPICAS</div>
+            {[
+              {t:'Tanque abierto',d:'Transmisor de presión manométrica en el fondo. Simple y económico.'},
+              {t:'Tanque cerrado (presurizado)',d:'Transmisor DP: H=alta (fondo), L=baja (espacio vapor). Compensación automática de presión de vapor.'},
+              {t:'Supresión de cero',d:'Cuando el transmisor está por debajo del nivel mínimo: restar la columna estática fija mediante el ajuste LRV.'},
+              {t:'Wet leg / Dry leg',d:'Tanques con condensados: línea húmeda llena de líquido de referencia para compensar la presión superior.'},
+            ].map((r,i)=>(
+              <div key={i} style={{borderBottom:'1px solid #1e3a5f',padding:'6px 0',fontSize:12}}>
+                <div style={{color:CYAN,fontWeight:700}}>{r.t}</div>
+                <div style={{color:'#94a3b8',marginTop:2}}>{r.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{width:380}}>
+          <div style={{background:CARD,border:`2px solid ${CYAN}`,borderRadius:12,padding:18,marginBottom:14}}>
+            <div style={{fontSize:12,color:CYAN,fontWeight:700,marginBottom:12,textTransform:'uppercase'}}>Calculadora Interactiva</div>
+            {[
+              {l:'Densidad fluido (kg/m³)',val:rho,set:setRho,min:500,max:2000,step:50},
+              {l:'Altura máxima tanque (m)',val:Hmax,set:setHmax,min:1,max:20,step:0.5},
+              {l:'Nivel actual (%)',val:pct,set:setPct,min:0,max:100,step:1},
+            ].map((f,i)=>(
+              <div key={i} style={{marginBottom:12}}>
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:3}}>
+                  <span>{f.l}</span><span style={{color:CYAN,fontWeight:700}}>{f.val}</span>
+                </div>
+                <input type='range' min={f.min} max={f.max} step={f.step} value={f.val}
+                  onChange={e=>f.set(+e.target.value)} style={{width:'100%',accentColor:CYAN}}/>
+              </div>
+            ))}
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[
+              {l:'Altura h',v:`${h.toFixed(2)} m`,c:CYAN},
+              {l:'Presión',v:`${(P/1000).toFixed(2)} kPa`,c:GOLD},
+              {l:'En bar',v:`${(P/100000).toFixed(4)} bar`,c:GREEN},
+              {l:'Señal salida',v:`${mA.toFixed(1)} mA`,c:VIOLET},
+            ].map((r,i)=>(
+              <div key={i} style={{background:'#0a1628',border:`1px solid ${r.c}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
+                <div style={{fontSize:10,color:'#64748b'}}>{r.l}</div>
+                <div style={{fontSize:18,fontWeight:800,color:r.c,marginTop:4}}>{r.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* SCENE 3 — FLOTADOR / DESPLAZAMIENTO */
+function S3(){
+  const [lvl,setLvl]=useState(50);
+  const empuje=(lvl/100)*0.5*1000*9.81; // N (simplified)
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
+      <Title icon='🔵' color={GREEN} title='Flotador y Desplazador' sub='Principio de Arquímedes — empuje = ρ·g·V_sumergido'/>
+      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
+        <div style={{flex:1}}>
+          <IB color={GREEN} title='Principio de Arquímedes'>El flotador sube o baja con el nivel. El desplazador (buoy) permanece fijo — el nivel cambia el empuje sobre él: <b style={{color:GREEN}}>F = S·H·ρ·g</b>. Un tubo de torsión convierte este empuje en señal. Exactitud: ±0.5%.</IB>
+          <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            {[
+              {t:'Flotador directo',d:'Tubo guía vertical. Sigue el nivel. Transmisión mecánica o magnética.'},
+              {t:'Indicador magnético',d:'Flotador con imán. Cintas de colores en tubo externo. Visual + transmisión.'},
+              {t:'Desplazador (Buoy)',d:'Flotador sumergido largo. Barra de torsión detecta variación de empuje.'},
+              {t:'Magnetoestrictivo',d:'Pulso torsional por campo magnético. Exactitud ±0.01 mm. Sin partes críticas.'},
+            ].map((r,i)=>(
+              <div key={i} style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:8,padding:'10px 12px'}}>
+                <div style={{fontSize:11,fontWeight:700,color:GREEN}}>{r.t}</div>
+                <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{r.d}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:14,background:'#0a1628',border:`1px solid ${GREEN}33`,borderRadius:8,padding:'12px 14px'}}>
+            <div style={{fontSize:11,color:GREEN,fontWeight:700,marginBottom:4}}>ECUACIÓN DESPLAZADOR</div>
+            <div style={{fontFamily:'monospace',fontSize:13,color:'#e2e8f0',lineHeight:1.8}}>
+              M_torsión = (S · H · ρ · g - P_flotador) · L_brazo<br/>
+              Al subir el nivel → mayor empuje → menor torsión<br/>
+              Al bajar el nivel → menor empuje → mayor torsión
+            </div>
+          </div>
+        </div>
+        <div style={{width:380,display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
+          <FloatTankViz pct={lvl} empuje={empuje}/>
+          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)} style={{width:'100%',accentColor:GREEN}}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,width:'100%'}}>
+            <div style={{background:CARD,border:`1px solid ${GREEN}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
+              <div style={{fontSize:10,color:'#64748b'}}>Nivel</div>
+              <div style={{fontSize:22,fontWeight:800,color:GREEN}}>{lvl}%</div>
+            </div>
+            <div style={{background:CARD,border:`1px solid ${GOLD}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
+              <div style={{fontSize:10,color:'#64748b'}}>Empuje relativo</div>
+              <div style={{fontSize:22,fontWeight:800,color:GOLD}}>{(empuje/4905*100).toFixed(0)}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function FloatTankViz({pct,empuje}){
+  const h=pct*2;
+  const fY=260-h-20;
+  return(
+    <svg width={220} height={300}>
+      <rect x={40} y={20} width={120} height={240} rx={6} fill={CARD} stroke={GREEN} strokeWidth={2}/>
+      <rect x={42} y={260-h} width={116} height={h} rx={0} fill={`${CYAN}33`} style={{transition:'all 0.1s'}}/>
+      {/* float */}
+      <ellipse cx={100} cy={fY} rx={30} ry={14} fill={GREEN} opacity={0.9} style={{transition:'cy 0.1s'}}/>
+      <line x1={100} y1={fY} x2={100} y2={20} stroke='#94a3b8' strokeWidth={1} strokeDasharray='3,3'/>
+      {/* level line */}
+      <line x1={160} y1={260-h} x2={175} y2={260-h} stroke={CYAN} strokeWidth={2} style={{transition:'y1 0.1s'}}/>
+      <text x={178} y={264-h} fill={CYAN} fontSize={10}>{pct}%</text>
+    </svg>
+  );
+}
+
+/* SCENE 4 — ULTRASÓNICO Y RADAR */
+function S4(){
+  const [sel,setSel]=useState(0);
+  const [lvl,setLvl]=useState(60);
+  const v_air=343; // m/s sound in air
+  const v_radio=3e8; // m/s EM
+  const H=10; // m tank height
+  const dist=H*(1-lvl/100); // m from sensor to surface
+  const t_us=2*dist/v_air*1000; // ms
+  const t_radar=2*dist/v_radio*1e9; // ns
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
+      <Title icon='📡' color={VIOLET} title='Ultrasónico y Radar (Microondas)' sub='Tiempo de vuelo — h = v·t/2 — sin contacto con el fluido'/>
+      <div style={{display:'flex',gap:10,marginTop:14}}>
+        {['🔊 Ultrasónico','📡 Radar (FMCW)'].map((t,i)=>(
+          <button key={i} onClick={()=>setSel(i)}
+            style={{padding:'8px 20px',borderRadius:20,border:`2px solid ${i===0?VIOLET:GOLD}`,
+              background:sel===i?(i===0?VIOLET:GOLD):'transparent',color:sel===i?BG:(i===0?VIOLET:GOLD),fontWeight:700,fontSize:12,cursor:'pointer'}}>
+            {t}
+          </button>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
+        <div style={{flex:1}}>
+          {sel===0?(
+            <>
+              <IB color={VIOLET} title='Principio Ultrasónico'>Transductor en la parte superior emite un pulso de sonido (20-200 kHz). El pulso se refleja en la superficie del líquido y regresa. <b style={{color:VIOLET}}>h = v·t/2</b>. El nivel = altura tanque − distancia medida. Sin contacto con el fluido.</IB>
+              <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                {[
+                  {k:'Exactitud',v:'±0.1% a ±0.5%'},{k:'Velocidad sonido (aire)',v:'343 m/s (varía con T°)'},
+                  {k:'Compensación T°',v:'Sensor temperatura integrado'},{k:'Limitación',v:'Espuma, niebla, polvo absorbentes'},
+                  {k:'Rango',v:'0.5 m a 70 m'},{k:'Fluidos',v:'Líquidos y sólidos granulados'},
+                ].map((r,i)=>(
+                  <div key={i} style={{background:CARD,border:`1px solid ${VIOLET}33`,borderRadius:8,padding:'8px 10px'}}>
+                    <div style={{fontSize:10,color:VIOLET,fontWeight:700}}>{r.k}</div>
+                    <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{r.v}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ):(
+            <>
+              <IB color={GOLD} title='Principio Radar FMCW'>Emite ondas electromagnéticas (6-80 GHz). No afectado por temperatura, vapor, espuma. La diferencia de frecuencia entre señal emitida y reflejada da el tiempo de vuelo: <b style={{color:GOLD}}>Δf ∝ distancia</b>. Ideal para fluidos agresivos y presiones elevadas.</IB>
+              <div style={{marginTop:14,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                {[
+                  {k:'Exactitud',v:'±1 mm (FMCW guiado)'},{k:'Frecuencia',v:'6-80 GHz (microondas)'},
+                  {k:'No afectado por',v:'T°, vapor, espuma, color'},{k:'Aplicación',v:'Tanques proceso, agitados'},
+                  {k:'Tipos',v:'De antena libre / guiado en cable'},{k:'Ventaja',v:'Funciona en vacío y presión'},
+                ].map((r,i)=>(
+                  <div key={i} style={{background:CARD,border:`1px solid ${GOLD}33`,borderRadius:8,padding:'8px 10px'}}>
+                    <div style={{fontSize:10,color:GOLD,fontWeight:700}}>{r.k}</div>
+                    <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{r.v}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <div style={{width:380,display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+          <UltraTankViz pct={lvl} sel={sel}/>
+          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)}
+            style={{width:'100%',accentColor:sel===0?VIOLET:GOLD}}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,width:'100%'}}>
+            {sel===0?[
+              {l:'Distancia sensor',v:`${dist.toFixed(2)} m`,c:VIOLET},
+              {l:'Tiempo vuelo',v:`${t_us.toFixed(2)} ms`,c:CYAN},
+              {l:'Nivel calculado',v:`${(H-dist).toFixed(2)} m`,c:GREEN},
+              {l:'Nivel %',v:`${lvl}%`,c:GOLD},
+            ]:[
+              {l:'Distancia sensor',v:`${dist.toFixed(2)} m`,c:GOLD},
+              {l:'Tiempo vuelo',v:`${t_radar.toFixed(2)} ns`,c:CYAN},
+              {l:'Nivel calculado',v:`${(H-dist).toFixed(2)} m`,c:GREEN},
+              {l:'Nivel %',v:`${lvl}%`,c:VIOLET},
+            ].map((r,i)=>(
+              <div key={i} style={{background:CARD,border:`1px solid ${r.c}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
+                <div style={{fontSize:10,color:'#64748b'}}>{r.l}</div>
+                <div style={{fontSize:16,fontWeight:800,color:r.c,marginTop:4}}>{r.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function UltraTankViz({pct,sel}){
+  const h=pct*2;
+  const col=sel===0?VIOLET:GOLD;
+  const pulseY=260-h-10;
+  return(
+    <svg width={220} height={300}>
+      {/* sensor at top */}
+      <rect x={75} y={8} width={50} height={20} rx={4} fill={CARD} stroke={col} strokeWidth={2}/>
+      <text x={100} y={22} fill={col} fontSize={9} textAnchor='middle'>{sel===0?'US':'RADAR'}</text>
+      {/* beam */}
+      <line x1={100} y1={28} x2={100} y2={pulseY} stroke={col} strokeWidth={1.5} strokeDasharray='5,3' opacity={0.7}/>
+      <polygon points={`95,${pulseY} 105,${pulseY} 100,${pulseY+8}`} fill={col} opacity={0.8}/>
+      {/* tank */}
+      <rect x={40} y={30} width={120} height={230} rx={6} fill={CARD} stroke='#1e3a5f' strokeWidth={2}/>
+      <rect x={42} y={260-h} width={116} height={h} rx={0} fill={`${CYAN}33`} style={{transition:'all 0.1s'}}/>
+      {/* labels */}
+      <line x1={160} y1={260-h} x2={175} y2={260-h} stroke={CYAN} strokeWidth={1.5}/>
+      <text x={178} y={264-h} fill={CYAN} fontSize={9}>{pct}%</text>
+      <text x={100} y={290} fill='#64748b' fontSize={9} textAnchor='middle'>h = v·t/2</text>
+    </svg>
+  );
+}
+
+/* SCENE 5 — CAPACITIVO Y CONDUCTIVO */
+function S5(){
+  const [lvl,setLvl]=useState(55);
+  const K_liquid=80; // water
+  const K_air=1;
+  const A=0.01; // m²
+  const D=0.01; // m
+  const C_total=((K_liquid-K_air)*lvl/100+K_air)*8.854e-12*A/D*1e12; // pF
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 70px'}}>
+      <Title icon='⚡' color={ORANGE} title='Capacitivo y Conductivo' sub='Propiedades eléctricas del fluido para detectar nivel'/>
+      <div style={{display:'flex',gap:40,marginTop:16,width:'100%',flex:1}}>
+        <div style={{flex:1}}>
+          <div style={{display:'flex',flexDirection:'column',gap:14}}>
+            <IB color={ORANGE} title='Medidor Capacitivo'>El electrodo y la pared del tanque forman un condensador. La capacitancia varía con el nivel porque la constante dieléctrica del líquido (K) es diferente a la del gas: <b style={{color:ORANGE}}>ΔC = (K₂-K₁)·A/D</b>. Válido para líquidos y sólidos.</IB>
+            <IB color={RED} title='Medidor Conductivo / Resistivo'>Electrodos sumergidos. Cuando el líquido conductor los toca, se cierra el circuito y activa un relé. Uso como alarma de nivel alto/bajo. Impedancia mínima del fluido: 25 MΩ/cm. Alimentación alterna para evitar electrólisis.</IB>
+            <div style={{background:'#0a1628',border:`1px solid ${ORANGE}33`,borderRadius:8,padding:'12px 14px'}}>
+              <div style={{fontSize:11,color:ORANGE,fontWeight:700,marginBottom:6}}>CONSTANTES DIELÉCTRICAS</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,fontSize:11}}>
+                {[['Fluido','K aprox.','Tipo'],['Vacío / Aire','1.0','Ref'],['Agua','80','Alta'],['Petróleo','2.0','Baja'],['Etanol','25','Media'],['Ácido HCl','4.6','Media']].map((r,i)=>(
+                  <React.Fragment key={i}>
+                    {r.map((c,j)=><div key={j} style={{color:i===0?ORANGE:j===0?'#e2e8f0':j===1?CYAN:'#64748b',padding:'3px 4px',borderBottom:'1px solid #1e3a5f',fontWeight:i===0?700:400}}>{c}</div>)}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{width:380,display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+          <CapTankViz pct={lvl}/>
+          <input type='range' min={0} max={100} value={lvl} onChange={e=>setLvl(+e.target.value)} style={{width:'100%',accentColor:ORANGE}}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,width:'100%'}}>
+            <div style={{background:CARD,border:`1px solid ${ORANGE}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
+              <div style={{fontSize:10,color:'#64748b'}}>Nivel</div>
+              <div style={{fontSize:24,fontWeight:800,color:ORANGE}}>{lvl}%</div>
+            </div>
+            <div style={{background:CARD,border:`1px solid ${CYAN}33`,borderRadius:8,padding:'10px',textAlign:'center'}}>
+              <div style={{fontSize:10,color:'#64748b'}}>Capacitancia</div>
+              <div style={{fontSize:24,fontWeight:800,color:CYAN}}>{C_total.toFixed(1)} pF</div>
+            </div>
+          </div>
+          <div style={{background:CARD,border:`1px solid ${RED}33`,borderRadius:8,padding:'12px 14px',width:'100%'}}>
+            <div style={{fontSize:11,color:RED,fontWeight:700,marginBottom:6}}>ALARMA CONDUCTIVA — ON/OFF</div>
+            <div style={{display:'flex',gap:8}}>
+              {[{p:25,l:'Nivel bajo'},{p:50,l:'Nivel medio'},{p:75,l:'Nivel alto'}].map((a,i)=>(
+                <div key={i} style={{flex:1,background:'#0a1628',border:`2px solid ${lvl>=a.p?GREEN:BORDER}`,borderRadius:8,padding:'8px',textAlign:'center'}}>
+                  <div style={{fontSize:18}}>{lvl>=a.p?'🔴':'⚫'}</div>
+                  <div style={{fontSize:9,color:lvl>=a.p?RED:'#64748b'}}>{a.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function CapTankViz({pct}){
+  const h=pct*2;
+  return(
+    <svg width={220} height={280}>
+      <rect x={40} y={20} width={120} height={240} rx={6} fill={CARD} stroke={ORANGE} strokeWidth={2}/>
+      <rect x={42} y={260-h} width={116} height={h} fill={`${ORANGE}33`} style={{transition:'all 0.1s'}}/>
+      {/* electrode */}
+      <line x1={100} y1={30} x2={100} y2={250} stroke={ORANGE} strokeWidth={4}/>
+      <text x={100} y={16} fill={ORANGE} fontSize={9} textAnchor='middle'>Electrodo</text>
+      {/* alarm points */}
+      {[25,50,75].map(p=>(
+        <circle key={p} cx={155} cy={260-p*2} r={5} fill={pct>=p?RED:BORDER}/>
+      ))}
+      <text x={100} y={275} fill='#64748b' fontSize={9} textAnchor='middle'>C = ε·K·A/D</text>
+    </svg>
+  );
+}
+
+/* SCENE 6 — SELECCIÓN Y COMPARATIVA */
+function S6(){
+  const rows=[
+    {m:'DP Hidrostático',p:'P=h·ρ·g',acc:'±0.2%',cont:'Sí',fluid:'Líquidos',cost:'Bajo',c:CYAN},
+    {m:'Flotador directo',p:'Arquímedes',acc:'±0.5%',cont:'Sí',fluid:'Líquidos limpios',cost:'Bajo',c:GREEN},
+    {m:'Desplazador',p:'Empuje variable',acc:'±0.5%',cont:'Sí',fluid:'Líq/interfases',cost:'Medio',c:GREEN},
+    {m:'Magnetoestrictivo',p:'Pulso torsional',acc:'±0.01mm',cont:'Sí (flotador)',fluid:'Líquidos',cost:'Medio',c:VIOLET},
+    {m:'Ultrasónico',p:'Tiempo vuelo',acc:'±0.1-0.5%',cont:'No',fluid:'Líq/sólidos',cost:'Medio',c:VIOLET},
+    {m:'Radar FMCW',p:'Microondas',acc:'±1 mm',cont:'No',fluid:'Cualquiera',cost:'Alto',c:GOLD},
+    {m:'Capacitivo',p:'ΔC = f(nivel)',acc:'±0.25%',cont:'Sí',fluid:'Líq/sólidos',cost:'Medio',c:ORANGE},
+    {m:'Conductivo',p:'Resistencia',acc:'On/Off',cont:'Sí',fluid:'Conductores',cost:'Muy bajo',c:RED},
+  ];
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',padding:'28px 60px'}}>
+      <Title icon='📊' color={GOLD} title='Comparativa de Medidores de Nivel' sub='Selección según fluido, exactitud, contacto y costo'/>
+      <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginTop:16}}>
+        <thead>
+          <tr>{['Medidor','Principio','Exactitud','Contacto','Fluidos','Costo'].map((h,i)=>(
+            <th key={i} style={{background:'#0a1628',padding:'9px 8px',textAlign:'left',color:GOLD,fontSize:10,textTransform:'uppercase',letterSpacing:0.8,borderBottom:`2px solid ${GOLD}44`}}>{h}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          {rows.map((r,i)=>(
+            <tr key={i} style={{background:i%2===0?CARD:'#0a1628'}}>
+              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:r.c,fontWeight:700}}>{r.m}</td>
+              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:'#94a3b8'}}>{r.p}</td>
+              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:'#e2e8f0',fontFamily:'monospace'}}>{r.acc}</td>
+              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:r.cont==='No'?GREEN:GOLD,fontWeight:600}}>{r.cont}</td>
+              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:'#94a3b8'}}>{r.fluid}</td>
+              <td style={{padding:'8px',borderBottom:`1px solid ${BORDER}`,color:r.cost.includes('Bajo')?GREEN:r.cost==='Alto'?RED:GOLD,fontWeight:600}}>{r.cost}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{display:'flex',gap:14,marginTop:16,width:'100%'}}>
+        {[
+          {icon:'💡',c:GOLD,t:'El transmisor DP es el más común y económico para tanques de proceso con líquidos limpios o moderadamente sucios.'},
+          {icon:'🏆',c:VIOLET,t:'El radar FMCW es el más exacto y versátil — ideal para condiciones severas: vapor, presión, temperatura y espuma.'},
+          {icon:'⚡',c:RED,t:'Los conductivos (on/off) son los más económicos para alarmas de nivel en agua, calderas y depósitos con líquidos conductores.'},
+        ].map((t,i)=>(
+          <div key={i} style={{flex:1,background:CARD,border:`1px solid ${t.c}33`,borderRadius:8,padding:'10px 12px',display:'flex',gap:8}}>
+            <span style={{fontSize:18}}>{t.icon}</span>
+            <div style={{fontSize:11,color:'#cbd5e1',lineHeight:1.6}}>{t.t}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* SCENE 7 — TEST */
+function S7(){
+  const [idx,setIdx]=useState(0);
+  const [chosen,setChosen]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=QUIZ[idx];
+  const pick=(i)=>{
+    if(chosen!==null)return;
+    setChosen(i);
+    if(i===q.correct)setScore(s=>s+1);
+    setTimeout(()=>{if(idx+1<QUIZ.length){setIdx(i=>i+1);setChosen(null);}else setDone(true);},1400);
+  };
+  if(done){
+    const pct=Math.round(score/QUIZ.length*100);
+    return(<div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20}}>
+      <div style={{fontSize:72}}>{pct>=90?'🥇':pct>=70?'🥈':pct>=50?'🥉':'📚'}</div>
+      <div style={{fontSize:42,fontWeight:800,color:'#fff'}}>{score}/{QUIZ.length}</div>
+      <div style={{fontSize:22,color:GOLD}}>{pct}%</div>
+      <button onClick={()=>{setIdx(0);setChosen(null);setScore(0);setDone(false);}} style={{marginTop:16,padding:'12px 32px',borderRadius:24,background:GOLD,color:BG,fontWeight:800,fontSize:15,border:'none',cursor:'pointer'}}>Repetir</button>
+    </div>);
+  }
+  return(
+    <div style={{width:1280,height:720,background:BG,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 120px',gap:20}}>
+      <div style={{fontSize:13,color:GOLD,letterSpacing:3,textTransform:'uppercase'}}>Evaluación · Clase 2.3</div>
+      <div style={{width:'100%',height:6,background:'#1e3a5f',borderRadius:3}}><div style={{height:6,borderRadius:3,background:GOLD,width:`${(idx/QUIZ.length)*100}%`,transition:'width 0.4s'}}/></div>
+      <div style={{fontSize:11,color:'#475569',alignSelf:'flex-end'}}>{idx+1}/{QUIZ.length}</div>
+      <div style={{fontSize:20,fontWeight:700,color:'#fff',textAlign:'center',lineHeight:1.5,maxWidth:820}}>{q.q}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,width:'100%',maxWidth:820}}>
+        {q.opts.map((o,i)=>{
+          let bg=CARD,border=BORDER,color='#cbd5e1';
+          if(chosen!==null){if(i===q.correct){bg='#14532d';border=GREEN;color=GREEN;}else if(i===chosen){bg='#450a0a';border=RED;color=RED;}}
+          return(<div key={i} onClick={()=>pick(i)} style={{background:bg,border:`2px solid ${border}`,borderRadius:10,padding:'14px 18px',cursor:chosen===null?'pointer':'default',color,fontSize:13,transition:'all 0.2s'}}>
+            <span style={{color:GOLD,fontWeight:800,marginRight:8}}>{['A','B','C','D'][i]}.</span>{o}
+          </div>);
+        })}
+      </div>
+      <div style={{fontSize:12,color:'#475569'}}>Puntuación: {score} pts</div>
+    </div>
+  );
+}
+
+const SCENES=[
+  {label:'Intro',comp:S1},{label:'Hidrostático DP',comp:S2},{label:'Flotador',comp:S3},
+  {label:'Ultrasónico/Radar',comp:S4},{label:'Capacitivo/Conductivo',comp:S5},
+  {label:'Comparativa',comp:S6},{label:'Test',comp:S7},
+];
+function App(){
+  const [scene,setScene]=useState(0);
+  const Comp=SCENES[scene].comp;
+  return(
+    <div style={{width:1280,height:720,background:BG,position:'relative',overflow:'hidden'}}>
+      <Comp/>
+      <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(8,12,24,0.95)',borderTop:`1px solid ${BORDER}`,display:'flex',alignItems:'center',justifyContent:'center',gap:4,padding:'6px 16px'}}>
+        <button onClick={()=>setScene(s=>Math.max(0,s-1))} disabled={scene===0} style={{padding:'5px 14px',borderRadius:6,background:scene===0?'#1e3a5f':GOLD,color:scene===0?'#475569':BG,border:'none',cursor:scene===0?'default':'pointer',fontWeight:700,fontSize:12}}>← Anterior</button>
+        <div style={{display:'flex',gap:4,flex:1,justifyContent:'center'}}>
+          {SCENES.map((s,i)=>(
+            <button key={i} onClick={()=>setScene(i)} style={{padding:'4px 10px',borderRadius:6,fontSize:10,background:scene===i?GOLD:'transparent',color:scene===i?BG:'#64748b',border:`1px solid ${scene===i?GOLD:BORDER}`,cursor:'pointer',fontWeight:scene===i?700:400,whiteSpace:'nowrap'}}>
+              {i+1}. {s.label}
+            </button>
+          ))}
+        </div>
+        <button onClick={()=>setScene(s=>Math.min(SCENES.length-1,s+1))} disabled={scene===SCENES.length-1} style={{padding:'5px 14px',borderRadius:6,background:scene===SCENES.length-1?'#1e3a5f':GOLD,color:scene===SCENES.length-1?'#475569':BG,border:'none',cursor:scene===SCENES.length-1?'default':'pointer',fontWeight:700,fontSize:12}}>Siguiente →</button>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

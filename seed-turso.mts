@@ -799,6 +799,22 @@ const lessonsPro = [
     durationSec: 960,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.1 - Medicion de Presion.html`,
   },
+  {
+    order: 6,
+    title: "Medición de Caudal — Placa Orificio, Magnético, Vórtex y Coriolis",
+    description:
+      "Domina los principales métodos de medición de caudal: placa orificio con calculadora Bernoulli interactiva (β, ΔP, ρ → Qv), Venturi y tobera con comparación de pérdida de presión, rotámetro con animación de flotador, caudalímetro magnético (E=B·D·v con calculadora EMF), vórtex (Strouhal f=St·v/D) y Coriolis. Tabla comparativa completa y test de 10 preguntas.",
+    durationSec: 960,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.2 - Medicion de Caudal.html`,
+  },
+  {
+    order: 7,
+    title: "Medición de Nivel — Hidrostática, Flotador, Ultrasónico y Capacitivo",
+    description:
+      "Domina las tecnologías de medición de nivel: presión hidrostática (P=h·ρ·g con calculadora DP interactiva), flotador/desplazador con animación de principio de Arquímedes, ultrasónico/radar (calculadora tiempo de vuelo en ms/ns), capacitivo (ΔC=K·A/D) y resistivo con simulación de alarma. Tabla de selección por aplicación y test de 10 preguntas.",
+    durationSec: 900,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 2.3 - Medicion de Nivel.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
