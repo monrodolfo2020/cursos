@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.2 – HAZOP y LOPA</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:12px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-blue{background:#1e40af44;color:#93c5fd;border:1px solid #1e40af66;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.meter-bar{height:10px;background:#0f1729;border-radius:5px;overflow:hidden;margin:3px 0;}
+.meter-fill{height:100%;border-radius:5px;transition:width .4s;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef}=React;
+
+/* ── SCENE 1: HAZOP — Metodología ──────────────────────────── */
+function Scene1(){
+  const [word,setWord]=useState('HIGH');
+  const guideWords={
+    HIGH:{label:'Alta / Más de',color:'#ef4444',examples:['Alta presión → rotura de tubería','Alto nivel → desbordamiento','Alta temperatura → reacción descontrolada']},
+    LOW:{label:'Baja / Menos de',color:'#3b82f6',examples:['Baja presión → colapso de recipiente','Bajo caudal → sobretemperatura en reactor','Baja concentración → producto fuera de spec']},
+    NONE:{label:'Ninguna / Ausencia',color:'#94a3b8',examples:['Sin flujo → tubería seca, bomba quemada','Sin refrigerante → reacción térmica','Sin alimentación eléctrica → pérdida de control']},
+    REVERSE:{label:'Inverso / Opuesto',color:'#a78bfa',examples:['Flujo inverso → contaminación cruzada','Reacción inversa → producto no deseado','Backflow en válvula de retención']},
+    OTHER:{label:'Otro que / Distinto',color:'#22c55e',examples:['Otra sustancia → contaminación','Otra fase (líquido en lugar de gas)','Impurezas no previstas']},
+    PART:{label:'Parte de / Parcial',color:'#f97316',examples:['Composición incompleta → reacción insuficiente','Partial open valve → caudal reducido','Señal parcial → lectura errónea']},
+  };
+  const w=guideWords[word];
+  return(<div>
+    <div className="sec-title">HAZOP — Metodología y Palabras Guía</div>
+    <div className="sec-sub">Hazard and Operability Study · IEC 61511 / IEC 61882 · Análisis sistemático de desviaciones</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es un HAZOP?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            El <span style={{color:'#f59e0b',fontWeight:600}}>HAZOP</span> es un análisis estructurado y sistemático
+            de peligros y problemas de operabilidad en un proceso. Un equipo multidisciplinario aplica
+            <span style={{color:'#f59e0b'}}> palabras guía</span> a variables de proceso (nodos) para identificar
+            desviaciones posibles, sus causas y consecuencias.
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'9px 12px',marginBottom:8}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:6}}>Equipo HAZOP típico</div>
+            {[['👨‍💼','Líder HAZOP','Facilita, nunca propone soluciones'],
+              ['🔧','Ingeniero de proceso','Conoce el proceso a fondo'],
+              ['⚙️','Ingeniero de instrumentación','Verifica los lazos de control'],
+              ['🔒','Ingeniero de seguridad','Evalúa consecuencias y salvaguardas'],
+              ['🛠','Ingeniero de mantenimiento','Aporta experiencia operativa'],
+            ].map(([ic,r,d])=>(
+              <div key={r} style={{display:'flex',gap:8,marginBottom:4,alignItems:'center'}}>
+                <span style={{fontSize:14}}>{ic}</span>
+                <div><span style={{fontSize:10,color:'#cbd5e1',fontWeight:600}}>{r}</span><span style={{fontSize:10,color:'#475569'}}> — {d}</span></div>
+              </div>
+            ))}
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'9px 12px'}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:4}}>Proceso del HAZOP por nodo</div>
+            {['1. Seleccionar un nodo (sección del proceso)','2. Definir la intención de diseño','3. Aplicar palabra guía + parámetro','4. Identificar causas posibles','5. Evaluar consecuencias','6. Revisar salvaguardas existentes','7. Asignar acción / recomendación'].map((s,i)=>(
+              <div key={i} style={{fontSize:10,color:'#94a3b8',marginBottom:2,display:'flex',gap:6}}>
+                <span style={{color:'#f59e0b',flexShrink:0}}>▸</span>{s}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Palabras Guía — selecciona para ver ejemplos</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
+            {Object.entries(guideWords).map(([k,v])=>(
+              <button key={k} onClick={()=>setWord(k)}
+                className={`btn-outline${word===k?' active':''}`}
+                style={{borderColor:word===k?v.color+'aa':undefined,color:word===k?v.color:undefined}}>
+                {k}
+              </button>
+            ))}
+          </div>
+          <div style={{background:'#060a14',borderRadius:8,padding:'12px 14px',borderLeft:`3px solid ${w.color}`}}>
+            <div style={{fontSize:13,fontWeight:700,color:w.color,marginBottom:8}}>{word} — "{w.label}"</div>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:6}}>Ejemplos de desviaciones:</div>
+            {w.examples.map((e,i)=>(
+              <div key={i} style={{display:'flex',gap:7,marginBottom:5,alignItems:'flex-start'}}>
+                <div style={{width:6,height:6,borderRadius:'50%',background:w.color,flexShrink:0,marginTop:3}}/>
+                <div style={{fontSize:11,color:'#cbd5e1'}}>{e}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Variables de proceso analizadas</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+            {['Flujo','Presión','Temperatura','Nivel','Composición','Fase','Tiempo','Velocidad reacción','Viscosidad','pH','Concentración','Voltaje'].map(v=>(
+              <span key={v} className="tag tag-blue">{v}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: HAZOP — Hoja de Trabajo Interactiva ──────────── */
+function Scene2(){
+  const [node,setNode]=useState(0);
+  const nodes=[
+    {
+      name:'Nodo 1 — Línea de alimentación al reactor',
+      intent:'Flujo de 50 kg/h de reactivo A a 20°C y 3 bar hacia el reactor R-101',
+      rows:[
+        {gw:'HIGH FLOW',cause:'Válvula FV-101 falla abierta / setpoint erróneo',consequence:'Sobre-alimentación → exotermia descontrolada → alta temperatura',severity:'Catastrófico',safeguard:'FIC-101 lazo de control · TAHH-101 (SIS) shutdown',sil:'SIL 2'},
+        {gw:'NO FLOW',cause:'Bomba P-101 falla / válvula FV-101 cierra',consequence:'Reacción incompleta → producto fuera de spec',severity:'Menor',safeguard:'FAL-101 alarma bajo caudal · Operador interviene',sil:'N/A'},
+        {gw:'HIGH TEMP',cause:'Intercambiador E-101 falla / fluido caliente en retorno',consequence:'Reacción prematura en línea → posible polimerización',severity:'Serio',safeguard:'TAH-101 alarma alta temperatura',sil:'SIL 1'},
+        {gw:'REVERSE FLOW',cause:'Válv. check falla + sobrepresión en reactor',consequence:'Contaminación de tanque de alimentación TK-100',severity:'Serio',safeguard:'Válvula check CV-101 en línea',sil:'SIL 1'},
+      ]
+    },
+    {
+      name:'Nodo 2 — Reactor R-101 (zona de reacción)',
+      intent:'Reacción exotérmica a 60°C y 4 bar. Refrigeración por camisa de agua.',
+      rows:[
+        {gw:'HIGH TEMP',cause:'Fallo refrigeración / alta alimentación / pérdida agitación',consequence:'Reacción fuera de control (runaway) → sobrepresión → ruptura',severity:'Catastrófico',safeguard:'TAHH-101 (SIS SIL 2) · PSV-101 válvula alivio · PAHH-101 shutdown',sil:'SIL 2'},
+        {gw:'HIGH PRESSURE',cause:'Generación de gas excesiva / válvula salida cerrada',consequence:'Sobrepresión → ruptura recipiente → liberación tóxica',severity:'Catastrófico',safeguard:'PSV-101 · PAHH-101 (SIS SIL 3)',sil:'SIL 3'},
+        {gw:'LOW LEVEL',cause:'Fuga en reactor / bajo suministro',consequence:'Exposición del agitador → cavitación → daño mecánico',severity:'Moderado',safeguard:'LAL-101 alarma bajo nivel',sil:'N/A'},
+        {gw:'NO AGITATION',cause:'Motor agitador falla / corte eléctrico',consequence:'Gradientes térmicos → punto caliente → reacción local descontrolada',severity:'Serio',safeguard:'SAL-101 alarma baja velocidad agitador',sil:'SIL 1'},
+      ]
+    },
+  ];
+  const n=nodes[node];
+  const sevColor={Catastrófico:'#ef4444',Serio:'#f97316',Moderado:'#eab308',Menor:'#22c55e'};
+  return(<div>
+    <div className="sec-title">HAZOP — Hoja de Trabajo (Worksheet)</div>
+    <div className="sec-sub">Ejemplo práctico: Reactor exotérmico — 2 nodos · Desviaciones, causas, consecuencias y SIL asignado</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {nodes.map((nd,i)=>(
+        <button key={i} className={`btn-outline${node===i?' active':''}`} onClick={()=>setNode(i)}>{nd.name.split('—')[0].trim()}</button>
+      ))}
+    </div>
+    <div className="card" style={{padding:'8px 12px',marginBottom:8}}>
+      <div style={{fontSize:10,color:'#64748b'}}>📍 <span style={{color:'#f59e0b',fontWeight:700}}>{n.name}</span></div>
+      <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>Intención: {n.intent}</div>
+    </div>
+    <div style={{overflowX:'auto'}}>
+      <table>
+        <thead>
+          <tr>
+            <th style={{width:'14%'}}>Desviación</th>
+            <th style={{width:'22%'}}>Causa posible</th>
+            <th style={{width:'25%'}}>Consecuencia</th>
+            <th style={{width:'10%'}}>Severidad</th>
+            <th style={{width:'23%'}}>Salvaguardas</th>
+            <th style={{width:'6%'}}>SIL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {n.rows.map((r,i)=>(
+            <tr key={i}>
+              <td><span style={{color:'#f59e0b',fontWeight:600,fontSize:10}}>{r.gw}</span></td>
+              <td style={{fontSize:10,color:'#94a3b8'}}>{r.cause}</td>
+              <td style={{fontSize:10,color:'#cbd5e1'}}>{r.consequence}</td>
+              <td><span style={{color:sevColor[r.severity]||'#94a3b8',fontWeight:600,fontSize:10}}>{r.severity}</span></td>
+              <td style={{fontSize:10,color:'#64748b'}}>{r.safeguard}</td>
+              <td><span className={r.sil==='SIL 3'?'tag tag-green':r.sil==='SIL 2'?'tag tag-blue':r.sil==='SIL 1'?'tag tag-amber':''}>{r.sil}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div className="card" style={{marginTop:8,marginBottom:0,padding:'9px 12px'}}>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+        {Object.entries(sevColor).map(([s,c])=>(
+          <div key={s} style={{display:'flex',alignItems:'center',gap:5}}>
+            <div style={{width:8,height:8,borderRadius:'50%',background:c}}/>
+            <span style={{fontSize:10,color:c}}>{s}</span>
+          </div>
+        ))}
+        <div style={{fontSize:10,color:'#475569',marginLeft:'auto'}}>Normativa: IEC 61882 · Resultado del HAZOP alimenta directamente el LOPA</div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Matriz de Riesgo ──────────────────────────────── */
+function Scene3(){
+  const [sel,setSel]=useState(null);
+  const freqLabels=['F1\n<0.01/año','F2\n0.01–0.1/año','F3\n0.1–1/año','F4\n>1/año'];
+  const sevLabels=['S1\nLeve','S2\nModera-do','S3\nSerio','S4\nCatastró-fico'];
+  const matrix=[
+    [{sil:null,c:'#14532d'},{sil:null,c:'#14532d'},{sil:'SIL 1',c:'#854d0e'},{sil:'SIL 2',c:'#991b1b'}],
+    [{sil:null,c:'#14532d'},{sil:'SIL 1',c:'#854d0e'},{sil:'SIL 2',c:'#991b1b'},{sil:'SIL 3',c:'#7f1d1d'}],
+    [{sil:'SIL 1',c:'#854d0e'},{sil:'SIL 2',c:'#991b1b'},{sil:'SIL 3',c:'#7f1d1d'},{sil:'SIL 3',c:'#7f1d1d'}],
+    [{sil:'SIL 2',c:'#991b1b'},{sil:'SIL 3',c:'#7f1d1d'},{sil:'SIL 3',c:'#7f1d1d'},{sil:'SIL 4*',c:'#4c0519'}],
+  ];
+  const examples=[
+    {f:3,s:3,desc:'Reactor R-101 — runaway reaction','freq':'0.5/año','conseq':'Lesiones graves, daño mayor'},
+    {f:1,s:3,desc:'Fuga en válvula de alta presión','freq':'0.005/año','conseq':'Lesión seria'},
+    {f:3,s:1,desc:'Alarma falsa (nuisance trip)','freq':'1/año','conseq':'Pérdida de producción'},
+  ];
+  return(<div>
+    <div className="sec-title">Matriz de Riesgo</div>
+    <div className="sec-sub">Frecuencia vs. Severidad · Asignación cualitativa de SIL · Entrada al LOPA</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Matriz de riesgo — haz clic en una celda</div>
+          <div style={{display:'flex',gap:0}}>
+            <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',paddingBottom:22,paddingRight:6}}>
+              {freqLabels.slice().reverse().map((f,i)=>(
+                <div key={i} style={{height:52,display:'flex',alignItems:'center',justifyContent:'flex-end',fontSize:8,color:'#64748b',textAlign:'right',whiteSpace:'pre',lineHeight:1.2}}>{f}</div>
+              ))}
+            </div>
+            <div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,52px)',gridTemplateRows:'repeat(4,52px)',gap:2}}>
+                {[3,2,1,0].map(fi=>
+                  [0,1,2,3].map(si=>{
+                    const cell=matrix[fi][si];
+                    const isEx=examples.some(e=>e.f===fi+1&&e.s===si+1);
+                    const isSel=sel&&sel.f===fi&&sel.s===si;
+                    return(<div key={`${fi}-${si}`}
+                      onClick={()=>setSel(isSel?null:{f:fi,s:si,cell})}
+                      style={{background:cell.c,borderRadius:4,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',border:isSel?'2px solid #f59e0b':'2px solid transparent',transition:'all .15s',position:'relative'}}>
+                      {cell.sil&&<span style={{fontSize:9,fontWeight:700,color:'#fff'}}>{cell.sil}</span>}
+                      {!cell.sil&&<span style={{fontSize:9,color:'#14532d88'}}>OK</span>}
+                      {isEx&&<div style={{position:'absolute',top:2,right:2,width:6,height:6,borderRadius:'50%',background:'#f59e0b'}}/>}
+                    </div>);
+                  })
+                )}
+              </div>
+              <div style={{display:'flex',gap:0,marginTop:2}}>
+                {sevLabels.map((s,i)=>(
+                  <div key={i} style={{width:54,fontSize:8,color:'#64748b',textAlign:'center',whiteSpace:'pre',lineHeight:1.2}}>{s}</div>
+                ))}
+              </div>
+              <div style={{fontSize:8,color:'#475569',textAlign:'center',marginTop:4}}>← Severidad →</div>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',paddingLeft:6}}>
+              <div style={{fontSize:8,color:'#475569',writingMode:'vertical-rl',transform:'rotate(180deg)'}}>← Frecuencia →</div>
+            </div>
+          </div>
+          {sel&&(
+            <div style={{marginTop:8,background:'#f59e0b11',border:'1px solid #f59e0b33',borderRadius:6,padding:'7px 10px'}}>
+              <div style={{fontSize:11,color:'#f59e0b',fontWeight:700}}>
+                F{sel.f+1} × S{sel.s+1} → {sel.cell.sil||'Sin SIL requerido (riesgo tolerable)'}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Leyenda de colores</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            {[['#14532d','Sin SIL (tolerable)'],['#854d0e','SIL 1 (RRF 10–100)'],['#991b1b','SIL 2 (RRF 100–1000)'],['#7f1d1d','SIL 3 (RRF 1000–10000)'],['#4c0519','SIL 4 (requiere análisis especial)']].map(([c,l])=>(
+              <div key={l} style={{display:'flex',alignItems:'center',gap:5}}>
+                <div style={{width:10,height:10,borderRadius:2,background:c,flexShrink:0}}/>
+                <span style={{fontSize:9,color:'#94a3b8'}}>{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Ejemplos del reactor R-101 (puntos en la matriz)</div>
+          {examples.map((ex,i)=>(
+            <div key={i} style={{background:'#060a14',borderRadius:6,padding:'8px 10px',marginBottom:6,borderLeft:`3px solid ${matrix[ex.f-1][ex.s-1].c}`}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                <span style={{fontSize:11,color:'#f1f5f9',fontWeight:600}}>{ex.desc}</span>
+                <span style={{fontSize:10,color:'#f59e0b',fontFamily:'monospace'}}>F{ex.f}×S{ex.s}</span>
+              </div>
+              <div style={{fontSize:10,color:'#64748b'}}>Frecuencia: {ex.freq} · {ex.conseq}</div>
+              <div style={{marginTop:4}}>
+                <span style={{fontSize:10,color:'#fff',fontWeight:700,background:matrix[ex.f-1][ex.s-1].c,padding:'1px 7px',borderRadius:3}}>
+                  {matrix[ex.f-1][ex.s-1].sil||'Sin SIL'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Limitaciones de la Matriz de Riesgo</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            La matriz es <span style={{color:'#f59e0b'}}>cualitativa</span> — útil para priorizar pero insuficiente para demostrar cumplimiento normativo.
+            Para asignación formal de SIL se requiere <span style={{color:'#f59e0b'}}>LOPA cuantitativo</span> que calcule la frecuencia mitigada real.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: LOPA — Conceptos y Créditos IPL ───────────────── */
+function Scene4(){
+  const ipls=[
+    {name:'BPCS (lazo DCS)',pfd:0.1,credit:'1 década',type:'control',desc:'Lazo de control automático. PFD=0.1 si es independiente del BPCS que causó el evento.'},
+    {name:'Alarma + acción operador',pfd:0.1,credit:'1 década',type:'human',desc:'Solo válida si: hay tiempo suficiente (>10 min), operador entrenado, acceso al instrumento. PFD=0.1.'},
+    {name:'SIS/ESD (SIL 1)',pfd:0.01,credit:'2 décadas',type:'sis',desc:'Sistema instrumentado de seguridad diseñado y certificado. PFD=0.01 para SIL 1.'},
+    {name:'SIS/ESD (SIL 2)',pfd:0.001,credit:'3 décadas',type:'sis',desc:'Sistema instrumentado de seguridad SIL 2. PFD=0.001.'},
+    {name:'Válvula de alivio (PSV)',pfd:0.01,credit:'2 décadas',type:'passive',desc:'Dispositivo pasivo sin energía ni lógica. Siempre independiente. PFD=0.01 típico.'},
+    {name:'Disco de ruptura',pfd:0.001,credit:'3 décadas',type:'passive',desc:'Dispositivo pasivo de respuesta instantánea. PFD=0.001 cuando se combina con PSV.'},
+    {name:'Dique de contención',pfd:0.01,credit:'2 décadas',type:'passive',desc:'Mitiga consecuencias post-evento. No previene el evento, reduce severidad.'},
+  ];
+  const typeColor={control:'#3b82f6',human:'#a78bfa',sis:'#f59e0b',passive:'#22c55e'};
+  return(<div>
+    <div className="sec-title">LOPA — Créditos de Capas de Protección</div>
+    <div className="sec-sub">Layer of Protection Analysis · Créditos IPL · PFD por capa · IEC 61511 Anexo F</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Capas de protección y sus PFD típicos</div>
+          <table>
+            <thead><tr><th>IPL</th><th>Tipo</th><th>PFD típico</th><th>Crédito</th></tr></thead>
+            <tbody>
+              {ipls.map(ip=>(
+                <tr key={ip.name}>
+                  <td style={{fontSize:10}}>{ip.name}</td>
+                  <td><span style={{background:typeColor[ip.type]+'22',color:typeColor[ip.type],padding:'1px 5px',borderRadius:3,fontSize:9,fontWeight:700}}>{ip.type}</span></td>
+                  <td style={{fontFamily:'monospace',color:'#f59e0b',fontSize:10}}>{ip.pfd}</td>
+                  <td style={{color:'#86efac',fontSize:10}}>{ip.credit}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Requisitos para que una capa cuente como IPL válida</div>
+          {['Independencia: la IPL no puede ser afectada por la causa raíz del evento.',
+            'Efectividad: PFD ≤ 0.1 (reduce riesgo al menos 10×).',
+            'Auditabilidad: debe poder demostrarse y mantenerse documentado.',
+            'Especificidad: diseñada y probada para el escenario específico.'].map((r,i)=>(
+            <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
+              <span style={{color:'#f59e0b',flexShrink:0,fontSize:10}}>✓</span>
+              <span style={{fontSize:10,color:'#94a3b8'}}>{r}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Fórmula LOPA</div>
+          <div className="formula-box" style={{fontSize:13,lineHeight:2}}>
+            f_miti = f_IE × ∏ PFD_IPLi
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:10}}>
+            {[['f_miti','Frecuencia mitigada del evento (objetivo)'],['f_IE','Frecuencia del evento iniciador (sin protecciones)'],['PFD_IPLi','PFD de cada capa de protección independiente'],['∏','Producto de todos los PFD (se multiplican las capas)']].map(([s,d])=>(
+              <div key={s} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                <span style={{color:'#f59e0b',fontFamily:'monospace',fontWeight:700,minWidth:60,fontSize:11}}>{s}</span>
+                <span style={{fontSize:10,color:'#94a3b8'}}>{d}</span>
+              </div>
+            ))}
+          </div>
+          <div className="formula-box" style={{fontSize:11,lineHeight:1.8}}>
+            SIL requerido = log₁₀(f_IE / f_tolerable) − Σ créditos IPL
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Criterios de frecuencia tolerable (típicos)</div>
+          <table>
+            <thead><tr><th>Consecuencia</th><th>f tolerable</th></tr></thead>
+            <tbody>
+              {[['Fatalidad en planta','≤ 1×10⁻⁴/año'],['Lesión grave múltiple','≤ 1×10⁻³/año'],['Lesión individual','≤ 1×10⁻²/año'],['Daño mayor a equipo','≤ 1×10⁻¹/año'],['Pérdida de producción','≤ 1×10⁰/año']].map(([c,f])=>(
+                <tr key={c}><td style={{fontSize:10}}>{c}</td><td style={{fontFamily:'monospace',color:'#f59e0b',fontSize:10}}>{f}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: LOPA — Calculadora ────────────────────────────── */
+function Scene5(){
+  const [fIE,setFIE]=useState(-1);
+  const [fTol,setFTol]=useState(-4);
+  const [ipls,setIPLS]=useState([true,false,false,false]);
+  const ipl_opts=[
+    {name:'BPCS / lazo DCS',pfd:0.1},{name:'Alarma + operador',pfd:0.1},
+    {name:'SIS SIL 1',pfd:0.01},{name:'PSV alivio',pfd:0.01},
+  ];
+  const freqIE=Math.pow(10,fIE);
+  const freqTol=Math.pow(10,fTol);
+  const selIPLS=ipl_opts.filter((_,i)=>ipls[i]);
+  const pfdProduct=selIPLS.reduce((p,ip)=>p*ip.pfd,1);
+  const fMiti=freqIE*pfdProduct;
+  const gap=fMiti/freqTol;
+  const silNeeded=gap>10?3:gap>1?2:gap>0.1?1:0;
+  const silColor=silNeeded===0?'#22c55e':silNeeded===1?'#f59e0b':silNeeded===2?'#3b82f6':'#ef4444';
+  const isMet=fMiti<=freqTol;
+  return(<div>
+    <div className="sec-title">LOPA — Calculadora de SIL Objetivo</div>
+    <div className="sec-sub">Frecuencia iniciador × PFD capas = frecuencia mitigada → SIL requerido para el SIS</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Parámetros del escenario</div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>Frecuencia del evento iniciador f_IE</span>
+              <span style={{color:'#ef4444',fontFamily:'monospace'}}>10<sup>{fIE}</sup> /año = {freqIE.toExponential(1)}/año</span>
+            </div>
+            <input type="range" min="-4" max="1" step="1" value={fIE} onChange={e=>setFIE(+e.target.value)}/>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#334155',marginTop:1}}>
+              <span>Muy raro (10⁻⁴)</span><span>Frecuente (10¹)</span>
+            </div>
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>Frecuencia tolerable f_tol</span>
+              <span style={{color:'#22c55e',fontFamily:'monospace'}}>10<sup>{fTol}</sup> /año</span>
+            </div>
+            <input type="range" min="-6" max="-2" step="1" value={fTol} onChange={e=>setFTol(+e.target.value)}/>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#334155',marginTop:1}}>
+              <span>Muy estricto (10⁻⁶)</span><span>Permisivo (10⁻²)</span>
+            </div>
+          </div>
+          <div className="card-h">Capas de protección existentes (selecciona las que aplican)</div>
+          {ipl_opts.map((ip,i)=>(
+            <div key={i} onClick={()=>setIPLS(prev=>{const n=[...prev];n[i]=!n[i];return n;})}
+              style={{display:'flex',alignItems:'center',gap:8,padding:'5px 8px',borderRadius:5,cursor:'pointer',
+                background:ipls[i]?'#f59e0b11':'transparent',border:`1px solid ${ipls[i]?'#f59e0b55':'#1e2d4a'}`,marginBottom:4}}>
+              <div style={{width:14,height:14,borderRadius:3,background:ipls[i]?'#f59e0b':'#1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                {ipls[i]&&<span style={{fontSize:9,color:'#080c18',fontWeight:700}}>✓</span>}
+              </div>
+              <span style={{fontSize:11,color:ipls[i]?'#f1f5f9':'#64748b'}}>{ip.name}</span>
+              <span style={{marginLeft:'auto',fontSize:10,fontFamily:'monospace',color:'#f59e0b'}}>PFD={ip.pfd}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Resultado LOPA</div>
+          <div style={{background:'#060a14',borderRadius:8,padding:'12px',marginBottom:10}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:11,color:'#64748b',marginBottom:3}}>f_IE</div>
+                <div style={{fontSize:18,fontWeight:700,color:'#ef4444',fontFamily:'monospace'}}>{freqIE.toExponential(1)}</div>
+              </div>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:11,color:'#64748b',marginBottom:3}}>∏ PFD capas</div>
+                <div style={{fontSize:18,fontWeight:700,color:'#3b82f6',fontFamily:'monospace'}}>{pfdProduct.toExponential(1)}</div>
+              </div>
+              <div style={{textAlign:'center',gridColumn:'1/-1'}}>
+                <div style={{fontSize:10,color:'#64748b',marginBottom:3}}>f_miti = f_IE × ∏PFD</div>
+                <div style={{fontSize:22,fontWeight:700,color:isMet?'#22c55e':'#ef4444',fontFamily:'monospace'}}>{fMiti.toExponential(2)}/año</div>
+                <div style={{fontSize:10,color:'#64748b',marginTop:2}}>vs f_tolerable = {freqTol.toExponential(1)}/año</div>
+              </div>
+            </div>
+          </div>
+          {isMet?(
+            <div style={{textAlign:'center',background:'#14532d33',border:'1px solid #22c55e55',borderRadius:8,padding:'10px',marginBottom:10}}>
+              <div style={{fontSize:14,fontWeight:700,color:'#22c55e'}}>✓ Riesgo TOLERABLE</div>
+              <div style={{fontSize:11,color:'#86efac',marginTop:3}}>Las capas existentes son suficientes. No se requiere SIS adicional.</div>
+            </div>
+          ):(
+            <div style={{marginBottom:10}}>
+              <div style={{textAlign:'center',background:silColor+'22',border:`1px solid ${silColor}55`,borderRadius:8,padding:'10px',marginBottom:8}}>
+                <div style={{fontSize:12,color:'#64748b',marginBottom:3}}>SIS adicional requerido</div>
+                <div style={{fontSize:22,fontWeight:700,color:silColor}}>SIL {silNeeded}</div>
+                <div style={{fontSize:10,color:silColor,marginTop:2}}>RRF necesario ≈ {gap.toFixed(1)}× (PFD ≤ {(freqTol/freqIE/pfdProduct).toExponential(1)})</div>
+              </div>
+            </div>
+          )}
+          <div className="card-h">Paso a paso del cálculo</div>
+          <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.8,fontFamily:'monospace',background:'#060a14',borderRadius:5,padding:'8px 10px'}}>
+            <div>f_IE = {freqIE.toExponential(2)}/año</div>
+            {selIPLS.map((ip,i)=><div key={i}>× {ip.name} PFD={ip.pfd}</div>)}
+            <div style={{borderTop:'1px solid #1e2d4a',marginTop:3,paddingTop:3,color:'#fcd34d'}}>= f_miti = {fMiti.toExponential(2)}/año {isMet?'≤':'>'} f_tol = {freqTol.toExponential(1)}/año</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 6: Métodos de Asignación de SIL ──────────────────── */
+function Scene6(){
+  const [method,setMethod]=useState('lopa');
+  const methods={
+    lopa:{name:'LOPA (Layer of Protection Analysis)',tag:'Cuantitativo',color:'#f59e0b',pros:['Resultado cuantitativo demostrable','Directo hacia la norma IEC 61511','Considera todas las IPL existentes','Requiere datos de frecuencia confiables'],cons:['Requiere HAZOP previo completo','Necesita frecuencias de eventos iniciadores','Más tiempo que métodos cualitativos'],when:'Proyectos con requisito normativo formal. Cualquier SIL ≥ 2.'},
+    riskGraph:{name:'Risk Graph (IEC 61508 Anexo D)',tag:'Semi-cuantitativo',color:'#3b82f6',pros:['Más rápido que LOPA','No requiere frecuencias numéricas exactas','Bueno para primeras estimaciones','Fácil de comunicar'],cons:['Subjetivo en la asignación de parámetros','Puede sobre o sub-estimar el SIL','Resultados dependientes del experto'],when:'Fases conceptuales. Proyectos donde LOPA no es mandatorio.'},
+    riskMatrix:{name:'Matriz de Riesgo',tag:'Cualitativo',color:'#22c55e',pros:['Muy rápido y visual','Útil para priorizar escenarios','No requiere datos cuantitativos precisos'],cons:['No da un número de PFD requerido','No considera IPL existentes','Insuficiente para demostrar cumplimiento IEC 61511'],when:'Screening inicial. Identificación de escenarios prioritarios para LOPA.'},
+    safetylayer:{name:'Safety Layer Matrix (SIL Selector)',tag:'Cuantitativo simplificado',color:'#a78bfa',pros:['Combina Risk Graph con créditos IPL','Resultado más preciso que Risk Graph solo','Considera salvaguardas existentes'],cons:['Menos aceptado que LOPA en auditorías','Requiere calibración con datos del proceso'],when:'Cuando LOPA es difícil de justificar y Risk Graph es insuficiente.'},
+  };
+  const m=methods[method];
+  return(<div>
+    <div className="sec-title">Métodos de Asignación de SIL</div>
+    <div className="sec-sub">LOPA · Risk Graph · Matriz de Riesgo · IEC 61511 Cláusula 9</div>
+    <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
+      {Object.entries(methods).map(([k,v])=>(
+        <button key={k} className={`btn-outline${method===k?' active':''}`} onClick={()=>setMethod(k)}
+          style={{borderColor:method===k?v.color+'aa':undefined,color:method===k?v.color:undefined}}>{v.name.split('(')[0].trim()}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+            <span style={{background:m.color+'33',color:m.color,padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:700}}>{m.tag}</span>
+            <span style={{fontSize:13,fontWeight:700,color:m.color}}>{m.name}</span>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>Ventajas:</div>
+            {m.pros.map(p=><div key={p} style={{fontSize:10,color:'#86efac',marginBottom:2}}>✓ {p}</div>)}
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>Limitaciones:</div>
+            {m.cons.map(c=><div key={c} style={{fontSize:10,color:'#fca5a5',marginBottom:2}}>✗ {c}</div>)}
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'8px 10px'}}>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:3}}>¿Cuándo usar?</div>
+            <div style={{fontSize:11,color:'#cbd5e1'}}>{m.when}</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Flujo de decisión para elegir método</div>
+          {[['¿Proyecto con requisito IEC 61511 formal?','→ LOPA obligatorio (SIL ≥ 2)','#f59e0b'],
+            ['¿Solo fase conceptual o screening inicial?','→ Matriz de Riesgo primero','#22c55e'],
+            ['¿HAZOP completo disponible con frecuencias?','→ LOPA cuantitativo','#3b82f6'],
+            ['¿Planta existente con historia de eventos?','→ Frecuencias de datos históricos + LOPA','#a78bfa'],
+            ['¿Auditoría de certificación TÜV/exida?','→ LOPA con sustento documental','#f59e0b'],
+          ].map(([q,a,c])=>(
+            <div key={q} style={{display:'flex',gap:8,marginBottom:6,alignItems:'flex-start'}}>
+              <div style={{width:4,background:c,alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+              <div>
+                <div style={{fontSize:10,color:'#94a3b8'}}>{q}</div>
+                <div style={{fontSize:10,color:c,fontWeight:600,marginTop:1}}>{a}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Normas de referencia</div>
+          <table>
+            <thead><tr><th>Norma</th><th>Método</th></tr></thead>
+            <tbody>
+              {[['IEC 61511-3 Anexo F','LOPA — metodología completa'],['IEC 61508-5 Anexo D','Risk Graph — semi-cuantitativo'],['IEC 61508-5 Anexo E','Hazardous event severity matrix'],['CCPS Guidelines','LOPA para industria de procesos'],['ISA-TR84.00.02','LOPA y HAZOP para SIS'],].map(([n,m])=>(
+                <tr key={n}><td style={{color:'#f59e0b',fontSize:10}}>{n}</td><td style={{fontSize:10,color:'#94a3b8'}}>{m}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 7: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Cuál es el propósito de las "palabras guía" en un HAZOP?',opts:['Definir los niveles SIL de cada instrumento','Sistematizar la identificación de desviaciones en variables de proceso','Calcular la probabilidad de fallo de cada componente','Seleccionar el tipo de arquitectura MooN'],ans:1},
+  {q:'En LOPA, ¿cómo se calcula la frecuencia mitigada del evento (f_miti)?',opts:['f_IE + suma de PFD de cada capa','f_IE × producto de PFD de cada capa IPL','f_IE / RRF del SIS','f_IE × SIL asignado'],ans:1},
+  {q:'¿Qué valor de PFD se asigna típicamente a una alarma + acción de operador como IPL?',opts:['0.001','0.01','0.1','1.0'],ans:2},
+  {q:'¿Cuál de estos NO es un requisito para que una capa cuente como IPL válida?',opts:['Independencia de la causa raíz','Auditabilidad y mantenimiento documentado','Ser un sistema electrónico certificado','Efectividad: PFD ≤ 0.1'],ans:2},
+  {q:'¿Cuál método de asignación de SIL es el más adecuado para un proyecto con requisito formal IEC 61511?',opts:['Matriz de riesgo cualitativa','Risk Graph (IEC 61508 Anexo D)','LOPA cuantitativo','Juicio experto sin documentación'],ans:2},
+  {q:'En la hoja de trabajo HAZOP, la desviación "HIGH PRESSURE" en un reactor exotérmico puede conducir a:',opts:['Reacción incompleta','Sobrepresión → ruptura del recipiente → liberación tóxica','Bajo nivel en el tanque','Corrosión acelerada'],ans:1},
+  {q:'¿Qué indica f_tolerable = 1×10⁻⁴/año en LOPA?',opts:['Se tolera 1 accidente cada 10 años','Se tolera como máximo 1 fatalidad cada 10,000 años','El SIS debe tener PFD de 0.0001','El RRF del sistema es exactamente 10,000'],ans:1},
+  {q:'¿Cuántas "décadas de reducción de riesgo" otorga una PSV (válvula de alivio) como IPL?',opts:['1 década (PFD=0.1)','2 décadas (PFD=0.01)','3 décadas (PFD=0.001)','4 décadas (PFD=0.0001)'],ans:1},
+  {q:'El HAZOP identifica el escenario de riesgo. ¿Cuál es el documento que traduce ese riesgo en un SIL numérico para el SIS?',opts:['P&ID del proceso','LOPA (Layer of Protection Analysis)','FAT Protocol','Functional Safety Manual'],ans:1},
+  {q:'En la Matriz de Riesgo, una celda F4×S4 (frecuente + catastrófico) corresponde a:',opts:['Sin SIL requerido','SIL 1','SIL 3','SIL 4 (requiere análisis especial)'],ans:3},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    if(i===q.ans)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(qi+1>=quizData.length)setDone(true);
+      else{setQi(qi+1);setSel(null);}
+    },1200);
+  };
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>
+      {score>=8?'Dominas HAZOP y LOPA. Estás listo para liderar análisis de riesgo en planta.':score>=6?'Buen nivel. Repasa los créditos IPL y la fórmula LOPA.':'Refuerza los conceptos de palabras guía y el cálculo de frecuencia mitigada.'}
+    </div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — HAZOP y LOPA</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>
+      {quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}
+    </div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}>
+      <div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div>
+    </div>
+    {q.opts.map((o,i)=>{
+      let cls='quiz-opt';
+      if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}
+      return(<div key={i} className={cls} onClick={()=>choose(i)}>
+        <div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+        {o}
+      </div>);
+    })}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. HAZOP — Metodología',comp:Scene1},
+  {id:2,label:'2. HAZOP — Hoja de trabajo',comp:Scene2},
+  {id:3,label:'3. Matriz de Riesgo',comp:Scene3},
+  {id:4,label:'4. LOPA — Créditos IPL',comp:Scene4},
+  {id:5,label:'5. LOPA — Calculadora',comp:Scene5},
+  {id:6,label:'6. Métodos de asignación SIL',comp:Scene6},
+  {id:7,label:'7. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);
+  const S=SCENES.find(s=>s.id===scene);
+  const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Clase 1.2 — HAZOP y LOPA</div>
+        <div className="topbar-sub">Análisis de Riesgo · Palabras Guía · Créditos IPL · SIL desde LOPA · IEC 61511 / IEC 61882</div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -890,11 +890,35 @@ const lessonsSIL = [
   // ── MÓDULO 1 — Fundamentos SIL ──────────────────────────────────────────
   {
     order: 1,
-    title: "Seguridad Funcional SIL — PFDavg, Arquitecturas MooN y Ciclo de Vida IEC 61511",
+    title: "SIL Avanzado — PFDavg, Arquitecturas MooN y Ciclo de Vida IEC 61511",
     description:
-      "Domina el diseño cuantitativo de sistemas SIS: capas de protección (IPL), fiabilidad R(t)=e^(-λt), modos de falla (λDD/λDU/λSD/λSU), SFF, cálculo de PFDavg por arquitectura (1oo1, 1oo2, 2oo2, 2oo3), factor beta para causas comunes (CCF), ejemplo completo Tx+Barrera+PLC+Válvula, análisis de consecuencias (event trees, BLEVE, VCE) y ciclo de vida IEC 61511. Simuladores interactivos y calculadoras.",
+      "Domina el diseño cuantitativo de sistemas SIS: capas de protección (IPL), fiabilidad R(t)=e^(-λt), modos de falla (λDD/λDU/λSD/λSU), SFF, cálculo de PFDavg por arquitectura (1oo1, 1oo2, 2oo2, 2oo3), factor beta para causas comunes (CCF), ejemplo completo Tx+Barrera+PLC+Válvula, análisis de consecuencias (event trees, BLEVE, VCE) y ciclo de vida IEC 61511.",
     durationSec: 960,
     videoPath: `${BASE_SIL}/Clase 1.1 - Seguridad Funcional SIL.html`,
+  },
+  {
+    order: 2,
+    title: "HAZOP y LOPA — Análisis de Riesgo y Asignación de SIL",
+    description:
+      "Domina las herramientas de análisis de riesgo: metodología HAZOP con palabras guía (HIGH, LOW, NONE, REVERSE…), hoja de trabajo completa para reactor exotérmico, matriz de riesgo frecuencia×severidad, créditos IPL en LOPA, calculadora de frecuencia mitigada y SIL objetivo, comparativa de métodos cuantitativos y cualitativos. Ejercicios interactivos con escenarios reales.",
+    durationSec: 900,
+    videoPath: `${BASE_SIL}/Clase 1.2 - HAZOP y LOPA.html`,
+  },
+  {
+    order: 3,
+    title: "Proof Testing y PST — Mantenimiento del SIS",
+    description:
+      "Comprende por qué los fallos DU ocultos requieren pruebas periódicas: impacto del intervalo TI sobre PFDavg, eficiencia del test (PE), Partial Stroke Testing (PST) con fórmula de cobertura C, comparativa FST vs PST, procedimientos detallados por componente (transmisor, PLC, válvula ESD, barrera IS), gestión del bypass con LOTO y documentación requerida por IEC 61511 Cláusula 16.",
+    durationSec: 840,
+    videoPath: `${BASE_SIL}/Clase 1.3 - Proof Testing y PST.html`,
+  },
+  {
+    order: 4,
+    title: "Dispositivos SIL y Certificación — Tipo A/B, FMEDA, TÜV, ATEX",
+    description:
+      "Aprende a seleccionar y especificar dispositivos SIL: diferencia Tipo A vs Tipo B (IEC 61508 Parte 2), tablas SFF×HFT para cada tipo, análisis FMEDA con clasificación λ_DD/DU/SD/SU, proceso de certificación con TÜV/exida/FM, contenido del Functional Safety Manual, base de datos de dispositivos certificados y clasificación de zonas ATEX (Ex ia/ib/d/e/nA) para sensores del SIS.",
+    durationSec: 840,
+    videoPath: `${BASE_SIL}/Clase 1.4 - Dispositivos SIL y Certificacion.html`,
   },
 ];
 

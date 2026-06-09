@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.3 – Proof Testing y PST</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:12px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: Por qué se necesita el Proof Test ─────────────── */
+function Scene1(){
+  const [ti,setTI]=useState(1);
+  const [ldu,setLdu]=useState(0.01);
+  // PFD sube linealmente hasta TI, luego baja a 0 después de cada test
+  const pfdAtTI=ldu*ti/2;
+  const sil=pfdAtTI<1e-3?3:pfdAtTI<1e-2?2:pfdAtTI<0.1?1:0;
+  const silColor=sil===3?'#22c55e':sil===2?'#3b82f6':sil===1?'#f59e0b':'#ef4444';
+  return(<div>
+    <div className="sec-title">Proof Testing — ¿Por qué es indispensable?</div>
+    <div className="sec-sub">Fallos ocultos (λ_DU) · Intervalo de prueba TI · PFDavg degradado en el tiempo · IEC 61511 Cláusula 16</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">El problema de los fallos peligrosos NO detectados</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            Los fallos <span style={{color:'#ef4444',fontWeight:600}}>λ_DU (Dangerous Undetected)</span> no
+            son visibles durante operación normal — el SIS parece funcionar pero ya no puede actuar
+            si ocurre la demanda. Permanecen ocultos hasta el <span style={{color:'#f59e0b'}}>proof test periódico</span>.
+          </div>
+          <svg width="100%" viewBox="0 0 300 130">
+            <rect width="300" height="130" rx="5" fill="#060a14"/>
+            <text x="8" y="12" fill="#64748b" fontSize="8">PFD(t)</text>
+            <line x1="20" y1="15" x2="20" y2="115" stroke="#1e2d4a" strokeWidth="1"/>
+            <line x1="20" y1="115" x2="295" y2="115" stroke="#1e2d4a" strokeWidth="1"/>
+            {[0,1,2,3].map(c=>{
+              const x0=20+c*60; const x1=20+(c+1)*60;
+              return(<g key={c}>
+                <line x1={x0} y1="115" x2={x1} y2="35" stroke="#ef4444" strokeWidth="1.5"/>
+                <line x1={x1} y1="35" x2={x1} y2="115" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="3,2"/>
+                <text x={(x0+x1)/2} y="128" textAnchor="middle" fill="#64748b" fontSize="7">TI</text>
+              </g>);
+            })}
+            <line x1="20" y1="75" x2="295" y2="75" stroke="#f59e0b" strokeWidth="1" strokeDasharray="4,3"/>
+            <text x="250" y="72" fill="#f59e0b" fontSize="8">PFDavg</text>
+            <text x="25" y="38" fill="#ef4444" fontSize="8">PFD sube sin</text>
+            <text x="25" y="47" fill="#ef4444" fontSize="8">detección</text>
+            <text x="115" y="50" fill="#22c55e" fontSize="8">Test:</text>
+            <text x="115" y="60" fill="#22c55e" fontSize="8">reset a 0</text>
+          </svg>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Simulador — Efecto del intervalo TI</div>
+          <div style={{marginBottom:6}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>λ_DU (tasa peligrosa no detectada)</span>
+              <span style={{color:'#f59e0b'}}>{ldu.toFixed(4)}/año</span>
+            </div>
+            <input type="range" min="0.002" max="0.05" step="0.001" value={ldu} onChange={e=>setLdu(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>TI — Intervalo de prueba</span>
+              <span style={{color:'#f59e0b'}}>{ti} año(s)</span>
+            </div>
+            <input type="range" min="1" max="10" step="1" value={ti} onChange={e=>setTI(+e.target.value)}/>
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'8px 12px',textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,color:silColor,fontFamily:'monospace'}}>{pfdAtTI.toExponential(2)}</div>
+            <div style={{fontSize:10,color:'#64748b',marginTop:2}}>PFDavg = λ_DU × TI/2 → <span style={{color:silColor,fontWeight:700}}>SIL {sil||'< 1'}</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Concepto de Proof Test</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:10}}>
+            Un <span style={{color:'#f59e0b',fontWeight:600}}>Proof Test (prueba periódica)</span> es un test planificado
+            que simula la condición de demanda real para verificar que el SIF puede ejecutar su función
+            de seguridad. Detecta fallos DU ocultos y "resetea" la probabilidad de fallo a cero.
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'9px 12px',marginBottom:8}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:5}}>Tipos de prueba</div>
+            {[['Full Stroke Test (FST)','Válvula cierra 100% — cobertura C=99-100%','#22c55e'],
+              ['Partial Stroke Test (PST)','Válvula mueve 10-15% — cobertura C=70-80%','#f59e0b'],
+              ['Loop Check','Verificación señal sensor→PLC→válvula','#3b82f6'],
+              ['Proof Test transmisores','Inyección de señal, comparación vs. patrón','#a78bfa'],
+            ].map(([t,d,c])=>(
+              <div key={t} style={{marginBottom:6}}>
+                <div style={{fontSize:10,color:c,fontWeight:600}}>{t}</div>
+                <div style={{fontSize:9,color:'#64748b'}}>{d}</div>
+              </div>
+            ))}
+          </div>
+          <div className="card-h">Responsabilidades IEC 61511</div>
+          {['El dueño del proceso (Owner/Operator) es responsable del proof testing.',
+            'Debe existir un procedimiento escrito (Proof Test Procedure) para cada SIF.',
+            'Los resultados deben registrarse y archivarse (trazabilidad auditable).',
+            'Si se detecta un fallo DU, se reporta al sistema de gestión y se analiza.',
+          ].map((r,i)=>(
+            <div key={i} style={{display:'flex',gap:5,marginBottom:4}}>
+              <span style={{color:'#f59e0b',fontSize:10,flexShrink:0}}>▸</span>
+              <span style={{fontSize:10,color:'#94a3b8'}}>{r}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Eficiencia del Proof Test (PE) ────────────────── */
+function Scene2(){
+  const [pe,setPE]=useState(0.9);
+  const [ldu,setLdu]=useState(0.01);
+  const [ti,setTI]=useState(1);
+  const pfd_ideal=ldu*ti/2;
+  const pfd_pe=ldu*ti/2*(1-pe)+ldu*ti/2*pe;
+  const pfd_real=pe*(ldu*ti/2)+(1-pe)*ldu*ti;
+  const impacto=pfd_real/pfd_ideal;
+  return(<div>
+    <div className="sec-title">Eficiencia del Proof Test (PE)</div>
+    <div className="sec-sub">Test Effectiveness · PFDavg corregido · Impacto de pruebas incompletas · IEC 61511-1 Cl.16.2</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es la eficiencia PE?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            Ningún proof test detecta el <span style={{color:'#f59e0b'}}>100%</span> de los fallos ocultos.
+            La eficiencia <span style={{color:'#f59e0b',fontWeight:600}}>PE</span> representa la fracción de fallos DU
+            que el test realmente detecta. Una PE=0.9 significa que el 10% de los fallos
+            ocultos sobreviven el test y se acumulan en el siguiente intervalo.
+          </div>
+          <div className="formula-box" style={{fontSize:12,lineHeight:1.9}}>
+            PFDavg_real = PE × (λ_DU×TI/2) + (1−PE) × λ_DU×TI
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>λ_DU</span><span style={{color:'#f59e0b'}}>{ldu.toFixed(4)}/año</span>
+            </div>
+            <input type="range" min="0.002" max="0.03" step="0.001" value={ldu} onChange={e=>setLdu(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>TI — Intervalo</span><span style={{color:'#f59e0b'}}>{ti} año(s)</span>
+            </div>
+            <input type="range" min="1" max="5" step="1" value={ti} onChange={e=>setTI(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>PE — Eficiencia del test</span><span style={{color:'#f59e0b'}}>{(pe*100).toFixed(0)}%</span>
+            </div>
+            <input type="range" min="0.5" max="1.0" step="0.05" value={pe} onChange={e=>setPE(+e.target.value)}/>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Comparativa de PFDavg</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            <div style={{background:'#060a14',borderRadius:6,padding:'9px',textAlign:'center'}}>
+              <div style={{fontSize:11,color:'#64748b',marginBottom:3}}>Test ideal (PE=100%)</div>
+              <div style={{fontSize:20,fontWeight:700,color:'#22c55e',fontFamily:'monospace'}}>{pfd_ideal.toExponential(2)}</div>
+            </div>
+            <div style={{background:'#060a14',borderRadius:6,padding:'9px',textAlign:'center'}}>
+              <div style={{fontSize:11,color:'#64748b',marginBottom:3}}>Test real (PE={Math.round(pe*100)}%)</div>
+              <div style={{fontSize:20,fontWeight:700,color:pfd_real>pfd_ideal*1.5?'#ef4444':'#f59e0b',fontFamily:'monospace'}}>{pfd_real.toExponential(2)}</div>
+            </div>
+          </div>
+          <div style={{background:'#f59e0b11',border:'1px solid #f59e0b33',borderRadius:6,padding:'8px 10px',marginBottom:10}}>
+            <div style={{fontSize:11,color:'#f59e0b'}}>
+              Con PE={Math.round(pe*100)}%, el PFDavg real es <strong>{impacto.toFixed(2)}×</strong> mayor que con un test perfecto.
+            </div>
+          </div>
+          <div className="card-h">PE típica por tipo de prueba y componente</div>
+          <table>
+            <thead><tr><th>Componente</th><th>Tipo de test</th><th>PE típico</th></tr></thead>
+            <tbody>
+              {[['Transmisor','Calibración + sim. trip','90–100%'],
+                ['PLC Safety','Test de lazo completo','95–100%'],
+                ['Válvula ESD','Full Stroke Test (FST)','99–100%'],
+                ['Válvula ESD','Partial Stroke Test (PST)','70–80%'],
+                ['Solenoide','Test de activación','90–95%'],
+                ['Barrera IS','Verificación parámetros','85–95%'],
+              ].map(([c,t,p])=>(
+                <tr key={c+t}><td style={{fontSize:10}}>{c}</td><td style={{fontSize:10,color:'#64748b'}}>{t}</td><td style={{color:'#f59e0b',fontFamily:'monospace',fontSize:10}}>{p}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: PST — Partial Stroke Test ─────────────────────── */
+function Scene3(){
+  const [C,setC]=useState(0.75);
+  const [TI_pst,setTIpst]=useState(1/12);
+  const [TI_fst,setTIfst]=useState(1);
+  const [lambda,setLambda]=useState(0.025);
+  const pfd_notest=lambda*1/2;
+  const pfd_pst=C*lambda*(TI_pst/2)+(1-C)*lambda*(TI_fst/2);
+  const pfd_fst=lambda*TI_fst/2;
+  const improvement=pfd_notest/pfd_pst;
+  return(<div>
+    <div className="sec-title">Partial Stroke Testing (PST)</div>
+    <div className="sec-sub">Test parcial de válvulas ESD · Cobertura de diagnóstico C · GMI SIL Manual Cap. 5.6.2</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es el PST?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            El <span style={{color:'#f59e0b',fontWeight:600}}>Partial Stroke Test</span> mueve la válvula ESD
+            un 10-15% de su carrera para verificar que no está atascada (<i>stuck</i>), sin cerrar
+            completamente el proceso. Se aplica entre Full Stroke Tests completos
+            para aumentar la frecuencia de verificación <span style={{color:'#f59e0b'}}>sin parar la planta</span>.
+          </div>
+          <div className="formula-box" style={{fontSize:11,lineHeight:1.9}}>
+            PFDavg = C×λ×(TI_I/2) + (1−C)×λ×(TI/2)
+          </div>
+          <div style={{fontSize:9,color:'#475569',marginBottom:10,textAlign:'center'}}>TI_I = intervalo PST · TI = intervalo FST · C = cobertura PST</div>
+          <div style={{marginBottom:6}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:1}}>
+              <span>C — Cobertura diagnóstica PST</span><span style={{color:'#f59e0b'}}>{(C*100).toFixed(0)}%</span>
+            </div>
+            <input type="range" min="0.5" max="0.95" step="0.05" value={C} onChange={e=>setC(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:6}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:1}}>
+              <span>TI_I (intervalo PST)</span><span style={{color:'#f59e0b'}}>{(TI_pst*12).toFixed(0)} mes(es)</span>
+            </div>
+            <input type="range" min={1/12} max={6/12} step={1/12} value={TI_pst} onChange={e=>setTIpst(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:6}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:1}}>
+              <span>TI (intervalo FST)</span><span style={{color:'#f59e0b'}}>{TI_fst} año(s)</span>
+            </div>
+            <input type="range" min="1" max="5" step="1" value={TI_fst} onChange={e=>setTIfst(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:6}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:1}}>
+              <span>λ_DU válvula</span><span style={{color:'#f59e0b'}}>{lambda.toFixed(4)}/año</span>
+            </div>
+            <input type="range" min="0.005" max="0.05" step="0.005" value={lambda} onChange={e=>setLambda(+e.target.value)}/>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Comparativa de estrategias de test</div>
+          <div style={{display:'flex',flexDirection:'column',gap:7,marginBottom:10}}>
+            {[
+              ['Sin PST (solo FST 1 año)',pfd_notest,'#ef4444'],
+              ['FST puro (TI_fst años)',pfd_fst,'#3b82f6'],
+              ['PST + FST (combinado)',pfd_pst,'#22c55e'],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{background:'#060a14',borderRadius:5,padding:'8px 10px',display:'flex',justifyContent:'space-between',alignItems:'center',borderLeft:`3px solid ${c}`}}>
+                <span style={{fontSize:10,color:'#94a3b8'}}>{l}</span>
+                <span style={{fontSize:14,fontWeight:700,color:c,fontFamily:'monospace'}}>{v.toExponential(2)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{background:'#22c55e11',border:'1px solid #22c55e33',borderRadius:6,padding:'8px 10px',marginBottom:10}}>
+            <div style={{fontSize:11,color:'#22c55e',fontWeight:600}}>
+              PST+FST mejora PFDavg {improvement.toFixed(1)}× vs. solo FST anual
+            </div>
+          </div>
+          <div className="card-h">Limitaciones del PST</div>
+          {['No verifica el cierre completo (sello, leakage test).',
+            'Pruebas frecuentes incrementan riesgo de nuisance trips.',
+            'Cobertura real C depende del diseño del actuador y del posicionador.',
+            'Debe documentarse: % de carrera, tiempo de respuesta, resultado.',
+            'IEC 61511 requiere PST documentado en el Proof Test Procedure.',
+          ].map((r,i)=>(
+            <div key={i} style={{display:'flex',gap:5,marginBottom:3}}>
+              <span style={{color:'#ef4444',fontSize:10,flexShrink:0}}>⚠</span>
+              <span style={{fontSize:10,color:'#94a3b8'}}>{r}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Procedimientos por Componente ─────────────────── */
+function Scene4(){
+  const [comp,setComp]=useState('tx');
+  const procs={
+    tx:{name:'Transmisor',icon:'📡',color:'#3b82f6',
+      steps:['1. Notificar al panel — colocar en bypass el SIF (registrar hora y operador).',
+        '2. Desconectar señal 4-20 mA y conectar calibrador de lazo.',
+        '3. Inyectar señal equivalente al setpoint de trip (e.g. 4.2 mA para bajo nivel).',
+        '4. Verificar que el PLC Safety recibe y procesa correctamente la señal de trip.',
+        '5. Comprobar respuesta del elemento final si está en alcance.',
+        '6. Probar en varios puntos: 25%, 50%, 75%, 100% del rango.',
+        '7. Documentar: fecha, técnico, resultado, desviaciones, número de reporte.',
+        '8. Retirar bypass — confirmar retorno a operación normal.'],
+      tips:['Usar calibrador certificado (trazable a NIST/patrón)','Registrar número de serie del instrumento','Verificar también la señal de 20 mA (nivel alto) si aplica'],
+      ti:'1 año típico'},
+    plc:{name:'PLC de Seguridad',icon:'🖥',color:'#f59e0b',
+      steps:['1. Coordinar con producción — ventana de mantenimiento planificada.',
+        '2. Revisar diagnósticos online: estado de módulos I/O, comunicaciones, memoria.',
+        '3. Ejecutar test de lazo desde cada entrada (simular trip individual).',
+        '4. Verificar lógica de votación si aplica (1oo2, 2oo3).',
+        '5. Probar cada salida ESD: comprobar que el comando llega al actuador.',
+        '6. Verificar tiempos de respuesta (≤ tiempo de proceso especificado en SRS).',
+        '7. Comprobar UPS y fuente de respaldo — simular pérdida de alimentación.',
+        '8. Registrar versión de firmware. Verificar integridad del programa (checksum).'],
+      tips:['Nunca modificar el programa durante el test','El PLC Safety requiere test certificado por personal competente (IEC 61511 Cl. 5.2)','Documentar el número de versión del software de seguridad'],
+      ti:'20 años típico (diagnóstico online cubre el período)'},
+    valve:{name:'Válvula ESD',icon:'🔧',color:'#22c55e',
+      steps:['1. Instalar bypass de proceso si el sistema lo permite (válvula de bypass + bloqueo).',
+        '2. PST (mensual/trimestral): mover válvula 10-15% de su carrera — verificar respuesta del posicionador.',
+        '3. FST (anual/semestral): cerrar válvula completamente — medir tiempo de cierre.',
+        '4. Verificar sello: prueba de leakage (norma API 598 o especificada en SRS).',
+        '5. Inspeccionar actuador, sello de vástago, conexiones de aire/gas del piloto.',
+        '6. Probar la solenoide SOV: corte de corriente → válvula cierra en tiempo especificado.',
+        '7. Restaurar bypass — abrir válvula ESD a posición normal.',
+        '8. Documentar tiempo de cierre, resultado de leakage, cualquier anomalía.'],
+      tips:['Las válvulas representan el 35% del PFDavg del SIF — test de válvulas es prioritario','Tiempo de cierre debe cumplir el requerido por el SRS','Registrar la dirección de fallo (fail-closed, fail-open)'],
+      ti:'4 meses (FST) + mensual (PST)'},
+    barrier:{name:'Barrera IS / Isolador',icon:'🔌',color:'#a78bfa',
+      steps:['1. Verificar que la barrera está alimentada y tiene continuidad de tierra (IS crítico).',
+        '2. Medir voltaje de salida y corriente de cortocircuito con multímetro certificado.',
+        '3. Verificar parámetros de entidad: Uo, Io, Po, Co, Lo — deben cumplir los del sensor.',
+        '4. Probar el aislamiento galvánico entre lado peligroso y seguro.',
+        '5. Verificar LEDs de diagnóstico: ninguna alarma de cortocircuito o circuito abierto.',
+        '6. Test funcional: inyectar señal en lado peligroso — verificar señal en lado seguro.',
+        '7. Inspeccionar conexiones y borneras — torque según fabricante.',
+        '8. Documentar tipo/modelo/número de serie y parámetros medidos.'],
+      tips:['La barrera en zona ATEX requiere inspección visual de la carcasa','Verificar que el tipo de barrera coincide con la clasificación de zona del campo','Zener barriers: verificar resistencia del conductor de tierra (≤1 Ω)'],
+      ti:'10 años típico'},
+  };
+  const p=procs[comp];
+  return(<div>
+    <div className="sec-title">Procedimientos de Proof Test por Componente</div>
+    <div className="sec-sub">Transmisor · PLC Safety · Válvula ESD · Barrera IS · Según IEC 61511 Cláusula 16</div>
+    <div style={{display:'flex',gap:5,marginBottom:10}}>
+      {Object.entries(procs).map(([k,v])=>(
+        <button key={k} className={`btn-outline${comp===k?' active':''}`} onClick={()=>setComp(k)}
+          style={{borderColor:comp===k?v.color+'aa':undefined,color:comp===k?v.color:undefined}}>
+          {v.icon} {v.name}
+        </button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+            <span style={{fontSize:24}}>{p.icon}</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:p.color}}>{p.name}</div>
+              <div style={{fontSize:10,color:'#64748b'}}>TI recomendado: <span style={{color:'#f59e0b'}}>{p.ti}</span></div>
+            </div>
+          </div>
+          <div className="card-h">Pasos del procedimiento</div>
+          {p.steps.map((s,i)=>(
+            <div key={i} style={{display:'flex',gap:7,marginBottom:5,alignItems:'flex-start'}}>
+              <div style={{width:18,height:18,borderRadius:'50%',background:p.color+'33',border:`1px solid ${p.color}55`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:p.color,flexShrink:0,marginTop:1}}>{i+1}</div>
+              <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.4}}>{s}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Tips y puntos clave</div>
+          {p.tips.map((t,i)=>(
+            <div key={i} style={{display:'flex',gap:6,marginBottom:6,alignItems:'flex-start'}}>
+              <span style={{color:'#f59e0b',fontSize:12,flexShrink:0}}>💡</span>
+              <span style={{fontSize:10,color:'#cbd5e1'}}>{t}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Contenido mínimo del Registro de Proof Test</div>
+          <table>
+            <thead><tr><th>Campo</th><th>Requerimiento</th></tr></thead>
+            <tbody>
+              {[['Fecha y hora','Exacta, con zona horaria'],
+                ['Técnico responsable','Nombre y firma / ID'],
+                ['Componente','Tag, modelo, N/S, FW version'],
+                ['Procedimiento','Número de revisión del PTP'],
+                ['Resultado','PASS / FAIL / CONDITIONAL'],
+                ['Observaciones','Fallos encontrados, acciones tomadas'],
+                ['Próximo test','Fecha calculada según TI'],
+              ].map(([c,r])=>(
+                <tr key={c}><td style={{fontSize:10,color:'#f59e0b'}}>{c}</td><td style={{fontSize:10,color:'#94a3b8'}}>{r}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Gestión del Bypass ────────────────────────────── */
+function Scene5(){
+  const [step,setStep]=useState(0);
+  const bypassSteps=[
+    {icon:'📋',title:'Autorización documentada',desc:'Solicitar permiso de trabajo. Registrar: razón del bypass, duración estimada, SIF afectado, alternativas de mitigación activas durante el bypass.',color:'#3b82f6'},
+    {icon:'🔔',title:'Notificación al panel',desc:'Informar al operador de sala de control. El operador debe aumentar vigilancia del proceso. Activar compensación alternativa si el riesgo lo requiere.',color:'#f59e0b'},
+    {icon:'🏷',title:'Señalización física',desc:'Colocar candado y etiqueta (LOTO) en el panel de SIS. Indicar en HMI que el SIF está en bypass. Limitar el tiempo de bypass al mínimo indispensable.',color:'#f97316'},
+    {icon:'🔧',title:'Ejecución del proof test',desc:'Realizar el test según el procedimiento aprobado. Documentar todos los resultados — pass/fail, valores medidos, tiempo de respuesta.',color:'#22c55e'},
+    {icon:'✅',title:'Retiro del bypass',desc:'Verificar que el SIF retorna a estado operativo normal. Confirmar con panel de control que no hay alarmas activas. Documentar hora exacta de retiro.',color:'#22c55e'},
+    {icon:'📁',title:'Cierre documental',desc:'Completar el registro de proof test. Archivar en el sistema de gestión de mantenimiento (CMMS). Programar próximo test.',color:'#a78bfa'},
+  ];
+  return(<div>
+    <div className="sec-title">Gestión del Bypass durante Proof Test</div>
+    <div className="sec-sub">LOTO · Autorización · Notificación · Retiro · IEC 61511-1 Cláusula 16.3</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Flujo de gestión del bypass — haz clic en cada paso</div>
+          {bypassSteps.map((s,i)=>(
+            <div key={i} onClick={()=>setStep(i)} style={{
+              display:'flex',alignItems:'center',gap:8,padding:'7px 10px',borderRadius:6,cursor:'pointer',marginBottom:4,
+              background:step===i?s.color+'22':'transparent',border:`1px solid ${step===i?s.color+'88':'#1e2d4a'}`,transition:'all .2s'
+            }}>
+              <span style={{fontSize:18,flexShrink:0}}>{s.icon}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,fontWeight:step===i?700:400,color:step===i?s.color:'#94a3b8'}}>{i+1}. {s.title}</div>
+              </div>
+              <div style={{width:8,height:8,borderRadius:'50%',background:step===i?s.color:'#1e2d4a'}}/>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <span style={{fontSize:28}}>{bypassSteps[step].icon}</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:bypassSteps[step].color}}>Paso {step+1}: {bypassSteps[step].title}</div>
+            </div>
+          </div>
+          <div style={{fontSize:12,color:'#cbd5e1',lineHeight:1.6,marginBottom:12}}>{bypassSteps[step].desc}</div>
+        </div>
+        <div className="card">
+          <div className="card-h">Riesgo durante bypass — mitigación requerida</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.5,marginBottom:8}}>
+            Durante el bypass el SIF <span style={{color:'#ef4444',fontWeight:600}}>no puede actuar</span>.
+            El riesgo del proceso aumenta temporalmente. IEC 61511 requiere:
+          </div>
+          {[['Evaluación de riesgo residual','¿El riesgo sin el SIF sigue siendo tolerable?'],
+            ['Medidas compensatorias','Incremento de vigilancia del operador, reducción de carga'],
+            ['Límite de tiempo','Definir el tiempo máximo de bypass permitido'],
+            ['Aprobación de nivel superior','Bypass >8 h generalmente requiere aprobación de jefatura'],
+          ].map(([t,d])=>(
+            <div key={t} style={{display:'flex',gap:8,marginBottom:5,alignItems:'flex-start'}}>
+              <div style={{width:5,background:'#f59e0b',alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+              <div><div style={{fontSize:10,color:'#f59e0b',fontWeight:600}}>{t}</div><div style={{fontSize:10,color:'#64748b'}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">KPIs de gestión de proof tests</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            {['% tests completados a tiempo','N° fallos DU detectados/año','Tiempo promedio de bypass','% conformidad de documentación','MTBF observado vs. calculado'].map(k=>(
+              <span key={k} className="tag tag-amber">{k}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 6: Quiz ──────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Por qué los fallos λ_DU son más peligrosos que los λ_DD?',opts:['Son más frecuentes que los fallos detectados','Permanecen ocultos y el SIF parece operativo pero no puede actuar','Causan nuisance trips que paran la planta','Son causados por el operador, no por el instrumento'],ans:1},
+  {q:'La fórmula PFDavg = λ_DU × TI/2 asume que el proof test detecta el 100% de fallos. Si PE=80%, el PFDavg real:',opts:['Es igual al calculado con PE=100%','Es menor que el calculado con PE=100%','Es mayor que el calculado con PE=100%','No depende de PE'],ans:2},
+  {q:'¿Qué cobertura diagnóstica C ofrece un Partial Stroke Test (PST)?',opts:['99-100%','90-95%','70-80%','50-60%'],ans:2},
+  {q:'¿Cuál componente del SIF tiene el intervalo de proof test más corto?',opts:['PLC Safety (20 años)','Barrera IS (10 años)','Válvula ESD (4 meses FST + mensual PST)','Transmisor (1 año)'],ans:2},
+  {q:'Durante el bypass del SIS para proof test, IEC 61511 requiere:',opts:['Apagar el proceso completamente','Medidas compensatorias y evaluación de riesgo residual','No es necesario tomar ninguna medida especial','Instalar un SIS de respaldo idéntico'],ans:1},
+  {q:'El Full Stroke Test (FST) de una válvula ESD se diferencia del PST en que:',opts:['El FST solo mueve la válvula un 10-15%','El FST cierra la válvula completamente e incluye prueba de leakage','El FST no requiere bypass del proceso','El FST se realiza mensualmente'],ans:1},
+  {q:'¿Qué significa una cobertura PE=90% en un proof test?',opts:['El 90% de los fallos DU ocultos son detectados por el test','El test se completa en el 90% del tiempo planificado','El 90% de los componentes pasan el test','El SIF tiene 90% de disponibilidad'],ans:0},
+  {q:'¿Qué documento define el procedimiento paso a paso de cada proof test?',opts:['SRS (Safety Requirements Specification)','Proof Test Procedure (PTP)','FAT Protocol','HAZOP Worksheet'],ans:1},
+  {q:'Un PFDavg calculado asume TI=1 año. Si se extiende a TI=3 años sin cambiar arquitectura, el PFDavg:',opts:['Se reduce a un tercio','Se triplica','Se multiplica por 9 (arquitectura 1oo2)','Permanece igual'],ans:1},
+  {q:'¿Por qué las válvulas ESD representan el 35% del PFDavg del SIF típico?',opts:['Son los componentes más costosos del sistema','Tienen la mayor tasa λ_DU y requieren el test más frecuente','Son los únicos componentes sin certificación SIL','Su MTBF es siempre mayor que el del PLC'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    if(i===q.ans)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(qi+1>=quizData.length)setDone(true);
+      else{setQi(qi+1);setSel(null);}
+    },1200);
+  };
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>
+      {score>=8?'Excelente. Estás listo para planificar y ejecutar proof tests en planta real.':score>=6?'Buen nivel. Refuerza PST y gestión del bypass.':'Repasa los conceptos de PE, PST y la importancia de los fallos DU.'}
+    </div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Proof Testing y PST</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>
+      {quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}
+    </div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}>
+      <div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div>
+    </div>
+    {q.opts.map((o,i)=>{
+      let cls='quiz-opt';
+      if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}
+      return(<div key={i} className={cls} onClick={()=>choose(i)}>
+        <div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+        {o}
+      </div>);
+    })}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. ¿Por qué proof testing?',comp:Scene1},
+  {id:2,label:'2. Eficiencia PE',comp:Scene2},
+  {id:3,label:'3. Partial Stroke Test (PST)',comp:Scene3},
+  {id:4,label:'4. Procedimientos por componente',comp:Scene4},
+  {id:5,label:'5. Gestión del bypass',comp:Scene5},
+  {id:6,label:'6. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);
+  const S=SCENES.find(s=>s.id===scene);
+  const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Clase 1.3 — Proof Testing y PST</div>
+        <div className="topbar-sub">Fallos DU ocultos · Test Effectiveness PE · Full Stroke vs Partial Stroke · Bypass management · IEC 61511</div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

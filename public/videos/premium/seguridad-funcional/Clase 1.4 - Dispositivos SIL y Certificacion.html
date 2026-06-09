@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.4 – Dispositivos SIL y Certificación</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:12px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-blue{background:#1e40af44;color:#93c5fd;border:1px solid #1e40af66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: Tipo A vs Tipo B ──────────────────────────────── */
+function Scene1(){
+  const [sel,setSel]=useState('A');
+  const types={
+    A:{color:'#3b82f6',title:'Subsistema Tipo A',subtitle:'Componentes simples — modos de falla bien conocidos',
+      def:'Todos los modos de falla del subsistema son bien conocidos y la respuesta al fallo es completamente predecible.',
+      chars:['Todos los modos de falla del dispositivo pueden ser definidos','Comportamiento del dispositivo bajo condiciones de falla puede ser completamente determinado','Datos de campo fiables existen para los modos de falla'],
+      examples:['Relés electromagnéticos','Válvulas neumáticas simples','Transmisores analógicos 4-20 mA convencionales','Termopares / RTDs','Presostatos mecánicos','Barreras zener'],
+      hft_table:[['< 60%','SIL 1','SIL 2','SIL 3'],['60–90%','SIL 2','SIL 3','SIL 4'],['90–99%','SIL 3','SIL 4','SIL 4'],['≥ 99%','SIL 3','SIL 4','SIL 4']],
+      note:'HFT = Hardware Fault Tolerance. Para Tipo A la tabla aplica directamente.'},
+    B:{color:'#f97316',title:'Subsistema Tipo B',subtitle:'Componentes complejos — modos de falla no completamente conocidos',
+      def:'El subsistema contiene componentes con modos de falla no completamente determinables, típicamente porque la tecnología involucra lógica compleja (microprocesadores, FPGAs, software).',
+      chars:['Modos de falla del dispositivo NO pueden ser completamente definidos','La respuesta al fallo NO es completamente determinable','Incluye microprocesadores, ASICs, PLCs, software embebido'],
+      examples:['PLCs de seguridad (Safety PLC)','Módulos HART inteligentes','Transmisores con microprocesador','Convertidores A/D de alta resolución','Sistemas de bus de campo (Foundation, Profibus)'],
+      hft_table:[['< 60%','No permitido','SIL 1','SIL 2'],['60–90%','SIL 1','SIL 2','SIL 3'],['90–99%','SIL 2','SIL 3','SIL 4'],['≥ 99%','SIL 3','SIL 4','SIL 4']],
+      note:'Tipo B tiene requisitos más estrictos de HFT — necesita una capa más de tolerancia a fallos que Tipo A para el mismo SIL.'},
+  };
+  const t=types[sel];
+  return(<div>
+    <div className="sec-title">Tipo A vs Tipo B — Subsistemas IEC 61508</div>
+    <div className="sec-sub">Clasificación de componentes · Hardware Fault Tolerance (HFT) · Tabla SFF/HFT · IEC 61508 Parte 2</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {['A','B'].map(k=>(
+        <button key={k} className={`btn-outline${sel===k?' active':''}`} onClick={()=>setSel(k)}
+          style={{borderColor:sel===k?types[k].color+'aa':undefined,color:sel===k?types[k].color:undefined,fontSize:13,padding:'5px 20px'}}>
+          Tipo {k}
+        </button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div style={{fontSize:14,fontWeight:700,color:t.color,marginBottom:3}}>{t.title}</div>
+          <div style={{fontSize:11,color:'#64748b',marginBottom:8}}>{t.subtitle}</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8,background:'#060a14',borderRadius:5,padding:'8px 10px'}}>{t.def}</div>
+          <div className="card-h">Características</div>
+          {t.chars.map((c,i)=>(
+            <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
+              <span style={{color:t.color,fontSize:10,flexShrink:0}}>▸</span>
+              <span style={{fontSize:10,color:'#94a3b8'}}>{c}</span>
+            </div>
+          ))}
+          <div className="card-h" style={{marginTop:8}}>Ejemplos típicos</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+            {t.examples.map(e=><span key={e} className="tag tag-blue">{e}</span>)}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Tabla SFF vs HFT — Tipo {sel}</div>
+          <table>
+            <thead>
+              <tr><th>SFF</th><th>HFT = 0</th><th>HFT = 1</th><th>HFT = 2</th></tr>
+            </thead>
+            <tbody>
+              {t.hft_table.map(([sff,...sils])=>(
+                <tr key={sff}>
+                  <td style={{color:'#f59e0b',fontFamily:'monospace'}}>{sff}</td>
+                  {sils.map((sl,i)=>(
+                    <td key={i} style={{color:sl==='No permitido'?'#ef4444':sl==='SIL 4'?'#a78bfa':sl==='SIL 3'?'#22c55e':sl==='SIL 2'?'#3b82f6':'#f59e0b',fontWeight:600}}>{sl}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{fontSize:9,color:'#475569',marginTop:6}}>{t.note}</div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Diferencia clave A vs B en la práctica</div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'9px 12px'}}>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:6}}>Para alcanzar SIL 2 en modo de demanda:</div>
+            <div style={{display:'flex',gap:8}}>
+              <div style={{flex:1,background:'#1e3a5f22',border:'1px solid #3b82f655',borderRadius:5,padding:'7px'}}>
+                <div style={{fontSize:10,color:'#3b82f6',fontWeight:700,marginBottom:3}}>Tipo A</div>
+                <div style={{fontSize:10,color:'#94a3b8'}}>SFF ≥ 60% + HFT=0<br/>ó<br/>SFF cualquiera + HFT=1</div>
+              </div>
+              <div style={{flex:1,background:'#7c2d1222',border:'1px solid #f9731655',borderRadius:5,padding:'7px'}}>
+                <div style={{fontSize:10,color:'#f97316',fontWeight:700,marginBottom:3}}>Tipo B</div>
+                <div style={{fontSize:10,color:'#94a3b8'}}>SFF ≥ 60% + HFT=1<br/>ó<br/>SFF ≥ 90% + HFT=0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: FMEDA ─────────────────────────────────────────── */
+function Scene2(){
+  const [comp,setComp]=useState(0);
+  const components=[
+    {name:'Transmisor de Presión',icon:'📡',
+     modes:[
+       {mode:'Salida alta fija (>20mA)',type:'SD',lambda:400,pct:32,color:'#22c55e'},
+       {mode:'Salida baja fija (<4mA)',type:'DD',lambda:250,pct:20,color:'#f97316'},
+       {mode:'Deriva lenta de calibración',type:'DU',lambda:100,pct:8,color:'#ef4444'},
+       {mode:'Fallo aleatorio salida',type:'SU',lambda:350,pct:28,color:'#3b82f6'},
+       {mode:'Fallo en comunicación HART',type:'DD',lambda:150,pct:12,color:'#f97316'},
+     ]},
+    {name:'Válvula ESD Neumática',icon:'🔧',
+     modes:[
+       {mode:'No cierra en demanda (atascada abierta)',type:'DU',lambda:500,pct:40,color:'#ef4444'},
+       {mode:'Cierre espontáneo (nuisance)',type:'SU',lambda:300,pct:24,color:'#3b82f6'},
+       {mode:'Fuga interna (leakage)',type:'DU',lambda:200,pct:16,color:'#ef4444'},
+       {mode:'Fallo de actuador detectado',type:'DD',lambda:150,pct:12,color:'#f97316'},
+       {mode:'Fallo muelle de retorno',type:'DU',lambda:100,pct:8,color:'#ef4444'},
+     ]},
+  ];
+  const c=components[comp];
+  const totLambda=c.modes.reduce((s,m)=>s+m.lambda,0);
+  const lambdaDU=c.modes.filter(m=>m.type==='DU').reduce((s,m)=>s+m.lambda,0);
+  const lambdaDD=c.modes.filter(m=>m.type==='DD').reduce((s,m)=>s+m.lambda,0);
+  const lambdaSD=c.modes.filter(m=>m.type==='SD').reduce((s,m)=>s+m.lambda,0);
+  const lambdaSU=c.modes.filter(m=>m.type==='SU').reduce((s,m)=>s+m.lambda,0);
+  const SFF=(lambdaDD+lambdaSD+lambdaSU)/totLambda;
+  const typeColor={DD:'#f97316',DU:'#ef4444',SD:'#22c55e',SU:'#3b82f6'};
+  return(<div>
+    <div className="sec-title">FMEDA — Failure Mode, Effects and Diagnostic Analysis</div>
+    <div className="sec-sub">Análisis de modos de falla · Cálculo de SFF · Clasificación λ_DD/DU/SD/SU · IEC 61508 Parte 2 Anexo C</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {components.map((c,i)=>(
+        <button key={i} className={`btn-outline${comp===i?' active':''}`} onClick={()=>setComp(i)}>{c.icon} {c.name}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Tabla FMEDA — {c.name}</div>
+          <table>
+            <thead><tr><th>Modo de falla</th><th>Tipo</th><th>λ (FIT)</th><th>%</th></tr></thead>
+            <tbody>
+              {c.modes.map((m,i)=>(
+                <tr key={i}>
+                  <td style={{fontSize:10}}>{m.mode}</td>
+                  <td><span style={{background:typeColor[m.type]+'22',color:typeColor[m.type],padding:'1px 5px',borderRadius:3,fontSize:9,fontWeight:700}}>{m.type}</span></td>
+                  <td style={{fontFamily:'monospace',color:'#f59e0b',fontSize:10}}>{m.lambda}</td>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:4}}>
+                      <div style={{flex:1,height:6,background:'#0f1729',borderRadius:3,overflow:'hidden'}}>
+                        <div style={{width:`${m.pct}%`,height:'100%',background:m.color,borderRadius:3}}/>
+                      </div>
+                      <span style={{fontSize:9,color:'#64748b',width:24}}>{m.pct}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              <tr style={{background:'#f59e0b11'}}>
+                <td style={{color:'#f59e0b',fontWeight:700}}>TOTAL</td>
+                <td/>
+                <td style={{fontFamily:'monospace',color:'#f59e0b',fontWeight:700}}>{totLambda}</td>
+                <td style={{color:'#f59e0b',fontWeight:700}}>100%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Resultado FMEDA</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
+            {[['λ_DD',lambdaDD,'#f97316'],['λ_DU',lambdaDU,'#ef4444'],['λ_SD',lambdaSD,'#22c55e'],['λ_SU',lambdaSU,'#3b82f6']].map(([l,v,c])=>(
+              <div key={l} style={{background:'#060a14',borderRadius:5,padding:'7px',textAlign:'center'}}>
+                <div style={{fontSize:16,fontWeight:700,color:c,fontFamily:'monospace'}}>{v} FIT</div>
+                <div style={{fontSize:9,color:'#64748b'}}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{background:'#060a14',borderRadius:7,padding:'10px 12px',textAlign:'center',marginBottom:8}}>
+            <div style={{fontSize:11,color:'#64748b',marginBottom:3}}>SFF = (λ_DD+λ_SD+λ_SU) / λ_TOT</div>
+            <div style={{fontSize:26,fontWeight:700,color:'#f59e0b'}}>{(SFF*100).toFixed(1)}%</div>
+          </div>
+          <div className="card-h">Leyenda tipos de fallo</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+            {[['DD','Peligroso Detectado','#f97316'],['DU','Peligroso No Detectado','#ef4444'],['SD','Seguro Detectado','#22c55e'],['SU','Seguro No Detectado','#3b82f6']].map(([t,l,c])=>(
+              <div key={t} style={{background:c+'11',border:`1px solid ${c}33`,borderRadius:5,padding:'5px 8px',display:'flex',alignItems:'center',gap:5}}>
+                <span style={{fontSize:10,fontWeight:700,color:c}}>{t}</span>
+                <span style={{fontSize:9,color:'#64748b'}}>{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">¿Quién realiza la FMEDA?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.5}}>
+            El fabricante del dispositivo realiza la FMEDA internamente y la somete
+            a un <span style={{color:'#f59e0b'}}>cuerpo certificador independiente</span> (TÜV, exida, FM)
+            que la verifica y emite un certificado. Los resultados se publican en el
+            <span style={{color:'#f59e0b'}}> Functional Safety Manual (FSM)</span> del dispositivo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Proceso de Certificación ──────────────────────── */
+function Scene3(){
+  const [body,setBody]=useState('tuv');
+  const bodies={
+    tuv:{name:'TÜV Rheinland / SÜD',logo:'🇩🇪',color:'#ef4444',
+      scope:'Certificación IEC 61508/61511 para dispositivos de campo, PLCs y sistemas SIS completos.',
+      process:['1. Solicitud y contrato con TÜV','2. Revisión de documentación técnica (FMEDA, diseño, software)','3. Auditoría de proceso de desarrollo del fabricante','4. Análisis independiente de FMEDA y PFDavg','5. Pruebas de laboratorio (si aplica)','6. Emisión de certificado TÜV con número de registro','7. Mantenimiento: vigilancia anual, renovación cada 5 años'],
+      output:'Certificado TÜV + Functional Safety Manual publicado',
+      mark:'🏷 "TÜV Certified SIL X"'},
+    exida:{name:'exida',logo:'🇺🇸',color:'#3b82f6',
+      scope:'Especialista en seguridad funcional para industria de procesos. Líder en certificación de dispositivos de campo.',
+      process:['1. FMEDA review por expertos exida','2. Análisis de hardware según IEC 61508-2','3. Revisión de software embebido según IEC 61508-3','4. Assessment de documentación (SRS, diseño, V&V)','5. Certificado SILCAP con datos de PFDavg, SFF, HFT','6. Base de datos exida SERH con datos para cálculo de PFDavg del SIF'],
+      output:'Certificado exida + datos en SERH database',
+      mark:'🏷 "exida Certified SIL X"'},
+    fm:{name:'FM Global (Approvals)',logo:'🇺🇸',color:'#22c55e',
+      scope:'Certificación de equipos eléctricos y de seguridad para aplicaciones de proceso. Combina SIL con ATEX/FM Class.',
+      process:['1. Aplicación vía FM Approvals','2. Evaluación de diseño y documentación','3. Pruebas de laboratorio acreditado FM','4. FMEDA review para SIL','5. Emisión de certificado FM con clase de aprobación','6. Marcación FM en el producto'],
+      output:'Certificado FM + FM Class marking',
+      mark:'🏷 "FM Approved SIL X"'},
+  };
+  const b=bodies[body];
+  return(<div>
+    <div className="sec-title">Certificación de Dispositivos SIL</div>
+    <div className="sec-sub">TÜV · exida · FM · Proceso de certificación · Functional Safety Manual</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {Object.entries(bodies).map(([k,v])=>(
+        <button key={k} className={`btn-outline${body===k?' active':''}`} onClick={()=>setBody(k)}
+          style={{borderColor:body===k?v.color+'aa':undefined,color:body===k?v.color:undefined}}>
+          {v.logo} {v.name}
+        </button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+            <span style={{fontSize:24}}>{b.logo}</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:b.color}}>{b.name}</div>
+              <div style={{fontSize:10,color:'#64748b'}}>{b.scope}</div>
+            </div>
+          </div>
+          <div className="card-h">Proceso de certificación</div>
+          {b.process.map((p,i)=>(
+            <div key={i} style={{display:'flex',gap:7,marginBottom:4,alignItems:'flex-start'}}>
+              <div style={{width:16,height:16,borderRadius:'50%',background:b.color+'33',border:`1px solid ${b.color}55`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:b.color,flexShrink:0}}>{i+1}</div>
+              <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.4}}>{p}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Resultado y uso de la certificación</div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'9px 12px',marginBottom:8}}>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:3}}>Output del proceso</div>
+            <div style={{fontSize:11,color:'#f1f5f9'}}>{b.output}</div>
+            <div style={{marginTop:6,fontSize:12,fontWeight:700,color:b.color}}>{b.mark}</div>
+          </div>
+          <div className="card-h">Functional Safety Manual (FSM)</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.5,marginBottom:8}}>
+            El <span style={{color:'#f59e0b'}}>FSM</span> es el documento que el fabricante entrega
+            con cada dispositivo certificado. Contiene los datos que el ingeniero de SIS
+            necesita para el cálculo de PFDavg del SIF.
+          </div>
+          <div style={{background:'#060a14',borderRadius:5,padding:'8px 10px',marginBottom:8}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:4}}>Datos del FSM requeridos para el cálculo SIL:</div>
+            {['λ_DD, λ_DU, λ_SD, λ_SU (en FIT)','SFF calculado por la FMEDA','SIL máximo de uso (SIL capability)','HFT requerido (Hardware Fault Tolerance)','Tipo de subsistema (A o B)','Intervalo máximo de proof test (TI_max)','Diagnóstico online: qué detecta y qué no','Condiciones de instalación y uso (temperatura, presión, etc.)'].map((d,i)=>(
+              <div key={i} style={{display:'flex',gap:5,marginBottom:2}}>
+                <span style={{color:'#22c55e',fontSize:10}}>✓</span>
+                <span style={{fontSize:10,color:'#94a3b8'}}>{d}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">⚠ Lo que la certificación NO garantiza</div>
+          {['Que el dispositivo fue instalado correctamente.','Que el SIF completo cumple el SIL objetivo.','Que los proof tests se realizan correctamente.','Que el proceso de gestión de seguridad funcional es correcto.'].map((w,i)=>(
+            <div key={i} style={{display:'flex',gap:5,marginBottom:3}}>
+              <span style={{color:'#ef4444',fontSize:10,flexShrink:0}}>⚠</span>
+              <span style={{fontSize:10,color:'#94a3b8'}}>{w}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Selección de Dispositivos ─────────────────────── */
+function Scene4(){
+  const [sil,setSIL]=useState(2);
+  const devices=[
+    {name:'Transmisor Rosemount 3051S',type:'Sensor',sil:3,hft:0,sff:91.8,lambdaDU:0.0004,ti:'1 año',cert:'exida'},
+    {name:'Barrera MTL5044',type:'Barrera IS',sil:3,hft:0,sff:94.0,lambdaDU:0.00019,ti:'10 años',cert:'TÜV'},
+    {name:'PLC Siemens S7-300F',type:'Logic Solver',sil:3,hft:1,sff:99.3,lambdaDU:0.000005,ti:'20 años',cert:'TÜV'},
+    {name:'Válvula Biffi AUMA SIL2',type:'Final element',sil:2,hft:0,sff:73.8,lambdaDU:0.01092,ti:'4 meses',cert:'exida'},
+    {name:'PLC Hima X-SIL',type:'Logic Solver',sil:3,hft:1,sff:99.5,lambdaDU:0.000003,ti:'20 años',cert:'TÜV'},
+    {name:'Transmisor Vega VEGABAR',type:'Sensor',sil:2,hft:0,sff:85.0,lambdaDU:0.00080,ti:'2 años',cert:'TÜV'},
+  ];
+  const filtered=devices.filter(d=>d.sil>=sil);
+  return(<div>
+    <div className="sec-title">Selección de Dispositivos SIL</div>
+    <div className="sec-sub">SIL capability · SFF · λ_DU · Filtro por nivel requerido · Datos del FSM</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Criterios de selección de dispositivos SIL</div>
+          {[['SIL capability ≥ SIL requerido','El dispositivo debe estar certificado para el SIL del SIF.'],
+            ['Tipo A o B + HFT disponible','El HFT del dispositivo debe ≥ HFT requerido por la tabla SFF.'],
+            ['λ_DU compatible con TI','PFDavg del dispositivo debe ser ≤ su parte del presupuesto total.'],
+            ['TI_max adecuado','El TI calculado no puede superar el TI_max del fabricante.'],
+            ['Condiciones de proceso','Temperatura, presión, clasificación ATEX si aplica.'],
+            ['Diversidad si se requiere','Para CCF bajo: considerar diferentes fabricantes en redundancia.'],
+          ].map(([t,d])=>(
+            <div key={t} style={{display:'flex',gap:8,marginBottom:6,alignItems:'flex-start'}}>
+              <div style={{width:5,background:'#f59e0b',alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+              <div><div style={{fontSize:10,color:'#f59e0b',fontWeight:600}}>{t}</div><div style={{fontSize:10,color:'#64748b'}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Filtrar por SIL mínimo requerido</div>
+          <div style={{display:'flex',gap:5}}>
+            {[1,2,3].map(s=>(
+              <button key={s} className={`btn-outline${sil===s?' active':''}`} onClick={()=>setSIL(s)}>SIL {s}+</button>
+            ))}
+          </div>
+          <div style={{fontSize:10,color:'#64748b',marginTop:6}}>{filtered.length} dispositivo(s) con SIL capability ≥ {sil}</div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Base de datos de dispositivos certificados</div>
+          <table>
+            <thead><tr><th>Dispositivo</th><th>SIL</th><th>SFF</th><th>λ_DU /año</th><th>TI</th><th>Cert.</th></tr></thead>
+            <tbody>
+              {filtered.map((d,i)=>(
+                <tr key={i} style={{opacity:d.sil>=sil?1:0.4}}>
+                  <td>
+                    <div style={{fontSize:10,fontWeight:600,color:'#f1f5f9'}}>{d.name}</div>
+                    <div style={{fontSize:9,color:'#475569'}}>{d.type}</div>
+                  </td>
+                  <td><span style={{color:d.sil===3?'#22c55e':d.sil===2?'#3b82f6':'#f59e0b',fontWeight:700}}>SIL {d.sil}</span></td>
+                  <td style={{fontFamily:'monospace',fontSize:10,color:'#f59e0b'}}>{d.sff}%</td>
+                  <td style={{fontFamily:'monospace',fontSize:10,color:'#ef4444'}}>{d.lambdaDU.toFixed(5)}</td>
+                  <td style={{fontSize:10,color:'#64748b'}}>{d.ti}</td>
+                  <td><span className="tag tag-green">{d.cert}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: ATEX y Zonas Peligrosas para SIS ──────────────── */
+function Scene5(){
+  const [zone,setZone]=useState('1');
+  const zones={
+    '0':{name:'Zona 0 / Div. 1',color:'#ef4444',desc:'Presencia continua o larga duración de atmósfera explosiva (gas). Más del 1000h/año.',eqCat:'Categoría 1G (Ex ia)', examples:['Interior de recipientes con gases inflamables','Espacio sobre nivel de líquido inflamable en tanque'],sil:'SIL 3 es habitual en estos ambientes'},
+    '1':{name:'Zona 1 / Div. 1',color:'#f97316',desc:'Presencia probable en operación normal (gas). 10–1000h/año.',eqCat:'Categoría 2G (Ex ib, Ex d, Ex e)',examples:['Adyacente a válvulas de proceso','Área de bombas con líquidos inflamables'],sil:'SIL 2-3 típico para SIS en estas zonas'},
+    '2':{name:'Zona 2 / Div. 2',color:'#eab308',desc:'Presencia improbable en operación normal, si ocurre es breve (gas). <10h/año.',eqCat:'Categoría 3G (Ex nA, Ex nC)',examples:['Alrededores de equipos sellados','Almacenamiento de productos inflamables'],sil:'SIL 1-2 típico'},
+    '20':{name:'Zona 20',color:'#a78bfa',desc:'Presencia continua de nube de polvo combustible.',eqCat:'Categoría 1D',examples:['Interior de silos de harina/azúcar','Interior de transportadores neumáticos'],sil:'Aplican mismos principios SIL'},
+    '21':{name:'Zona 21',color:'#6366f1',desc:'Presencia probable de nube de polvo en operación normal.',eqCat:'Categoría 2D',examples:['Área de carga/descarga de polvos','Exteriores de silos'],sil:'Ex tD, Ex iD para sensores SIS'},
+  };
+  const z=zones[zone];
+  const exMethods=[
+    {method:'Ex ia (Seg. Intrínseca ia)',zone:'0,1,2',color:'#3b82f6',desc:'Energía limitada — no puede generar chispa ni superficie caliente suficiente para ignición incluso con 2 fallos.'},
+    {method:'Ex ib (Seg. Intrínseca ib)',zone:'1,2',color:'#6366f1',desc:'Energía limitada — seguridad intrínseca con 1 fallo. Barrera IS: Zener o galvánica.'},
+    {method:'Ex d (Carcasa antiexplosiva)',zone:'1,2',color:'#f97316',desc:'La explosión queda contenida dentro de la carcasa. No transmite ignición al exterior.'},
+    {method:'Ex e (Seguridad aumentada)',zone:'1,2',color:'#22c55e',desc:'Medidas extra para evitar arcos, chispas y calor excesivo. Para terminales, borneras, motores.'},
+    {method:'Ex nA (No incendiario)',zone:'2',color:'#94a3b8',desc:'Dispositivos que no pueden ser fuente de ignición en operación normal. Solo para Zona 2.'},
+  ];
+  return(<div>
+    <div className="sec-title">ATEX y Zonas Peligrosas para Dispositivos SIS</div>
+    <div className="sec-sub">Clasificación de zonas · Métodos de protección Ex · Barrera IS en SIS · ATEX 2014/34/UE · IEC 60079</div>
+    <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
+      {Object.keys(zones).map(k=>(
+        <button key={k} className={`btn-outline${zone===k?' active':''}`} onClick={()=>setZone(k)}
+          style={{borderColor:zone===k?zones[k].color+'aa':undefined,color:zone===k?zones[k].color:undefined}}>
+          {k==='0'||k==='1'||k==='2'?'Gas ':'Polvo '}{zones[k].name.split('/')[0].trim()}
+        </button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div style={{background:z.color+'22',border:`1px solid ${z.color}55`,borderRadius:7,padding:'9px 12px',marginBottom:8}}>
+            <div style={{fontSize:13,fontWeight:700,color:z.color,marginBottom:3}}>{z.name}</div>
+            <div style={{fontSize:11,color:'#94a3b8',marginBottom:5}}>{z.desc}</div>
+            <div style={{fontSize:10,color:'#64748b'}}>Equipos requeridos: <span style={{color:z.color,fontWeight:600}}>{z.eqCat}</span></div>
+          </div>
+          <div className="card-h">Ejemplos de aplicación</div>
+          {z.examples.map((e,i)=>(
+            <div key={i} style={{display:'flex',gap:6,marginBottom:3}}>
+              <span style={{color:z.color,fontSize:10}}>▸</span>
+              <span style={{fontSize:10,color:'#94a3b8'}}>{e}</span>
+            </div>
+          ))}
+          <div style={{marginTop:8,background:'#060a14',borderRadius:5,padding:'7px 10px'}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:600}}>{z.sil}</div>
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">SIS en Zonas ATEX — regla de oro</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            Los sensores/transmisores del SIS deben tener marcación ATEX apropiada para la zona.
+            La barrera IS (Ex ia) es la protección más usada en SIS porque permite
+            <span style={{color:'#f59e0b'}}> mantenimiento en caliente</span> sin hot-work permit.
+            El PLC Safety se instala en el cuarto de control (no peligrosa).
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Métodos de protección Ex para SIS</div>
+          {exMethods.map((m,i)=>(
+            <div key={i} style={{display:'flex',gap:8,marginBottom:6,alignItems:'flex-start'}}>
+              <div style={{background:m.color+'22',border:`1px solid ${m.color}55`,borderRadius:5,padding:'4px 8px',flexShrink:0,minWidth:130}}>
+                <div style={{fontSize:10,fontWeight:700,color:m.color}}>{m.method}</div>
+                <div style={{fontSize:9,color:'#64748b'}}>Zonas: {m.zone}</div>
+              </div>
+              <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.4}}>{m.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Parámetros de entidad IS — barrera + sensor</div>
+          <div className="formula-box" style={{fontSize:10,lineHeight:1.8}}>
+            U_o ≤ V_max · I_o ≤ I_max · P_o ≤ P_max<br/>
+            C_o ≥ C_i + C_cable · L_o ≥ L_i + L_cable
+          </div>
+          <div style={{fontSize:10,color:'#64748b',lineHeight:1.5}}>
+            La barrera IS debe cumplir que sus parámetros de salida (U_o, I_o, C_o, L_o)
+            sean compatibles con los parámetros máximos del sensor (V_max, I_max, C_i, L_i)
+            más la capacitancia/inductancia del cable.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 6: Quiz ──────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Qué diferencia a un subsistema Tipo B de uno Tipo A según IEC 61508?',opts:['Tipo B es más barato que Tipo A','Tipo B tiene modos de falla no completamente conocidos (ej. microprocesadores)','Tipo B solo se usa en zonas ATEX','Tipo B requiere menos cobertura de diagnóstico'],ans:1},
+  {q:'Un PLC de seguridad con microprocesador es siempre un subsistema de tipo:',opts:['Tipo A — porque es electrónico','Tipo B — porque sus modos de falla no son completamente determinables','Tipo A si tiene SIL 2, Tipo B si tiene SIL 3','No aplica la clasificación a PLCs'],ans:1},
+  {q:'La FMEDA sirve principalmente para:',opts:['Determinar el precio del dispositivo SIL','Calcular SFF, λ_DD, λ_DU, λ_SD, λ_SU del dispositivo','Seleccionar el intervalo de proof test','Hacer el HAZOP del proceso'],ans:1},
+  {q:'¿Qué contiene el Functional Safety Manual (FSM) de un dispositivo certificado?',opts:['El manual de operación del proceso industrial','Los datos de λ_DU, SFF, HFT y TI_max necesarios para el cálculo SIL del SIF','El procedimiento de proof test del instrumento','El listado de todos los dispositivos SIL del mercado'],ans:1},
+  {q:'Para SIL 2 con un subsistema Tipo A (SFF=70%), ¿qué HFT mínimo se requiere?',opts:['HFT = 0','HFT = 1','HFT = 2','No es posible alcanzar SIL 2 con Tipo A'],ans:0},
+  {q:'Para SIL 2 con un subsistema Tipo B (SFF=70%), ¿qué HFT mínimo se requiere?',opts:['HFT = 0','HFT = 1','HFT = 2','No es posible alcanzar SIL 2 con Tipo B'],ans:1},
+  {q:'¿En qué zona ATEX se requiere equipo categoría 1G (Ex ia)?',opts:['Zona 2','Zona 1','Zona 0','Zona 21'],ans:2},
+  {q:'¿Por qué la barrera de seguridad intrínseca Ex ia es la más usada en sensores de SIS?',opts:['Es la más barata del mercado','Permite mantenimiento en caliente sin hot-work permit','Tiene la menor caída de tensión','No requiere certificación ATEX'],ans:1},
+  {q:'¿Cuál organismo NO es un cuerpo certificador reconocido de dispositivos SIL?',opts:['TÜV Rheinland','exida','FM Global','ISO (International Organization for Standardization)'],ans:3},
+  {q:'Si el FSM indica TI_max = 2 años para un transmisor, ¿qué pasa si el diseñador calcula TI = 3 años?',opts:['No hay problema si el PFDavg sigue siendo adecuado','El diseño incumple el FSM — la certificación SIL no es válida para ese TI','Se puede usar TI=3 años con aprobación del fabricante','Solo aplica si el SIL es 3 o superior'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    if(i===q.ans)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(qi+1>=quizData.length)setDone(true);
+      else{setQi(qi+1);setSel(null);}
+    },1200);
+  };
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>
+      {score>=8?'Excelente. Puedes seleccionar y especificar dispositivos SIL para un proyecto real.':score>=6?'Buen nivel. Repasa la diferencia Tipo A/B y los requisitos del FSM.':'Refuerza FMEDA, certificación y la tabla SFF/HFT para cada tipo de subsistema.'}
+    </div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Dispositivos SIL y Certificación</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>
+      {quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}
+    </div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}>
+      <div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div>
+    </div>
+    {q.opts.map((o,i)=>{
+      let cls='quiz-opt';
+      if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}
+      return(<div key={i} className={cls} onClick={()=>choose(i)}>
+        <div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+        {o}
+      </div>);
+    })}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. Tipo A vs Tipo B',comp:Scene1},
+  {id:2,label:'2. FMEDA',comp:Scene2},
+  {id:3,label:'3. Proceso de certificación',comp:Scene3},
+  {id:4,label:'4. Selección de dispositivos',comp:Scene4},
+  {id:5,label:'5. ATEX y zonas peligrosas',comp:Scene5},
+  {id:6,label:'6. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);
+  const S=SCENES.find(s=>s.id===scene);
+  const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Clase 1.4 — Dispositivos SIL y Certificación</div>
+        <div className="topbar-sub">Tipo A/B · FMEDA · TÜV / exida / FM · Functional Safety Manual · ATEX · IEC 61508 Parte 2</div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
