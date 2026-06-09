@@ -879,18 +879,27 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 3.1 - Instrumentacion Analitica.html`,
   },
-  {
-    order: 16,
-    title: "Seguridad Funcional SIL Avanzado — PFDavg, Arquitecturas MooN y Ciclo de Vida IEC 61511",
-    description:
-      "Domina el diseño cuantitativo de sistemas SIS: capas de protección (IPL), fiabilidad R(t)=e^(-λt), modos de falla (λDD/λDU/λSD/λSU), SFF, cálculo de PFDavg por arquitectura (1oo1, 1oo2, 2oo2, 2oo3), factor beta para causas comunes (CCF), ejemplo completo Tx+Barrera+PLC+Válvula, análisis de consecuencias (event trees, BLEVE, VCE) y ciclo de vida IEC 61511. Simuladores interactivos y calculadoras.",
-    durationSec: 960,
-    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 3.2 - Seguridad Funcional SIL Avanzado.html`,
-  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);
 const totalMinutesPro = Math.round(totalSecPro / 60);
+
+const BASE_SIL = "/videos/premium/seguridad-funcional";
+
+const lessonsSIL = [
+  // ── MÓDULO 1 — Fundamentos SIL ──────────────────────────────────────────
+  {
+    order: 1,
+    title: "Seguridad Funcional SIL — PFDavg, Arquitecturas MooN y Ciclo de Vida IEC 61511",
+    description:
+      "Domina el diseño cuantitativo de sistemas SIS: capas de protección (IPL), fiabilidad R(t)=e^(-λt), modos de falla (λDD/λDU/λSD/λSU), SFF, cálculo de PFDavg por arquitectura (1oo1, 1oo2, 2oo2, 2oo3), factor beta para causas comunes (CCF), ejemplo completo Tx+Barrera+PLC+Válvula, análisis de consecuencias (event trees, BLEVE, VCE) y ciclo de vida IEC 61511. Simuladores interactivos y calculadoras.",
+    durationSec: 960,
+    videoPath: `${BASE_SIL}/Clase 1.1 - Seguridad Funcional SIL.html`,
+  },
+];
+
+const totalSecSIL = lessonsSIL.reduce((s, l) => s + l.durationSec, 0);
+const totalMinutesSIL = Math.round(totalSecSIL / 60);
 
 async function main() {
   await prisma.lesson.deleteMany();
@@ -926,7 +935,22 @@ async function main() {
     },
   });
 
-  console.log(`✅ Seed completado: ${lessons.length} lecciones gratis (${totalMinutes} min) + ${lessonsPro.length} lecciones PRO (${totalMinutesPro} min)`);
+  await prisma.course.create({
+    data: {
+      slug: "seguridad-funcional-sil",
+      title: "Seguridad Funcional SIL — IEC 61508 / IEC 61511",
+      description:
+        "Curso especializado en sistemas instrumentados de seguridad (SIS). Aprende a calcular PFDavg, asignar niveles SIL, diseñar arquitecturas MooN redundantes, aplicar el factor beta para causas comunes (CCF) y ejecutar el ciclo de vida completo según IEC 61511. Incluye análisis de consecuencias (BLEVE, VCE, dispersión tóxica) y el enfoque práctico del GMI SIL Manual.",
+      instructor: "Instrumex",
+      level: "Avanzado",
+      category: "Seguridad Industrial",
+      totalMinutes: totalMinutesSIL,
+      lessonCount: lessonsSIL.length,
+      lessons: { create: lessonsSIL },
+    },
+  });
+
+  console.log(`✅ Seed completado: ${lessons.length} lecciones gratis (${totalMinutes} min) + ${lessonsPro.length} lecciones PRO (${totalMinutesPro} min) + ${lessonsSIL.length} lecciones SIL (${totalMinutesSIL} min)`);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
