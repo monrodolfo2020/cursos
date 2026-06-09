@@ -879,6 +879,14 @@ const lessonsPro = [
     durationSec: 900,
     videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 3.1 - Instrumentacion Analitica.html`,
   },
+  {
+    order: 16,
+    title: "Seguridad Funcional SIL Avanzado — PFDavg, Arquitecturas MooN y Ciclo de Vida IEC 61511",
+    description:
+      "Domina el diseño cuantitativo de sistemas SIS: capas de protección (IPL), fiabilidad R(t)=e^(-λt), modos de falla (λDD/λDU/λSD/λSU), SFF, cálculo de PFDavg por arquitectura (1oo1, 1oo2, 2oo2, 2oo3), factor beta para causas comunes (CCF), ejemplo completo Tx+Barrera+PLC+Válvula, análisis de consecuencias (event trees, BLEVE, VCE) y ciclo de vida IEC 61511. Simuladores interactivos y calculadoras.",
+    durationSec: 960,
+    videoPath: `${BASE_PRO}/modulo-1-fundamentos/Clase 3.2 - Seguridad Funcional SIL Avanzado.html`,
+  },
 ];
 
 const totalSecPro = lessonsPro.reduce((s, l) => s + l.durationSec, 0);

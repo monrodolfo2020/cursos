@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.2 – Seguridad Funcional SIL Avanzado</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;cursor:pointer;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:13px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-blue{background:#1e40af44;color:#93c5fd;border:1px solid #1e40af66;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.pill{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.pill-green{background:#14532d55;color:#86efac;border:1px solid #22c55e44;}
+.meter-bar{height:12px;background:#0f1729;border-radius:6px;overflow:hidden;margin:4px 0;}
+.meter-fill{height:100%;border-radius:6px;transition:width .4s;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ── SCENE 1: Capas de Protección IPL ──────────────────────── */
+function Scene1(){
+  const [activeLayer,setActiveLayer]=useState(null);
+  const layers=[
+    {n:1,name:'Control de proceso (DCS)',color:'#3b82f6',desc:'Primera línea: controladores PID, lazos de control, instrumentación de proceso. Mantiene variables dentro de rangos seguros en operación normal.'},
+    {n:2,name:'Alarmas y monitoreo',color:'#6366f1',desc:'Sistemas de alarma que alertan al operador de condiciones anormales. Requieren acción humana para responder antes de alcanzar condición peligrosa.'},
+    {n:3,name:'SIS / ESD automático',color:'#f59e0b',desc:'Sistema Instrumentado de Seguridad: sensores, logic solver (PLC/SIS) y elementos finales independientes. Acción automática sin intervención humana. IEC 61511.'},
+    {n:4,name:'Protecciones físicas (válvulas alivio)',color:'#f97316',desc:'Válvulas de alivio de presión (PSV), discos de ruptura. Protección pasiva que no requiere energía ni lógica. Previene sobrepresión catastrófica.'},
+    {n:5,name:'Contención y dique',color:'#ef4444',desc:'Diques alrededor de tanques, doble pared, muros cortafuego. Mitigan consecuencias una vez ocurrido el evento. Contienen derrames y dispersión.'},
+    {n:6,name:'Sistema F&G (Fire & Gas)',color:'#dc2626',desc:'Detectores de gas, temperatura y llama. Activan sistemas de supresión (diluvio, CO₂, halon). Normalmente de-energizados — energizan para actuar.'},
+    {n:7,name:'Plan de emergencia interno',color:'#b91c1c',desc:'Procedimientos de evacuación, brigadas contra incendio, comunicación de emergencias. Reducen impacto en personal y propiedad.'},
+    {n:8,name:'Plan de emergencia externo',color:'#991b1b',desc:'Coordinación con bomberos, protección civil, hospitales. Mapeo de área de riesgo, evaluación de impacto en comunidad externa.'},
+  ];
+  return(<div>
+    <div className="sec-title">Capas de Protección (IPL)</div>
+    <div className="sec-sub">Independent Protection Layers · Modelo de defensa en profundidad · IEC 61511 / LOPA</div>
+    <div className="grid2">
+      <div>
+        <div className="card" style={{padding:'10px 12px'}}>
+          <div className="card-h">Modelo de Capas — haz clic en cada capa</div>
+          <div style={{position:'relative'}}>
+            {layers.map((l,i)=>{
+              const w=100-i*8;
+              const isActive=activeLayer===l.n;
+              return(<div key={l.n} onClick={()=>setActiveLayer(isActive?null:l.n)}
+                style={{width:`${w}%`,margin:'2px auto',background:isActive?l.color+'33':l.color+'18',
+                  border:`1px solid ${l.color}${isActive?'':'55'}`,borderRadius:5,padding:'4px 8px',
+                  cursor:'pointer',transition:'all .2s',display:'flex',alignItems:'center',gap:6}}>
+                <span style={{background:l.color,color:'#080c18',borderRadius:3,padding:'1px 5px',fontSize:9,fontWeight:700,flexShrink:0}}>IPL {l.n}</span>
+                <span style={{fontSize:10,color:isActive?'#f1f5f9':'#94a3b8',fontWeight:isActive?600:400}}>{l.name}</span>
+              </div>);
+            })}
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">ESD vs F&amp;G — diferencia clave</div>
+          <div style={{display:'flex',gap:8}}>
+            <div style={{flex:1,background:'#0f1729',borderRadius:6,padding:'7px 10px',borderLeft:'3px solid #f59e0b'}}>
+              <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:3}}>ESD (Emergency Shutdown)</div>
+              <div style={{fontSize:10,color:'#94a3b8'}}>Normalmente energizado</div>
+              <div style={{fontSize:10,color:'#94a3b8'}}>De-energiza para actuar (trip)</div>
+              <div style={{fontSize:10,color:'#94a3b8'}}>Lleva proceso a estado seguro</div>
+              <div style={{fontSize:10,color:'#94a3b8',marginTop:3}}>Evita nuisance trips costosos</div>
+            </div>
+            <div style={{flex:1,background:'#0f1729',borderRadius:6,padding:'7px 10px',borderLeft:'3px solid #ef4444'}}>
+              <div style={{fontSize:10,color:'#ef4444',fontWeight:700,marginBottom:3}}>F&amp;G (Fire &amp; Gas)</div>
+              <div style={{fontSize:10,color:'#94a3b8'}}>Normalmente de-energizado</div>
+              <div style={{fontSize:10,color:'#94a3b8'}}>Energiza para actuar (suprimir)</div>
+              <div style={{fontSize:10,color:'#94a3b8'}}>Mitiga consecuencias de incendio</div>
+              <div style={{fontSize:10,color:'#94a3b8',marginTop:3}}>Nuisance trip: activa supresión</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        {activeLayer?(
+          <div className="card">
+            <div className="card-h" style={{fontSize:14}}>IPL {activeLayer}: {layers[activeLayer-1].name}</div>
+            <div style={{fontSize:12,color:'#cbd5e1',lineHeight:1.6,marginBottom:10}}>{layers[activeLayer-1].desc}</div>
+            <div style={{background:'#060a14',borderRadius:6,padding:'8px 10px'}}>
+              <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>Norma de referencia</div>
+              {activeLayer<=2&&<div style={{fontSize:11,color:'#93c5fd'}}>IEC 61511 Parte 1 — Gestión del sistema de control</div>}
+              {activeLayer===3&&<div style={{fontSize:11,color:'#f59e0b'}}>IEC 61511 — Safety Instrumented Systems · IEC 61508 — Functional Safety</div>}
+              {activeLayer===4&&<div style={{fontSize:11,color:'#f97316'}}>ASME B31.3 · API 521 — Pressure relieving devices</div>}
+              {activeLayer>=5&&<div style={{fontSize:11,color:'#ef4444'}}>API RP 2003 · NFPA · Normativa ATEX local</div>}
+            </div>
+          </div>
+        ):(
+          <div className="card">
+            <div className="card-h">¿Qué es un SIS?</div>
+            <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+              Un <span style={{color:'#f59e0b',fontWeight:600}}>Safety Instrumented System (SIS)</span> es el conjunto de sensores,
+              lógica y elementos finales diseñados para llevar el proceso a un estado seguro cuando se detecta una condición peligrosa.
+            </div>
+            <div style={{background:'#060a14',borderRadius:6,padding:'9px 12px'}}>
+              <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:6}}>Componentes de un SIF</div>
+              {[['Sensor / Transmisor','Detecta la condición peligrosa','#3b82f6'],
+                ['Logic Solver (SIL PLC)','Evalúa la lógica de seguridad','#f59e0b'],
+                ['Elemento Final (Válvula ESD)','Ejecuta la acción de seguridad','#22c55e']
+              ].map(([c,d,col])=>(
+                <div key={c} style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:col,flexShrink:0}}/>
+                  <div>
+                    <span style={{fontSize:11,color:col,fontWeight:600}}>{c}</span>
+                    <span style={{fontSize:10,color:'#64748b'}}> — {d}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{marginTop:8,fontSize:10,color:'#64748b'}}>👈 Haz clic en cada capa para ver su descripción</div>
+          </div>
+        )}
+        <div className="card">
+          <div className="card-h">Concepto clave: independencia</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            Para que una capa cuente como IPL válida en LOPA, debe ser <span style={{color:'#f59e0b'}}>independiente</span> de la causa raíz
+            y de otras capas, con <span style={{color:'#f59e0b'}}>PFD ≤ 0.1</span> (IPL básico). La independencia garantiza que
+            el fallo de una capa no cause el fallo de otra.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Fiabilidad y Modos de Falla ──────────────────── */
+function Scene2(){
+  const [lambda,setLambda]=useState(100);
+  const [t,setT]=useState(8760);
+  const [mode,setMode]=useState('reliability');
+  const lam=lambda*1e-9;
+  const R=Math.exp(-lam*t);
+  const U=1-R;
+  const MTTF=Math.round(1/(lam*8760));
+  const pts=[];
+  for(let i=0;i<=50;i++){
+    const ti=i*t/50;
+    pts.push({x:i*100/50,y:Math.exp(-lam*ti)*100});
+  }
+  const path=pts.map((p,i)=>`${i===0?'M':'L'}${p.x*3},${(100-p.y)*1.4}`).join(' ');
+  return(<div>
+    <div className="sec-title">Conceptos de Fiabilidad</div>
+    <div className="sec-sub">R(t) = e<sup>−λt</sup> · MTTF · MTTR · MTBF · Tasa de fallo (FIT) · IEC 61508</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Simulador de Fiabilidad — R(t) = e<sup>−λt</sup></div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>Tasa de fallo λ</span>
+              <span style={{color:'#f59e0b'}}>{lambda} FIT = {lambda}×10⁻⁹/hr</span>
+            </div>
+            <input type="range" min="10" max="2000" value={lambda} onChange={e=>setLambda(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>Tiempo de misión t</span>
+              <span style={{color:'#f59e0b'}}>{(t/8760).toFixed(1)} años ({t.toLocaleString()} hrs)</span>
+            </div>
+            <input type="range" min="8760" max="175200" step="8760" value={t} onChange={e=>setT(+e.target.value)}/>
+          </div>
+          <svg width="100%" viewBox="0 0 300 150">
+            <rect x="0" y="0" width="300" height="150" rx="6" fill="#060a14"/>
+            <line x1="10" y1="10" x2="10" y2="140" stroke="#1e2d4a" strokeWidth="1"/>
+            <line x1="10" y1="140" x2="295" y2="140" stroke="#1e2d4a" strokeWidth="1"/>
+            <text x="5" y="14" fill="#64748b" fontSize="7" textAnchor="middle">R</text>
+            <text x="5" y="77" fill="#64748b" fontSize="7" textAnchor="middle">0.5</text>
+            <text x="5" y="140" fill="#64748b" fontSize="7" textAnchor="middle">0</text>
+            <line x1="10" y1="77" x2="295" y2="77" stroke="#1e2d4a" strokeWidth="0.5" strokeDasharray="3,3"/>
+            <path d={`M10,10 ${pts.slice(1).map(p=>`L${10+p.x*2.85},${10+((100-p.y)*1.28)}`).join(' ')}`} fill="none" stroke="#f59e0b" strokeWidth="2"/>
+            <circle cx={10+pts[pts.length-1].x*2.85} cy={10+((100-pts[pts.length-1].y)*1.28)} r="4" fill="#f59e0b"/>
+            <text x="155" y="135" textAnchor="middle" fill="#64748b" fontSize="8">Tiempo → {(t/8760).toFixed(0)} años</text>
+            <text x="160" y="40" fill="#f59e0b" fontSize="11" fontWeight="bold">R({(t/8760).toFixed(1)}a) = {(R*100).toFixed(2)}%</text>
+          </svg>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Resultados del cálculo</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+            {[
+              ['R(t)','Fiabilidad',`${(R*100).toFixed(3)}%`,'#22c55e'],
+              ['U(t)','No-fiabilidad (P fallo)',`${(U*100).toFixed(3)}%`,'#ef4444'],
+              ['λ','Tasa de fallo',`${lambda} FIT`,'#f59e0b'],
+              ['MTTF','Tiempo medio a fallo',`${MTTF.toLocaleString()} años`,'#3b82f6'],
+            ].map(([sym,lbl,val,col])=>(
+              <div key={sym} style={{background:'#060a14',borderRadius:6,padding:'7px 10px',textAlign:'center'}}>
+                <div style={{fontSize:15,fontWeight:700,color:col,fontFamily:'monospace'}}>{val}</div>
+                <div style={{fontSize:9,color:'#64748b',marginTop:2}}>{sym} — {lbl}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Relaciones MTTF · MTTR · MTBF</div>
+          <div className="formula-box" style={{fontSize:11,marginBottom:6}}>MTBF = MTTF + MTTR</div>
+          <div className="formula-box" style={{fontSize:11,marginBottom:6}}>Disponibilidad = MTTF / (MTTF + MTTR)</div>
+          <table>
+            <thead><tr><th>Término</th><th>Significado</th><th>Aplica a</th></tr></thead>
+            <tbody>
+              <tr><td><span className="gold">MTTF</span></td><td>Tiempo medio hasta primer fallo</td><td>No reparables</td></tr>
+              <tr><td><span className="gold">MTTR</span></td><td>Tiempo medio de reparación</td><td>Reparables</td></tr>
+              <tr><td><span className="gold">MTBF</span></td><td>Tiempo medio entre fallos</td><td>Reparables</td></tr>
+            </tbody>
+          </table>
+          <div style={{marginTop:8,fontSize:10,color:'#64748b'}}>
+            ⚠️ MTBF ≠ vida útil. Un MTBF de 1000 años significa que de 1000 dispositivos idénticos, 1 falla por año.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Curva de bañera (Bathtub curve)</div>
+          <svg width="100%" viewBox="0 0 280 70">
+            <path d="M10,60 Q40,15 80,45 L200,45 Q240,15 270,60" fill="none" stroke="#f59e0b" strokeWidth="2"/>
+            <text x="35" y="68" fill="#ef4444" fontSize="8" textAnchor="middle">Mortalidad infantil</text>
+            <text x="140" y="42" fill="#22c55e" fontSize="8" textAnchor="middle">λ constante</text>
+            <text x="235" y="68" fill="#f97316" fontSize="8" textAnchor="middle">Desgaste</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Modos de Falla — λD, λS, SFF ──────────────────── */
+function Scene3(){
+  const [lambdaDD,setDD]=useState(0.0010);
+  const [lambdaDU,setDU]=useState(0.0008);
+  const [lambdaSD,setSD]=useState(0.0060);
+  const [lambdaSU,setSU]=useState(0.0020);
+  const tot=lambdaDD+lambdaDU+lambdaSD+lambdaSU;
+  const SFF=tot>0?(lambdaDD+lambdaSD+lambdaSU)/tot:0;
+  const HFT_SIL=(SFF>=0.99?3:SFF>=0.95?2:SFF>=0.90?1:0);
+  const getSILcolor=(s)=>s===3?'#22c55e':s===2?'#3b82f6':s===1?'#f59e0b':'#ef4444';
+  return(<div>
+    <div className="sec-title">Modos de Falla y SFF</div>
+    <div className="sec-sub">λ<sub>DD</sub> · λ<sub>DU</sub> · λ<sub>SD</sub> · λ<sub>SU</sub> · Safe Failure Fraction · Diagnostic Coverage · IEC 61508</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Taxonomía de fallos — ajusta tasas (por año)</div>
+          {[
+            ['λ_DD','Peligroso Detectado',lambdaDD,setDD,'#f97316','Fallo que inhabilita la función de seguridad pero es detectado por diagnóstico'],
+            ['λ_DU','Peligroso No Detectado',lambdaDU,setDU,'#ef4444','Fallo más crítico — oculto hasta el test periódico (proof test)'],
+            ['λ_SD','Seguro Detectado',lambdaSD,setSD,'#22c55e','Fallo que causa trip innecesario pero es detectado online'],
+            ['λ_SU','Seguro No Detectado',lambdaSU,setSU,'#3b82f6','Causa nuisance trips; no detectado por diagnóstico'],
+          ].map(([sym,label,val,setter,col,desc])=>(
+            <div key={sym} style={{marginBottom:8}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}}>
+                <span style={{fontSize:11,color:col,fontWeight:700,fontFamily:'monospace'}}>{sym}</span>
+                <span style={{fontSize:10,color:'#f59e0b'}}>{val.toFixed(4)}/año</span>
+              </div>
+              <input type="range" min="0.0001" max="0.02" step="0.0001" value={val}
+                onChange={e=>setter(+e.target.value)} style={{accentColor:col}}/>
+              <div style={{fontSize:9,color:'#475569',marginTop:1}}>{label} — {desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Cálculo de SFF</div>
+          <div className="formula-box" style={{fontSize:12,lineHeight:1.6}}>
+            SFF = (λ_DD + λ_SD + λ_SU) / λ_TOT<br/>
+            = 1 − λ_DU / λ_TOT
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'10px 12px',textAlign:'center',marginBottom:8}}>
+            <div style={{fontSize:28,fontWeight:700,color:getSILcolor(HFT_SIL)}}>{(SFF*100).toFixed(1)}%</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Safe Failure Fraction (SFF)</div>
+          </div>
+          <table>
+            <thead><tr><th>SFF</th><th>HFT=0</th><th>HFT=1</th><th>HFT=2</th></tr></thead>
+            <tbody>
+              {[['< 60%','SIL 1','SIL 2','SIL 3'],
+                ['60–90%','SIL 2','SIL 3','SIL 4'],
+                ['90–99%','SIL 3','SIL 4','SIL 4'],
+                ['≥ 99%','SIL 3','SIL 4','SIL 4']
+              ].map(([s,...sils])=>{
+                const row=s==='< 60%'?SFF<0.60:s==='60–90%'?SFF>=0.60&&SFF<0.90:s==='90–99%'?SFF>=0.90&&SFF<0.99:SFF>=0.99;
+                return(<tr key={s} style={{background:row?'#f59e0b10':''}}>
+                  <td style={{color:row?'#f59e0b':'#94a3b8',fontWeight:row?700:400}}>{s}</td>
+                  {sils.map(sl=><td key={sl} style={{color:'#86efac'}}>{sl}</td>)}
+                </tr>);
+              })}
+            </tbody>
+          </table>
+          <div style={{fontSize:10,color:'#64748b',marginTop:6}}>HFT = Hardware Fault Tolerance (Tabla 2, IEC 61508)</div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Cobertura de diagnóstico C_D</div>
+          <div className="formula-box" style={{fontSize:11}}>λ_DD = C_D × λ_D &nbsp;|&nbsp; λ_DU = (1−C_D) × λ_D</div>
+          <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5}}>
+            Una cobertura C_D = 0.90 significa que el 90% de fallos peligrosos son detectados online.
+            El 10% restante (λ_DU) permanece oculto hasta el proof test periódico.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: PFDavg y Niveles SIL ─────────────────────────── */
+function Scene4(){
+  const [arch,setArch]=useState('1oo1');
+  const [ldu,setLdu]=useState(0.0008);
+  const [ti,setTI]=useState(1);
+  const pfdCalc=(a,l,t)=>{
+    if(a==='1oo1') return l*t/2;
+    if(a==='1oo2') return Math.pow(l*t,2)/3;
+    if(a==='2oo2') return l*t;
+    if(a==='2oo3') return Math.pow(l*t,2);
+    if(a==='1oo3') return Math.pow(l*t,3)/4;
+    return l*t/2;
+  };
+  const pfd=pfdCalc(arch,ldu,ti);
+  const rrf=pfd>0?Math.round(1/pfd):999999;
+  const sil=pfd<1e-4?4:pfd<1e-3?3:pfd<1e-2?2:pfd<0.1?1:0;
+  const silColors=['#ef4444','#f59e0b','#3b82f6','#22c55e','#a78bfa'];
+  const silLabels=['No SIL','SIL 1','SIL 2','SIL 3','SIL 4'];
+  return(<div>
+    <div className="sec-title">PFDavg y Niveles SIL</div>
+    <div className="sec-sub">Probability of Failure on Demand · Risk Reduction Factor · IEC 61508 / IEC 61511</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Tabla SIL — IEC 61508/61511</div>
+          <table>
+            <thead><tr><th>Nivel SIL</th><th>PFDavg</th><th>RRF</th><th>Modo demand</th></tr></thead>
+            <tbody>
+              {[['SIL 1','10⁻¹ – 10⁻²','10 – 100','#f59e0b'],
+                ['SIL 2','10⁻² – 10⁻³','100 – 1000','#3b82f6'],
+                ['SIL 3','10⁻³ – 10⁻⁴','1000 – 10000','#22c55e'],
+                ['SIL 4','10⁻⁴ – 10⁻⁵','10000 – 100000','#a78bfa'],
+              ].map(([sl,pfd,rrf,col])=>(
+                <tr key={sl}>
+                  <td><span style={{color:col,fontWeight:700}}>{sl}</span></td>
+                  <td style={{fontFamily:'monospace',fontSize:10}}>{pfd}</td>
+                  <td style={{fontFamily:'monospace',fontSize:10}}>{rrf}</td>
+                  <td style={{color:'#64748b',fontSize:10}}>Bajo demanda</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{marginTop:8}}>
+            <div className="formula-box" style={{fontSize:11,marginBottom:4}}>PFDavg (1oo1) ≈ λ_DU × TI / 2</div>
+            <div className="formula-box" style={{fontSize:11}}>RRF = 1 / PFDavg</div>
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Fórmulas simplificadas por arquitectura</div>
+          <table>
+            <thead><tr><th>Arq.</th><th>PFDavg (TI=1 año)</th></tr></thead>
+            <tbody>
+              {[['1oo1','λ_DU × TI / 2'],['1oo2','(λ_DU × TI)² / 3'],['2oo2','λ_DU × TI'],
+                ['2oo3','(λ_DU × TI)²'],['1oo3','(λ_DU × TI)³ / 4']].map(([a,f])=>(
+                <tr key={a}><td style={{color:'#f59e0b',fontFamily:'monospace'}}>{a}</td><td style={{fontFamily:'monospace',fontSize:10,color:'#94a3b8'}}>{f}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Calculadora PFDavg interactiva</div>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>Arquitectura</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+              {['1oo1','1oo2','2oo2','2oo3','1oo3'].map(a=>(
+                <button key={a} className={`btn-outline${arch===a?' active':''}`} onClick={()=>setArch(a)}>{a}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>λ_DU (tasa peligrosa no detectada)</span>
+              <span style={{color:'#f59e0b'}}>{ldu.toFixed(4)}/año</span>
+            </div>
+            <input type="range" min="0.0001" max="0.05" step="0.0001" value={ldu} onChange={e=>setLdu(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>TI — Intervalo de prueba periódica</span>
+              <span style={{color:'#f59e0b'}}>{ti} {ti===1?'año':'años'}</span>
+            </div>
+            <input type="range" min="1" max="10" step="1" value={ti} onChange={e=>setTI(+e.target.value)}/>
+          </div>
+          <div style={{background:'#060a14',borderRadius:8,padding:'12px',textAlign:'center',marginBottom:8}}>
+            <div style={{fontSize:11,color:'#64748b',marginBottom:4}}>PFDavg ({arch}, TI={ti}a)</div>
+            <div style={{fontSize:26,fontWeight:700,color:silColors[sil],fontFamily:'monospace'}}>{pfd.toExponential(2)}</div>
+            <div style={{fontSize:13,color:'#f59e0b',marginTop:2}}>RRF = {rrf.toLocaleString()}</div>
+          </div>
+          <div style={{textAlign:'center',background:silColors[sil]+'22',border:`1px solid ${silColors[sil]}55`,borderRadius:6,padding:'8px',fontSize:14,fontWeight:700,color:silColors[sil]}}>
+            {silLabels[sil]}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Arquitecturas MooN ────────────────────────────── */
+function Scene5(){
+  const [sel,setSel]=useState('1oo2');
+  const archs={
+    '1oo1':{
+      desc:'Sistema simple. Un componente — si falla peligrosamente, el SIF falla. Si falla seguros, da trip innecesario.',
+      safe:0.04,danger:0.02,mttfS:25,mttfD:50,
+      pros:['Bajo costo','Sin nuisance trips extra','Fácil de diagnosticar'],
+      cons:['Mayor PFDavg — solo alcanza SIL 1-2','Cada fallo peligroso es crítico','Sin redundancia'],
+      wiring:'Serie'
+    },
+    '1oo2':{
+      desc:'Dos canales en paralelo. Cualquier canal puede ejecutar el trip. Alta seguridad, mayor tasa de nuisance trips.',
+      safe:0.08,danger:0.0004,mttfS:12.5,mttfD:2500,
+      pros:['Excelente PFDavg — SIL 2-3','Muy resistente a fallos peligrosos','Permite proof test en caliente (1 canal)'],
+      cons:['Doble tasa de nuisance trips','Mayor costo de hardware','Requiere gestión de discrepancias'],
+      wiring:'Paralelo'
+    },
+    '2oo2':{
+      desc:'Dos canales; ambos deben detectar para actuar. Baja tasa de nuisance trips, peor PFDavg que 1oo1.',
+      safe:0.0016,danger:0.04,mttfS:625,mttfD:25,
+      pros:['Muy bajo nuisance trip rate','Alta disponibilidad de proceso','Buen para aplicaciones críticas en producción'],
+      cons:['Peor PFDavg que 1oo1','Un fallo peligroso en cualquier canal inhabilita el SIF','No apto para alta reducción de riesgo'],
+      wiring:'Serie lógica'
+    },
+    '2oo3':{
+      desc:'Votación mayoritaria. 2 de 3 canales deben detectar. Balance óptimo entre seguridad y disponibilidad.',
+      safe:0.0048,danger:0.0012,mttfS:208,mttfD:833,
+      pros:['Mejor balance seguridad/disponibilidad','Permite mantenimiento de 1 canal sin shutdown','SIL 2-3 alcanzable'],
+      cons:['Mayor costo (3x hardware)','Requiere diagnóstico cruzado','Más complejo de validar'],
+      wiring:'Votador 2/3'
+    },
+  };
+  const a=archs[sel];
+  const colors={'1oo1':'#f59e0b','1oo2':'#22c55e','2oo2':'#ef4444','2oo3':'#3b82f6'};
+  const col=colors[sel];
+  return(<div>
+    <div className="sec-title">Arquitecturas MooN</div>
+    <div className="sec-sub">1oo1 · 1oo2 · 2oo2 · 2oo3 · Comparativa de seguridad y disponibilidad · IEC 61508</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {Object.keys(archs).map(k=>(
+        <button key={k} className={`btn-outline${sel===k?' active':''}`} onClick={()=>setSel(k)} style={{borderColor:sel===k?colors[k]+'aa':undefined,color:sel===k?colors[k]:undefined}}>{k}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h" style={{color:col}}>{sel} — {a.wiring}</div>
+          <div style={{fontSize:11,color:'#94a3b8',marginBottom:10,lineHeight:1.5}}>{a.desc}</div>
+          <svg width="100%" viewBox="0 0 280 120">
+            <rect width="280" height="120" rx="6" fill="#060a14"/>
+            {sel==='1oo1'&&(<>
+              <rect x="100" y="45" width="80" height="30" rx="5" fill={col+'22'} stroke={col}/>
+              <text x="140" y="58" textAnchor="middle" fill={col} fontSize="10" fontWeight="bold">Canal A</text>
+              <text x="140" y="68" textAnchor="middle" fill="#64748b" fontSize="8">1oo1</text>
+              <line x1="20" y1="60" x2="100" y2="60" stroke={col} strokeWidth="2"/>
+              <line x1="180" y1="60" x2="260" y2="60" stroke={col} strokeWidth="2"/>
+              <polygon points="20,55 10,60 20,65" fill={col}/>
+              <polygon points="250,55 260,60 250,65" fill={col}/>
+              <text x="50" y="75" fill="#64748b" fontSize="8">Entrada</text>
+              <text x="210" y="75" fill="#64748b" fontSize="8">Salida</text>
+            </>)}
+            {sel==='1oo2'&&(<>
+              <rect x="90" y="20" width="80" height="28" rx="5" fill={col+'22'} stroke={col}/>
+              <text x="130" y="36" textAnchor="middle" fill={col} fontSize="10" fontWeight="bold">Canal A</text>
+              <rect x="90" y="72" width="80" height="28" rx="5" fill={col+'22'} stroke={col}/>
+              <text x="130" y="88" textAnchor="middle" fill={col} fontSize="10" fontWeight="bold">Canal B</text>
+              <line x1="20" y1="60" x2="90" y2="34" stroke={col} strokeWidth="1.5"/>
+              <line x1="20" y1="60" x2="90" y2="86" stroke={col} strokeWidth="1.5"/>
+              <line x1="170" y1="34" x2="240" y2="60" stroke={col} strokeWidth="1.5"/>
+              <line x1="170" y1="86" x2="240" y2="60" stroke={col} strokeWidth="1.5"/>
+              <circle cx="20" cy="60" r="5" fill={col}/>
+              <circle cx="240" cy="60" r="5" fill={col}/>
+              <text x="20" y="110" fill="#64748b" fontSize="8">OR (A o B activa trip)</text>
+            </>)}
+            {sel==='2oo2'&&(<>
+              <rect x="90" y="20" width="80" height="28" rx="5" fill={col+'22'} stroke={col}/>
+              <text x="130" y="36" textAnchor="middle" fill={col} fontSize="10" fontWeight="bold">Canal A</text>
+              <rect x="90" y="72" width="80" height="28" rx="5" fill={col+'22'} stroke={col}/>
+              <text x="130" y="88" textAnchor="middle" fill={col} fontSize="10" fontWeight="bold">Canal B</text>
+              <line x1="20" y1="60" x2="90" y2="34" stroke={col} strokeWidth="1.5"/>
+              <line x1="20" y1="60" x2="90" y2="86" stroke={col} strokeWidth="1.5"/>
+              <line x1="170" y1="34" x2="240" y2="60" stroke={col} strokeWidth="1.5"/>
+              <line x1="170" y1="86" x2="240" y2="60" stroke={col} strokeWidth="1.5"/>
+              <circle cx="20" cy="60" r="5" fill={col}/>
+              <circle cx="240" cy="60" r="5" fill={col}/>
+              <text x="20" y="110" fill="#64748b" fontSize="8">AND (A Y B deben actuar)</text>
+            </>)}
+            {sel==='2oo3'&&(<>
+              {[20,56,92].map((y,i)=>(
+                <g key={i}>
+                  <rect x="90" y={y} width="80" height="26" rx="5" fill={col+'22'} stroke={col}/>
+                  <text x="130" y={y+14} textAnchor="middle" fill={col} fontSize="10" fontWeight="bold">Canal {String.fromCharCode(65+i)}</text>
+                </g>
+              ))}
+              <rect x="195" y="38" width="50" height="44" rx="5" fill="#1e2d4a" stroke="#64748b"/>
+              <text x="220" y="56" textAnchor="middle" fill="#94a3b8" fontSize="9">Votador</text>
+              <text x="220" y="68" textAnchor="middle" fill={col} fontSize="10" fontWeight="bold">2/3</text>
+              <line x1="170" y1="33" x2="195" y2="50" stroke={col} strokeWidth="1.5"/>
+              <line x1="170" y1="69" x2="195" y2="60" stroke={col} strokeWidth="1.5"/>
+              <line x1="170" y1="105" x2="195" y2="70" stroke={col} strokeWidth="1.5"/>
+              <line x1="245" y1="60" x2="270" y2="60" stroke={col} strokeWidth="2"/>
+              <polygon points="260,56 270,60 260,64" fill={col}/>
+            </>)}
+          </svg>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Comparativa cuantitativa</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:8}}>
+            {[
+              ['P(fallo seguro)/año',`${a.safe}/yr`,col],
+              ['P(fallo peligroso)/año',`${a.danger}/yr`,col],
+              ['MTTF seguro',`${a.mttfS} años`,col],
+              ['MTTF peligroso',`${a.mttfD} años`,col],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{background:'#060a14',borderRadius:5,padding:'6px 9px'}}>
+                <div style={{fontSize:16,fontWeight:700,color:c,fontFamily:'monospace'}}>{v}</div>
+                <div style={{fontSize:9,color:'#64748b'}}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginBottom:6}}>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>Ventajas:</div>
+            {a.pros.map(p=><div key={p} style={{fontSize:10,color:'#86efac',marginBottom:2}}>✓ {p}</div>)}
+          </div>
+          <div>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>Limitaciones:</div>
+            {a.cons.map(c=><div key={c} style={{fontSize:10,color:'#fca5a5',marginBottom:2}}>✗ {c}</div>)}
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Tabla resumen comparativa</div>
+          <table>
+            <thead><tr><th>Arq.</th><th>PFDavg ↓ mejor</th><th>Nuisance ↓ mejor</th><th>SIL típico</th></tr></thead>
+            <tbody>
+              {[['1oo1','Moderado','Bajo','1-2'],['1oo2','Muy bajo','Alto','2-3'],['2oo2','Alto','Muy bajo','1'],['2oo3','Bajo','Bajo','2-3']].map(([a,p,n,s])=>(
+                <tr key={a} style={{background:a===sel?col+'11':''}}>
+                  <td style={{color:a===sel?col:'#94a3b8',fontWeight:a===sel?700:400}}>{a}</td>
+                  <td style={{fontSize:10}}>{p}</td><td style={{fontSize:10}}>{n}</td><td style={{color:'#86efac'}}>{s}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 6: Factor Beta — Causas Comunes ──────────────────── */
+function Scene6(){
+  const [beta,setBeta]=useState(0.05);
+  const [ldu,setLdu]=useState(0.001);
+  const [ti,setTI]=useState(1);
+  const pfd1oo2_noCCF=Math.pow(ldu*ti,2)/3;
+  const pfd1oo2_CCF=pfd1oo2_noCCF+beta*ldu*ti/2;
+  const pfd1oo1=ldu*ti/2;
+  const improvement=pfd1oo2_noCCF>0?(pfd1oo1/pfd1oo2_CCF).toFixed(1):'-';
+  return(<div>
+    <div className="sec-title">Factor Beta y Fallos de Causa Común (CCF)</div>
+    <div className="sec-sub">Common Cause Failures · Modelo Beta · IEC 61508 Parte 6 Anexo D</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué son los CCF?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:10}}>
+            Un <span style={{color:'#f59e0b',fontWeight:600}}>fallo de causa común</span> ocurre cuando un solo evento
+            causa el fallo simultáneo de múltiples canales redundantes. Elimina el beneficio de la redundancia.
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'9px 12px',marginBottom:8}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:6}}>Causas típicas de CCF</div>
+            {[
+              ['Ambiente','Temperatura extrema, vibración, corrosión que afecta todos los canales'],
+              ['Diseño','Error en especificación común a todos los canales'],
+              ['Mantenimiento','Calibración incorrecta aplicada a todos los instrumentos'],
+              ['Software','Bug común en logic solver redundante'],
+              ['Suministro','Fallo en fuente de alimentación compartida'],
+            ].map(([t,d])=>(
+              <div key={t} style={{display:'flex',gap:6,marginBottom:4}}>
+                <div style={{width:6,height:6,borderRadius:'50%',background:'#ef4444',flexShrink:0,marginTop:3}}/>
+                <div><span style={{fontSize:10,color:'#fca5a5',fontWeight:600}}>{t}:</span> <span style={{fontSize:10,color:'#64748b'}}>{d}</span></div>
+              </div>
+            ))}
+          </div>
+          <div className="formula-box" style={{fontSize:11,lineHeight:1.8}}>
+            λ_N = (1−β) × λ &nbsp;&nbsp; [fallo independiente]<br/>
+            λ_C = β × λ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [fallo causa común]
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Simulador — Efecto del factor β en 1oo2</div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>Factor β (fracción CCF)</span>
+              <span style={{color:'#f59e0b'}}>{(beta*100).toFixed(0)}%</span>
+            </div>
+            <input type="range" min="0.01" max="0.20" step="0.01" value={beta} onChange={e=>setBeta(+e.target.value)}/>
+            <div style={{fontSize:9,color:'#475569'}}>Típico: 2–10% (IEC 61508 Tabla D.5)</div>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>λ_DU (tasa peligrosa no detectada)</span>
+              <span style={{color:'#f59e0b'}}>{ldu.toFixed(4)}/año</span>
+            </div>
+            <input type="range" min="0.0005" max="0.02" step="0.0005" value={ldu} onChange={e=>setLdu(+e.target.value)}/>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>Intervalo de prueba TI</span>
+              <span style={{color:'#f59e0b'}}>{ti} año(s)</span>
+            </div>
+            <input type="range" min="1" max="5" step="1" value={ti} onChange={e=>setTI(+e.target.value)}/>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6}}>
+            {[
+              ['1oo1 (base)',pfd1oo1.toExponential(2),'#94a3b8'],
+              ['1oo2 sin CCF',pfd1oo2_noCCF.toExponential(2),'#22c55e'],
+              ['1oo2 con β',pfd1oo2_CCF.toExponential(2),'#f59e0b'],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{background:'#060a14',borderRadius:5,padding:'7px 8px',textAlign:'center'}}>
+                <div style={{fontSize:13,fontWeight:700,color:c,fontFamily:'monospace'}}>{v}</div>
+                <div style={{fontSize:9,color:'#475569',marginTop:2}}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:8,background:'#f59e0b11',border:'1px solid #f59e0b33',borderRadius:6,padding:'7px 10px',fontSize:11}}>
+            Con β={Math.round(beta*100)}%, la mejora real de 1oo2 sobre 1oo1 es <span style={{color:'#f59e0b',fontWeight:700}}>{improvement}×</span> (no 50× teórico sin CCF).
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Medidas para reducir CCF (IEC 61508)</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
+            {[['Separación física','Canales en diferentes áreas/cubiertas'],
+              ['Tecnología diversa','Diferentes fabricantes o principios de medición'],
+              ['Fuentes independientes','Alimentación separada por canal'],
+              ['Procedimientos','Calibración y test en diferentes equipos y fechas']
+            ].map(([t,d])=>(
+              <div key={t} style={{background:'#060a14',borderRadius:5,padding:'7px 9px'}}>
+                <div style={{fontSize:10,color:'#3b82f6',fontWeight:600,marginBottom:2}}>{t}</div>
+                <div style={{fontSize:10,color:'#64748b'}}>{d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 7: Ejemplo de Diseño SIF ────────────────────────── */
+function Scene7(){
+  const [ti,setTI]=useState(1);
+  const components=[
+    {name:'Transmisor (Tx)',icon:'📡',lambdaDU:0.00080,lambdaDD:0.0010,lambdaS:0.00800,mtbf:102,pct:20,sil:'SIL 3'},
+    {name:'Barrera / Isolador',icon:'🔌',lambdaDU:0.00019,lambdaDD:0.0014,lambdaS:0.00159,mtbf:314,pct:10,sil:'SIL 3'},
+    {name:'PLC de Seguridad',icon:'🖥',lambdaDU:0.00001,lambdaDD:0.0001,lambdaS:0.00135,mtbf:685,pct:25,sil:'SIL 3'},
+    {name:'Válvula ESD',icon:'🔧',lambdaDU:0.00218,lambdaDD:0.0001,lambdaS:0.0025,mtbf:500,pct:35,sil:'SIL 2'},
+    {name:'Fuente de Poder',icon:'⚡',lambdaDU:0.00005,lambdaDD:0.0005,lambdaS:0.0005,mtbf:1000,pct:10,sil:'SIL 3'},
+  ];
+  const totalDU=components.reduce((s,c)=>s+c.lambdaDU,0);
+  const pfd=totalDU*ti/2;
+  const rrf=Math.round(1/pfd);
+  const sil=pfd<1e-3?3:pfd<1e-2?2:pfd<0.1?1:0;
+  const silColor=sil===3?'#22c55e':sil===2?'#3b82f6':sil===1?'#f59e0b':'#ef4444';
+  return(<div>
+    <div className="sec-title">Ejemplo de Diseño de SIF</div>
+    <div className="sec-sub">Tx + Barrera + PLC + Válvula ESD · Arquitectura 1oo1 · Cálculo completo IEC 61511</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Componentes del SIF (Loop 1oo1)</div>
+          <div style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',marginBottom:2}}>
+              <span>Intervalo de prueba TI</span>
+              <span style={{color:'#f59e0b'}}>{ti} año(s)</span>
+            </div>
+            <input type="range" min="1" max="5" step="1" value={ti} onChange={e=>setTI(+e.target.value)}/>
+          </div>
+          <table>
+            <thead><tr><th>Componente</th><th>λ_DU /año</th><th>PFDavg</th><th>%</th><th>Cert.</th></tr></thead>
+            <tbody>
+              {components.map(c=>{
+                const pfdC=c.lambdaDU*ti/2;
+                return(<tr key={c.name}>
+                  <td><span style={{marginRight:4}}>{c.icon}</span>{c.name}</td>
+                  <td style={{fontFamily:'monospace',color:'#ef4444',fontSize:10}}>{c.lambdaDU.toFixed(5)}</td>
+                  <td style={{fontFamily:'monospace',color:'#f59e0b',fontSize:10}}>{pfdC.toFixed(5)}</td>
+                  <td style={{color:'#64748b'}}>{c.pct}%</td>
+                  <td><span className="tag tag-green">{c.sil}</span></td>
+                </tr>);
+              })}
+              <tr style={{background:'#f59e0b11',fontWeight:700}}>
+                <td style={{color:'#f59e0b'}}>TOTAL SIF</td>
+                <td style={{fontFamily:'monospace',color:'#ef4444',fontSize:10}}>{totalDU.toFixed(5)}</td>
+                <td style={{fontFamily:'monospace',color:'#f59e0b',fontSize:10}}>{pfd.toFixed(5)}</td>
+                <td style={{color:'#64748b'}}>100%</td>
+                <td><span style={{color:silColor,fontWeight:700}}>SIL {sil}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Resultado del análisis SIF</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            <div style={{background:'#060a14',borderRadius:7,padding:'10px',textAlign:'center'}}>
+              <div style={{fontSize:24,fontWeight:700,color:'#f59e0b',fontFamily:'monospace'}}>{pfd.toExponential(2)}</div>
+              <div style={{fontSize:10,color:'#64748b',marginTop:2}}>PFDavg total (TI={ti}a)</div>
+            </div>
+            <div style={{background:'#060a14',borderRadius:7,padding:'10px',textAlign:'center'}}>
+              <div style={{fontSize:24,fontWeight:700,color:silColor}}>{rrf.toLocaleString()}</div>
+              <div style={{fontSize:10,color:'#64748b',marginTop:2}}>RRF</div>
+            </div>
+          </div>
+          <div style={{textAlign:'center',background:silColor+'22',border:`1px solid ${silColor}55`,borderRadius:8,padding:'10px',fontSize:16,fontWeight:700,color:silColor,marginBottom:10}}>
+            Resultado: SIL {sil}
+          </div>
+          <div style={{background:'#060a14',borderRadius:6,padding:'9px 11px'}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:5}}>Consideraciones clave (GMI SIL Manual)</div>
+            {[
+              'El SIL del SIF es determinado por el componente más débil — la válvula ESD domina (35% del PFD).',
+              `Con TI=${ti}a, el 92% del presupuesto de PFD está en la válvula. Reducir TI de prueba en válvulas es la acción más efectiva.`,
+              'Si se necesita SIL 2: redundar la válvula (1oo2) reduce su PFDavg en ~50× neto (considera β=5%).',
+              'Los cuerpos certificadores (TÜV, exida, FM) exigen documentación de cada componente en el Safety Manual.',
+            ].map((t,i)=>(
+              <div key={i} style={{display:'flex',gap:6,marginBottom:5}}>
+                <div style={{fontSize:9,color:'#f59e0b',flexShrink:0,marginTop:1}}>▸</div>
+                <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.4}}>{t}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 8: Análisis de Consecuencias ─────────────────────── */
+function Scene8(){
+  const [releaseType,setRelease]=useState('gas');
+  const gasOutcomes=[
+    {name:'Jet Fire',prob:'40%',color:'#f97316',desc:'Ignición inmediata — llama continua, daño térmico localizado'},
+    {name:'VCE (Vapor Cloud Explosion)',prob:'15%',color:'#ef4444',desc:'Ignición retardada — onda de presión, daño extenso'},
+    {name:'Flash Fire',prob:'25%',color:'#eab308',desc:'Ignición retardada laminar — sin onda de presión, daño térmico'},
+    {name:'Nube tóxica dispersión',prob:'20%',color:'#a78bfa',desc:'Sin ignición — exposición tóxica, afecta área downwind'},
+  ];
+  const liqOutcomes=[
+    {name:'Pool Fire',prob:'35%',color:'#f97316',desc:'Líquido inflamable en dique — combustión controlada, daño térmico'},
+    {name:'BLEVE/Fireball',prob:'5%',color:'#ef4444',desc:'Explosión de recipiente presurizados — bola de fuego rápida'},
+    {name:'Flash Fire',prob:'20%',color:'#eab308',desc:'Vapores ignitados antes de dispersión completa'},
+    {name:'Derrame tóxico',prob:'40%',color:'#a78bfa',desc:'Líquido tóxico — contaminación suelo/agua, exposición dérmica'},
+  ];
+  const outcomes=releaseType==='gas'?gasOutcomes:liqOutcomes;
+  return(<div>
+    <div className="sec-title">Análisis de Consecuencias</div>
+    <div className="sec-sub">Event Trees · BLEVE · VCE · Dispersión tóxica · Modelado de consecuencias para SIL</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {[['gas','Liberación de gas'],['liq','Liberación de líquido']].map(([k,l])=>(
+        <button key={k} className={`btn-outline${releaseType===k?' active':''}`} onClick={()=>setRelease(k)}>{l}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Árbol de Eventos — {releaseType==='gas'?'Gas':'Líquido'}</div>
+          <div style={{position:'relative',paddingLeft:20}}>
+            <div style={{background:'#ef444422',border:'1px solid #ef444455',borderRadius:5,padding:'5px 10px',marginBottom:10,fontSize:11,color:'#fca5a5',fontWeight:600}}>
+              ⚠️ Evento iniciador: Pérdida de contención ({releaseType==='gas'?'rotura tubería, válv. abierta':'derrame, sobrellenado'})
+            </div>
+            {outcomes.map((o,i)=>(
+              <div key={o.name} style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:8}}>
+                <div style={{width:3,background:o.color,alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}}>
+                    <span style={{fontSize:11,color:o.color,fontWeight:700}}>{o.name}</span>
+                    <span style={{fontSize:10,color:'#f59e0b',fontFamily:'monospace'}}>{o.prob}</span>
+                  </div>
+                  <div className="meter-bar">
+                    <div className="meter-fill" style={{width:o.prob,background:o.color}}/>
+                  </div>
+                  <div style={{fontSize:9,color:'#64748b',marginTop:2}}>{o.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">BLEVE y VCE — los eventos más severos</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+            <div style={{background:'#7f1d1d22',border:'1px solid #ef444433',borderRadius:6,padding:'9px 10px'}}>
+              <div style={{fontSize:11,color:'#ef4444',fontWeight:700,marginBottom:4}}>BLEVE</div>
+              <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5}}>Boiling Liquid Expanding Vapor Explosion. Recipiente bajo presión expuesto a fuego externo → sobrepresión → ruptura catastrófica → bola de fuego. Duración: 5–30 seg.</div>
+            </div>
+            <div style={{background:'#78350f22',border:'1px solid #f9731633',borderRadius:6,padding:'9px 10px'}}>
+              <div style={{fontSize:11,color:'#f97316',fontWeight:700,marginBottom:4}}>VCE</div>
+              <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5}}>Vapor Cloud Explosion. Nube de gas inflamable ignita tardíamente en condición confinada — frente de llama supersónico, onda de presión destructiva. Ej: Texas City 2005.</div>
+            </div>
+          </div>
+          <div className="card-h">Herramientas para estimar consecuencias</div>
+          <table>
+            <thead><tr><th>Modelo</th><th>Para qué</th></tr></thead>
+            <tbody>
+              {[['TNT Equivalency','Carga de presión VCE (conservador)'],
+                ['TNO Multi-Energy','Explosión en espacio confinado'],
+                ['Gaussian Dispersion','Dispersión tóxica — zona IDLH'],
+                ['Probit functions','Probabilidad de lesión/muerte por sobrepresión o temperatura'],
+                ['ALOHA / PHAST','Software de modelado de consecuencias'],
+              ].map(([m,d])=>(
+                <tr key={m}><td style={{color:'#f59e0b',fontSize:10}}>{m}</td><td style={{fontSize:10,color:'#94a3b8'}}>{d}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Conexión con SIL — ciclo completo</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.5}}>
+            El análisis de consecuencias alimenta el <span style={{color:'#f59e0b'}}>LOPA</span> (Layer of Protection Analysis):
+            frecuencia del evento iniciador × severidad de consecuencias → <span style={{color:'#f59e0b'}}>RRF requerido</span> →
+            asignación de SIL objetivo para el SIS.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 9: Ciclo de Vida SIS (IEC 61511) ─────────────────── */
+function Scene9(){
+  const [phase,setPhase]=useState(0);
+  const phases=[
+    {n:1,name:'Análisis de Riesgo del Proceso',tag:'HAZOP/LOPA',color:'#3b82f6',desc:'Identificar peligros y escenarios de accidente. HAZOP (What-if sistemático) + LOPA para cuantificar frecuencia de eventos. Resultado: SIL objetivo por SIF.'},
+    {n:2,name:'Especificación de Req. de Seguridad (SRS)',tag:'SRS',color:'#6366f1',desc:'Documentar cada SIF: condición de activación, acción, SIL requerido, tiempo de respuesta, modos de fallo, restricciones. Documento contractual entre dueño y diseñador.'},
+    {n:3,name:'Diseño e Ingeniería del SIS',tag:'Diseño',color:'#f59e0b',desc:'Selección de arquitectura MooN, dispositivos, lógica. Cálculo de PFDavg. Verificación de que el SIL de diseño ≥ SIL objetivo.'},
+    {n:4,name:'Instalación y Comisionamiento',tag:'Instalación',color:'#f97316',desc:'Instalación física, pruebas de lazo (Loop Check), prueba de funcionalidad (FAT/SAT). Documentar cualquier desviación.'},
+    {n:5,name:'Validación de Seguridad Funcional',tag:'FSA',color:'#22c55e',desc:'Verificación formal de que el SIS cumple el SRS. Puede incluir auditoría por tercero (TÜV, exida). Requisito obligatorio IEC 61511-1 Cl.15.'},
+    {n:6,name:'Operación y Mantenimiento',tag:'O&M',color:'#a78bfa',desc:'Proof tests periódicos según TI calculado. Registro de fallos. Gestión de bypass. Revisión periódica de SIL (Management of Functional Safety).'},
+    {n:7,name:'Modificación / Descomisionamiento',tag:'MOC',color:'#64748b',desc:'Toda modificación requiere re-evaluación del SIL. Management of Change (MOC). Al descomisionar, asegurar que el SIS no sea retirado antes de eliminación del peligro.'},
+  ];
+  const p=phases[phase];
+  return(<div>
+    <div className="sec-title">Ciclo de Vida del SIS (IEC 61511)</div>
+    <div className="sec-sub">Safety Lifecycle · 7 fases · Gestión de Seguridad Funcional · Requisito normativo</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Fases del ciclo de vida — haz clic</div>
+          {phases.map((ph,i)=>(
+            <div key={ph.n} onClick={()=>setPhase(i)} style={{
+              display:'flex',alignItems:'center',gap:8,padding:'6px 9px',
+              borderRadius:6,cursor:'pointer',marginBottom:4,
+              background:phase===i?ph.color+'22':'transparent',
+              border:`1px solid ${phase===i?ph.color+'88':'#1e2d4a'}`,
+              transition:'all .2s'
+            }}>
+              <div style={{width:22,height:22,borderRadius:'50%',background:phase===i?ph.color:ph.color+'44',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:phase===i?'#080c18':'#94a3b8',flexShrink:0}}>{ph.n}</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:10,fontWeight:phase===i?700:400,color:phase===i?ph.color:'#94a3b8'}}>{ph.name}</div>
+              </div>
+              <span style={{background:ph.color+'33',color:ph.color,fontSize:8,padding:'1px 5px',borderRadius:3,fontWeight:700}}>{ph.tag}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <div style={{width:36,height:36,borderRadius:'50%',background:p.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700,color:'#080c18'}}>{p.n}</div>
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:p.color}}>{p.name}</div>
+              <span style={{background:p.color+'33',color:p.color,fontSize:9,padding:'1px 6px',borderRadius:3,fontWeight:700}}>{p.tag}</span>
+            </div>
+          </div>
+          <div style={{fontSize:12,color:'#cbd5e1',lineHeight:1.6,marginBottom:12}}>{p.desc}</div>
+          {phase===0&&(<div style={{background:'#060a14',borderRadius:6,padding:'8px 11px'}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:5}}>Metodologías de análisis de riesgo</div>
+            {[['HAZOP','Hazard and Operability Study — análisis sistemático de desvíos de proceso'],
+              ['LOPA','Layer of Protection Analysis — calcula frecuencia de evento y RRF necesario'],
+              ['FMEA','Failure Mode and Effects Analysis — a nivel de componente'],
+              ['FTA','Fault Tree Analysis — árbol de fallos para calcular tope frecuencia'],
+            ].map(([m,d])=>(
+              <div key={m} style={{display:'flex',gap:6,marginBottom:4}}>
+                <span style={{color:'#3b82f6',fontSize:10,fontWeight:700,width:40,flexShrink:0}}>{m}</span>
+                <span style={{fontSize:10,color:'#64748b'}}>{d}</span>
+              </div>
+            ))}
+          </div>)}
+          {phase===2&&(<div style={{background:'#060a14',borderRadius:6,padding:'8px 11px'}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:4}}>Distribución típica PFDavg (1oo1)</div>
+            {[['Válvula ESD','35%','#ef4444'],['PLC Safety','25%','#f59e0b'],['Transmisor','20%','#3b82f6'],['Barrera','10%','#22c55e'],['Fuente poder','10%','#a78bfa']].map(([c,p,col])=>(
+              <div key={c} style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
+                <div style={{width:50,fontSize:9,color:'#64748b'}}>{c}</div>
+                <div className="meter-bar" style={{flex:1}}>
+                  <div className="meter-fill" style={{width:p,background:col}}/>
+                </div>
+                <div style={{fontSize:9,color:col,width:25}}>{p}</div>
+              </div>
+            ))}
+          </div>)}
+          {phase===5&&(<div style={{background:'#060a14',borderRadius:6,padding:'8px 11px'}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:700,marginBottom:4}}>Intervalos típicos de Proof Test</div>
+            <table>
+              <thead><tr><th>Componente</th><th>TI recomendado</th></tr></thead>
+              <tbody>
+                {[['Transmisor','1 año'],['Barrera','10 años'],['PLC Safety','20 años'],['Válvula ESD','4 meses'],['Fuente poder','5 años']].map(([c,t])=>(
+                  <tr key={c}><td style={{color:'#94a3b8'}}>{c}</td><td style={{color:'#f59e0b',fontFamily:'monospace'}}>{t}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>)}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Documentos clave del Safety Lifecycle</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+            {['HAZOP Report','SRS','SIS Design Basis','FAT Protocol','SAT Protocol','FSA Report','Functional Safety Manual','Proof Test Procedure','MOC Form'].map(d=>(
+              <span key={d} className="tag tag-blue">{d}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 10: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Qué significa PFDavg en los sistemas SIS?',opts:['Probabilidad de Fallo en Demanda (promedio)','Probabilidad de Fallo en Diagnóstico','Porcentaje de Fallo Detectado','Promedio de Fallos por Diagnóstico'],ans:0},
+  {q:'En la arquitectura 1oo2, ¿qué ocurre si UN canal falla de forma peligrosa?',opts:['El SIF falla (ya no puede actuar)','El otro canal aún puede ejecutar el trip','Ambos canales se inhabilitan','El sistema entra en modo degradado sin trip posible'],ans:1},
+  {q:'¿Qué representa el factor β en el modelo de causas comunes?',opts:['La fracción de fallos que son peligrosos','La fracción de fallos que afectan simultáneamente a múltiples canales redundantes','La cobertura de diagnóstico del PLC','El porcentaje de pruebas exitosas'],ans:1},
+  {q:'¿Cuál es la fórmula simplificada del PFDavg para arquitectura 1oo1?',opts:['λ_DU × TI²/3','λ_DU × TI/2','2 × λ_DU × TI','λ_DU / TI'],ans:1},
+  {q:'La Safe Failure Fraction (SFF) se calcula como:',opts:['λ_DU / λ_TOT','(λ_DD + λ_SD + λ_SU) / λ_TOT','λ_D / λ_S','1 − λ_TOT'],ans:1},
+  {q:'¿Qué diferencia al ESD del sistema F&G en su modo de operación?',opts:['ESD opera normalmente de-energizado; F&G normalmente energizado','ESD normalmente energizado (de-energiza para trip); F&G normalmente de-energizado (energiza para actuar)','Ambos operan del mismo modo pero en diferentes zonas','ESD usa sensores digitales; F&G solo analógicos'],ans:1},
+  {q:'Un RRF de 1000 corresponde a:',opts:['SIL 1','SIL 2','SIL 3','SIL 4'],ans:1},
+  {q:'¿Cuál arquitectura ofrece el mejor balance entre baja probabilidad de fallo peligroso Y baja tasa de nuisance trips?',opts:['1oo1','1oo2','2oo2','2oo3'],ans:3},
+  {q:'En el ejemplo de diseño SIF (Tx+Barrera+PLC+Válvula), ¿qué componente domina el PFDavg total?',opts:['El transmisor (20%)','El PLC de seguridad (25%)','La válvula ESD (35%)','La barrera/aislador (10%)'],ans:2},
+  {q:'¿Qué documento formaliza los requisitos de cada SIF, incluyendo SIL objetivo y condiciones de activación?',opts:['HAZOP Report','SRS (Safety Requirements Specification)','FAT Protocol','FSA Report'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    if(i===q.ans)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(qi+1>=quizData.length)setDone(true);
+      else{setQi(qi+1);setSel(null);}
+    },1200);
+  };
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>
+      {score>=8?'Excelente dominio de Seguridad Funcional SIL. Listo para calcular PFDavg en planta.':score>=6?'Buen nivel. Repasa los cálculos de PFDavg y las diferencias entre arquitecturas.':'Refuerza los conceptos de λ_DU, SFF y arquitecturas MooN.'}
+    </div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Seguridad Funcional SIL</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length} · IEC 61508 / IEC 61511 · GMI SIL Manual</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>
+      {quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}
+    </div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}>
+      <div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div>
+    </div>
+    <div>{q.opts.map((o,i)=>{
+      let cls='quiz-opt';
+      if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}
+      return(<div key={i} className={cls} onClick={()=>choose(i)}>
+        <div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+        {o}
+      </div>);
+    })}</div>
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+/* ── NAVEGACIÓN PRINCIPAL ────────────────────────────────────── */
+const SCENES=[
+  {id:1,label:'1. Capas de Protección IPL',comp:Scene1},
+  {id:2,label:'2. Fiabilidad y λ',comp:Scene2},
+  {id:3,label:'3. Modos de Falla y SFF',comp:Scene3},
+  {id:4,label:'4. PFDavg y Niveles SIL',comp:Scene4},
+  {id:5,label:'5. Arquitecturas MooN',comp:Scene5},
+  {id:6,label:'6. Factor Beta (CCF)',comp:Scene6},
+  {id:7,label:'7. Ejemplo Diseño SIF',comp:Scene7},
+  {id:8,label:'8. Análisis Consecuencias',comp:Scene8},
+  {id:9,label:'9. Ciclo de Vida IEC 61511',comp:Scene9},
+  {id:10,label:'10. Quiz',comp:SceneQuiz},
+];
+
+function App(){
+  const [scene,setScene]=useState(1);
+  const S=SCENES.find(s=>s.id===scene);
+  const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Clase 3.2 — Seguridad Funcional SIL Avanzado</div>
+        <div className="topbar-sub">IEC 61508 · IEC 61511 · SIS Design · PFDavg · Arquitecturas MooN · GMI SIL Manual (3ª ed.)</div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
