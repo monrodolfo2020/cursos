@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.3 — PFD y tasas de falla</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#3b82f6;padding:6px 8px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;}
+td{padding:5px 8px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const tipos=[
+    {tipo:'λ_DD',nombre:'Dangerous Detected',color:'#f59e0b',desc:'Falla peligrosa detectada por diagnósticos automáticos. El sistema la reconoce y puede ir a estado seguro o emitir alarma de mantenimiento. No contribuye a PFDavg.'},
+    {tipo:'λ_DU',nombre:'Dangerous Undetected',color:'#ef4444',desc:'Falla peligrosa NO detectada. El sistema parece funcionar pero fallará al ser demandado. Es la principal contribuyente a PFDavg. Solo se descubre en el proof test.'},
+    {tipo:'λ_SD',nombre:'Safe Detected',color:'#22c55e',desc:'Falla segura detectada. El sistema entra automáticamente en estado seguro (ej: salida de relé se abre). Puede causar falsos trips pero no es peligrosa.'},
+    {tipo:'λ_SU',nombre:'Safe Undetected',color:'#3b82f6',desc:'Falla segura no detectada. No pone en peligro el proceso directamente, pero puede causar comportamiento inesperado. Contribuye a la tasa de falsos trips.'},
+  ];
+  return(<div>
+    <div className="sec-title">Modos de Falla y Tasas de Falla</div>
+    <div className="sec-sub">λ_DD, λ_DU, λ_SD, λ_SU — la base de los cálculos de PFDavg</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        {tipos.map((t,i)=>(
+          <div key={i} className="card" style={{borderLeft:`3px solid ${t.color}`,padding:'10px 12px',marginBottom:8}}>
+            <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:5}}>
+              <span style={{fontFamily:'monospace',fontSize:13,fontWeight:700,color:t.color}}>{t.tipo}</span>
+              <span style={{fontSize:11,color:'#94a3b8'}}>{t.nombre}</span>
+            </div>
+            <p style={{fontSize:11,color:'#cbd5e1',lineHeight:1.5}}>{t.desc}</p>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Relaciones entre modos de falla</div>
+          <div style={{background:'#060a14',borderRadius:8,padding:12,fontFamily:'monospace',fontSize:12,lineHeight:2}}>
+            <div style={{color:'#e2e8f0'}}>λ_total = λ_DD + λ_DU + λ_SD + λ_SU</div>
+            <div style={{color:'#60a5fa'}}>λ_D = λ_DD + λ_DU <span style={{color:'#64748b',fontSize:10}}>(fallas peligrosas)</span></div>
+            <div style={{color:'#60a5fa'}}>λ_S = λ_SD + λ_SU <span style={{color:'#64748b',fontSize:10}}>(fallas seguras)</span></div>
+            <div style={{color:'#f59e0b',marginTop:4}}>DC = λ_DD / (λ_DD + λ_DU)</div>
+            <div style={{color:'#94a3b8',fontSize:10}}><em>DC = Diagnostic Coverage (cobertura diagnóstica)</em></div>
+            <div style={{color:'#f59e0b',marginTop:4}}>SFF = (λ_DD + λ_SD + λ_SU) / λ_total</div>
+            <div style={{color:'#94a3b8',fontSize:10}}><em>SFF = Safe Failure Fraction</em></div>
+          </div>
+        </div>
+        <div className="card" style={{marginTop:8}}>
+          <div className="card-h">Tasas típicas de dispositivos</div>
+          <table>
+            <thead><tr><th>Dispositivo</th><th>λ_DU (fallas/h)</th><th>MTTF_D</th></tr></thead>
+            <tbody>
+              {[
+                ['Transmisor de presión','5×10⁻⁷','228 años'],
+                ['Transmisor de temperatura','3×10⁻⁷','380 años'],
+                ['Válvula ESD (λ_DU)','1×10⁻⁶','114 años'],
+                ['PLC SIS (λ_DU módulo)','2×10⁻⁷','570 años'],
+                ['Relé de seguridad','1×10⁻⁷','1,141 años'],
+              ].map((r,i)=>(
+                <tr key={i}><td>{r[0]}</td><td style={{fontFamily:'monospace',color:'#f59e0b'}}>{r[1]}</td><td style={{color:'#94a3b8'}}>{r[2]}</td></tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{fontSize:9,color:'#475569',marginTop:4}}>Fuente: OREDA, FMEDA de fabricantes. λ_DU ≈ λ_D × (1 - DC)</p>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const [ldu,setLdu]=useState(1e-6);
+  const [ti,setTi]=useState(8760);
+  const pfd1oo1=(ldu*ti/2);
+  const pfd1oo2=(ldu*ti)**2/3;
+  const pfd2oo3=ldu**2*ti**2;
+  const getSIL=(p)=>p<1e-4?'SIL 3':p<1e-3?'SIL 2':p<1e-2?'SIL 1':'< SIL';
+  const silC=['#64748b','#22c55e','#3b82f6','#f59e0b'];
+  const silIdx=(p)=>p<1e-4?3:p<1e-3?2:p<1e-2?1:0;
+  return(<div>
+    <div className="sec-title">Cálculo de PFDavg por Arquitectura</div>
+    <div className="sec-sub">Fórmulas simplificadas para sistemas en modo de baja demanda (IEC 61511)</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">Parámetros</div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:3}}>
+              <span>λ_DU del subsistema</span>
+              <span style={{color:'#3b82f6',fontFamily:'monospace',fontWeight:700}}>{ldu.toExponential(1)} /h</span>
+            </div>
+            <input type="range" min={1e-8} max={1e-5} step={1e-8} value={ldu} onChange={e=>setLdu(+e.target.value)}
+              style={{WebkitAppearance:'none',width:'100%',height:4,background:'#1e3a5f',borderRadius:2,outline:'none'}}/>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:3}}>
+              <span>Intervalo de prueba (TI)</span>
+              <span style={{color:'#3b82f6',fontFamily:'monospace',fontWeight:700}}>{ti.toLocaleString()} h ({(ti/8760).toFixed(1)} años)</span>
+            </div>
+            <input type="range" min={720} max={26280} step={720} value={ti} onChange={e=>setTi(+e.target.value)}
+              style={{WebkitAppearance:'none',width:'100%',height:4,background:'#1e3a5f',borderRadius:2,outline:'none'}}/>
+          </div>
+          <div className="def-box">
+            <span style={{color:'#3b82f6',fontWeight:700}}>Fórmulas:</span><br/>
+            <span style={{fontFamily:'monospace',color:'#60a5fa'}}>1oo1: PFD ≈ λ_DU × TI/2</span><br/>
+            <span style={{fontFamily:'monospace',color:'#60a5fa'}}>1oo2: PFD ≈ (λ_DU × TI)²/3</span><br/>
+            <span style={{fontFamily:'monospace',color:'#60a5fa'}}>2oo3: PFD ≈ (λ_DU × TI)²</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Resultados por arquitectura</div>
+          {[
+            {arq:'1oo1',desc:'Un elemento, sin redundancia',pfd:pfd1oo1},
+            {arq:'1oo2',desc:'Dos elementos en paralelo (OR)',pfd:pfd1oo2},
+            {arq:'2oo3',desc:'Tres elementos, voto 2 de 3',pfd:pfd2oo3},
+          ].map((a,i)=>(
+            <div key={i} style={{padding:'8px 0',borderBottom:'1px solid #1e3a5f22'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                <div>
+                  <span style={{fontFamily:'monospace',fontSize:13,fontWeight:700,color:'#e2e8f0'}}>{a.arq} </span>
+                  <span style={{fontSize:10,color:'#64748b'}}>{a.desc}</span>
+                </div>
+                <span style={{fontSize:14,fontWeight:700,color:silC[silIdx(a.pfd)]}}>{getSIL(a.pfd)}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:11,fontFamily:'monospace',color:'#f59e0b'}}>PFD = {a.pfd.toExponential(2)}</span>
+                <div style={{flex:1,height:4,background:'#1e3a5f',borderRadius:2}}>
+                  <div style={{height:'100%',width:`${Math.min(100,a.pfd*1000)}%`,background:silC[silIdx(a.pfd)],borderRadius:2}}/>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="def-box" style={{marginTop:8}}>
+            <span style={{color:'#3b82f6',fontWeight:700}}>Observación clave:</span> La arquitectura 1oo2 mejora el PFD en ~(λ_DU × TI)/3 respecto a 1oo1. El 2oo3 mejora aún más pero aumenta los falsos trips.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Modos de falla λ',comp:<Scene1/>},
+  {id:2,label:'Calculadora PFDavg',comp:<Scene2/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 3 · Lección 3.3 — Probabilidad de falla en demanda (PFD) y tasas de falla</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

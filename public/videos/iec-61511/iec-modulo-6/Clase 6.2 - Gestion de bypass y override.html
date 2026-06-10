@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 6.2 — Gestión de Bypass y Override</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const tipos=[
+    {name:'Bypass de mantenimiento',color:'#f59e0b',desc:'Inhibe temporalmente una SIF para realizar mantenimiento o proof test. El proceso puede seguir operando con medidas compensatorias.',uso:'Proof test, calibración, sustitución de equipos',riesgo:'La función de seguridad queda deshabilitada — riesgo aumentado',control:'PTW + tiempo máximo definido en SRS + alarma activa en sala control'},
+    {name:'Bypass de proceso (override)',color:'#ef4444',desc:'Inhibe una SIF durante condiciones de proceso no normales (arranque, paro, transición). Generalmente temporizado y con llave de autorización.',uso:'Arranque de planta, condiciones de proceso fuera de rango normal',riesgo:'El SIS no responderá a la condición peligrosa si ocurre durante el bypass',control:'Llave supervisora + temporizador automático + registro en DCS'},
+    {name:'Bypass de ingeniería',color:'#8b5cf6',desc:'Bypass permanente o de largo plazo durante modificaciones al sistema. Requiere MOC formal y evaluación del impacto en el SIL.',uso:'Modificaciones, reemplazos, expansiones del SIS',riesgo:'Impacto en la integridad del SIL si se extiende sin evaluación',control:'MOC aprobado + revalidación SIL + dossier actualizado'},
+  ];
+  const [sel,setSel]=useState(0);
+  return(<div>
+    <div className="sec-title">Tipos de Bypass en un SIS</div>
+    <div className="sec-sub">IEC 61511 §16.2.5 — Todo bypass debe ser gestionado con controles formales</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div style={{display:'flex',flexDirection:'column',gap:5,marginBottom:8}}>
+          {tipos.map((t,i)=>(
+            <button key={i} onClick={()=>setSel(i)}
+              style={{background:sel===i?t.color+'22':'transparent',color:sel===i?t.color:'#64748b',border:`1px solid ${sel===i?t.color:t.color+'44'}`,borderRadius:7,padding:'8px 12px',cursor:'pointer',fontSize:11,fontWeight:700,textAlign:'left',transition:'all .2s'}}>
+              {t.name}
+            </button>
+          ))}
+        </div>
+        <div className="def-box">
+          <span style={{color:'#3b82f6',fontWeight:700}}>IEC 61511 §16.2.5:</span> El SIS debe tener medios para indicar claramente cuando una SIF está en bypass. La condición de bypass debe ser visible en sala de control.
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderLeft:`3px solid ${tipos[sel].color}`}}>
+          <div style={{fontSize:15,fontWeight:700,color:tipos[sel].color,marginBottom:8}}>{tipos[sel].name}</div>
+          <p style={{fontSize:12,color:'#cbd5e1',lineHeight:1.6,marginBottom:8}}>{tipos[sel].desc}</p>
+          {[
+            {l:'Uso típico',v:tipos[sel].uso,c:'#22d3ee'},
+            {l:'Riesgo principal',v:tipos[sel].riesgo,c:'#ef4444'},
+            {l:'Controles requeridos',v:tipos[sel].control,c:'#22c55e'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid #1e3a5f22',fontSize:11}}>
+              <span style={{color:r.c,fontWeight:700}}>{r.l}: </span>
+              <span style={{color:'#cbd5e1'}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const reqs=[
+    {req:'Autorización formal con PTW',detail:'Todo bypass requiere un Permiso de Trabajo firmado por el supervisor autorizado de seguridad funcional.',critico:true},
+    {req:'Registro de inicio y fin',detail:'El sistema debe registrar con timestamp cuándo se activa y desactiva cada bypass. Registro inmutable en el DCS o SIS.',critico:true},
+    {req:'Alarma visible en sala de control',detail:'Una alarma activa debe permanecer durante todo el tiempo que una SIF esté en bypass. No puede ser silenciada sin registro.',critico:true},
+    {req:'Tiempo máximo definido',detail:'El SRS debe definir el tiempo máximo de bypass permitido para cada SIF. Superar ese tiempo requiere autorización adicional.',critico:true},
+    {req:'Medidas compensatorias',detail:'Mientras una SIF está en bypass, deben implementarse medidas compensatorias (rondas adicionales, vigilancia manual, reducción de producción).',critico:false},
+    {req:'Revisión periódica del estado',detail:'El operador debe verificar cada turno que los bypasses activos sean válidos y que las medidas compensatorias estén en vigor.',critico:false},
+    {req:'Cierre formal y verificación',detail:'Al retirar el bypass se debe verificar que la SIF volvió a operar correctamente y registrar el cierre.',critico:true},
+  ];
+  return(<div>
+    <div className="sec-title">Requisitos de Control de Bypass</div>
+    <div className="sec-sub">Controles mínimos que IEC 61511 exige para la gestión de bypass</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        {reqs.slice(0,4).map((r,i)=>(
+          <div key={i} className="card" style={{borderLeft:`3px solid ${r.critico?'#ef4444':'#f59e0b'}`,marginBottom:7,padding:'10px 12px'}}>
+            <div style={{display:'flex',gap:6,alignItems:'center',marginBottom:4}}>
+              <span style={{fontSize:10,fontWeight:700,color:r.critico?'#ef4444':'#f59e0b',background:r.critico?'#ef444422':'#f59e0b22',padding:'1px 6px',borderRadius:3}}>{r.critico?'CRÍTICO':'BUENA PRÁCTICA'}</span>
+            </div>
+            <div style={{fontSize:11,fontWeight:700,color:'#e2e8f0',marginBottom:3}}>{r.req}</div>
+            <p style={{fontSize:10,color:'#64748b',lineHeight:1.4}}>{r.detail}</p>
+          </div>
+        ))}
+      </div>
+      <div>
+        {reqs.slice(4).map((r,i)=>(
+          <div key={i} className="card" style={{borderLeft:`3px solid ${r.critico?'#ef4444':'#f59e0b'}`,marginBottom:7,padding:'10px 12px'}}>
+            <div style={{display:'flex',gap:6,alignItems:'center',marginBottom:4}}>
+              <span style={{fontSize:10,fontWeight:700,color:r.critico?'#ef4444':'#f59e0b',background:r.critico?'#ef444422':'#f59e0b22',padding:'1px 6px',borderRadius:3}}>{r.critico?'CRÍTICO':'BUENA PRÁCTICA'}</span>
+            </div>
+            <div style={{fontSize:11,fontWeight:700,color:'#e2e8f0',marginBottom:3}}>{r.req}</div>
+            <p style={{fontSize:10,color:'#64748b',lineHeight:1.4}}>{r.detail}</p>
+          </div>
+        ))}
+        <div className="def-box" style={{borderColor:'#ef4444'}}>
+          <span style={{color:'#ef4444',fontWeight:700}}>Incidente real:</span> El accidente de Texas City (2005) incluyó bypasses no gestionados de alarmas de nivel. La gestión inadecuada de bypasses es una causa recurrente de accidentes industriales.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Tipos de bypass',comp:<Scene1/>},
+  {id:2,label:'Control de bypass',comp:<Scene2/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 6 · Lección 6.2 — Gestión de bypass y override en el SIS</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

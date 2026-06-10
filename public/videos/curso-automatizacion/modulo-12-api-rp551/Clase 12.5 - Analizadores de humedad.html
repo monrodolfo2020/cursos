@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 12.5 — Analizadores de Humedad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060b08;font-family:'Space Grotesk',system-ui,sans-serif;color:#eef4ef;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060b08,#0a120d);border-bottom:2px solid rgba(110,210,150,0.3);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#35b07a;}
+.topbar-sub{font-size:11px;color:#90a89a;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(110,210,150,0.1);border:1px solid rgba(110,210,150,0.25);color:#35b07a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a120d;border-right:1px solid rgba(110,210,150,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#566b5e;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#35b07a;border-left-color:#35b07a;background:rgba(110,210,150,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#eef4ef;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(110,210,150,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#35b07a;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#566b5e;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1712;border:1px solid rgba(110,210,150,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#35b07a;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060b08;border-left:3px solid #35b07a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.warn-box{background:rgba(200,90,58,0.07);border-left:3px solid #c85a3a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:6px;}
+.badge-g{background:rgba(110,210,150,0.15);color:#35b07a;border:1px solid rgba(110,210,150,0.3);}
+.badge-r{background:rgba(200,90,58,0.15);color:#c85a3a;border:1px solid rgba(200,90,58,0.3);}
+.badge-b{background:rgba(60,120,210,0.15);color:#5b9bef;border:1px solid rgba(60,120,210,0.3);}
+.badge-y{background:rgba(210,170,50,0.15);color:#d4ab40;border:1px solid rgba(210,170,50,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(110,210,150,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+.tab-btn{padding:7px 14px;border:1px solid rgba(110,210,150,0.25);border-radius:6px;background:transparent;color:#566b5e;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.tab-btn.sel{background:rgba(110,210,150,0.12);border-color:#35b07a;color:#35b07a;font-weight:600;}
+.tab-btn:hover:not(.sel){border-color:rgba(110,210,150,0.5);color:#eef4ef;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+const TECNOLOGIAS={
+  qcm:{
+    label:'Cuarzo piezoeléctrico (QCM)',
+    color:'#35b07a',
+    rango:'−100 a +20 °C punto de rocío',
+    exactitud:'±1 °C punto de rocío',
+    tiempoResp:'< 30 s (si la línea está seca)',
+    aplica:'Gas natural, gas de proceso limpio, gases industriales secos',
+    como:'Un cristal de cuarzo recubierto de material higroscópico cambia su frecuencia de oscilación al absorber agua. La variación de frecuencia es proporcional a la masa de agua adsorbida, que se correlaciona con la humedad del gas.',
+    pros:['Muy amplio rango (de −100 a +20 °C dp)','Alta exactitud para gas seco','Sin partes móviles, bajo mantenimiento'],
+    cons:['Envenenamiento por aminas, glicoles, aceites','Requiere ciclos de regeneración periódica','No apto si el gas contiene condensados líquidos'],
+  },
+  capacitivo:{
+    label:'Sensor capacitivo (Al₂O₃)',
+    color:'#5b9bef',
+    rango:'−80 a +20 °C punto de rocío',
+    exactitud:'±2 °C punto de rocío',
+    tiempoResp:'< 60 s',
+    aplica:'Gas natural, aire seco, gas de instrumento, gas de blanket',
+    como:'Una película de alúmina anodizada actúa como dieléctrico entre dos electrodos. La constante dieléctrica cambia con la adsorción de agua, alterando la capacitancia medida. La capacitancia se correlaciona con el punto de rocío.',
+    pros:['Robusto y económico','Sin regeneración si las condiciones son estables','Buen rendimiento en rango medio'],
+    cons:['Se degrada con ácidos fuertes (H₂S concentrado)','Deriva de calibración en 12–18 meses','Menos exacto que QCM en rangos muy secos (< −60 °C dp)'],
+  },
+  laser:{
+    label:'Espectroscopía TDLAS',
+    color:'#d4ab40',
+    rango:'0 a 10 000 ppm vol (ajustable)',
+    exactitud:'±1 ppm o ±2% del valor',
+    tiempoResp:'< 5 s',
+    aplica:'Gas natural en tuberías a alta presión, en línea sin extracción de muestra',
+    como:'Un láser de diodo sintonizable barre una línea de absorción específica de la molécula de H₂O en el infrarrojo cercano (1 394 nm). La absorbancia del láser es proporcional a la concentración de vapor de agua por ley de Beer-Lambert.',
+    pros:['Medición in-situ sin extracción de muestra','Sin contacto con el proceso — sin contaminación del sensor','Tiempo de respuesta muy rápido (< 5 s)'],
+    cons:['Alto costo inicial','Ventanas ópticas deben mantenerse limpias','No apto si el gas es muy sucio (opacidad óptica)'],
+  },
+  electro:{
+    label:'Célula electrolítica (P₂O₅)',
+    color:'#c85a3a',
+    rango:'0 a 5 000 ppm vol',
+    exactitud:'±5% del valor medido',
+    tiempoResp:'30–120 s',
+    aplica:'Gas de instrumentos, aire comprimido seco, gases industriales puros',
+    como:'El gas pasa sobre una película de pentóxido de difósforo (P₂O₅) que absorbe agua y la electroliza. La corriente de electrólisis (proporcionala la Ley de Faraday) es directamente proporcional al caudal de agua absorbida.',
+    pros:['Señal absoluta — no requiere calibración frecuente','Exactitud razonable para rango ppm','Medición de masa de agua (no relativa)'],
+    cons:['Muy sensible al caudal de muestra (debe controlarse exactamente)','P₂O₅ se contamina con metanol, aminas','No apto para gas con hidrocarburos condensados'],
+  },
+};
+
+function Scene1(){
+  const [sel,setSel]=useState('qcm');
+  const t=TECNOLOGIAS[sel];
+  return(<div>
+    <div className="sec-title">Tecnologías de Medición de Punto de Rocío</div>
+    <div className="sec-sub">API RP 551 §7.4 — Analizadores de humedad en gas natural y procesos industriales</div>
+    <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+      {Object.entries(TECNOLOGIAS).map(([k,v])=>(
+        <button key={k} className={`tab-btn${sel===k?' sel':''}`} onClick={()=>setSel(k)}>{v.label.split('(')[0].trim()}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h" style={{color:t.color}}>{t.label}</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
+            {[
+              {l:'RANGO',v:t.rango},
+              {l:'EXACTITUD',v:t.exactitud},
+              {l:'T. RESPUESTA',v:t.tiempoResp},
+              {l:'APLICA EN',v:t.aplica},
+            ].map((r,i)=>(
+              <div key={i} style={{background:'#060b08',borderRadius:6,padding:'7px 10px'}}>
+                <div style={{fontSize:9,color:'#566b5e',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.1em',marginBottom:3}}>{r.l}</div>
+                <div style={{fontSize:11,color:'#eef4ef',lineHeight:1.4}}>{r.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="card-h">Principio de medición</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:8}}>{t.como}</p>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <div>
+              <div className="card-h" style={{color:'#35b07a'}}>✓ Ventajas</div>
+              {t.pros.map((p,i)=>(
+                <div key={i} className="row"><span style={{color:'#35b07a',flexShrink:0}}>+</span><span style={{fontSize:11,color:'#90a89a'}}>{p}</span></div>
+              ))}
+            </div>
+            <div>
+              <div className="card-h" style={{color:'#c85a3a'}}>✗ Limitaciones</div>
+              {t.cons.map((p,i)=>(
+                <div key={i} className="row"><span style={{color:'#c85a3a',flexShrink:0}}>−</span><span style={{fontSize:11,color:'#90a89a'}}>{p}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Punto de rocío vs concentración ppm</div>
+          <div style={{background:'#060b08',borderRadius:8,padding:10,border:'1px solid rgba(110,210,150,0.1)'}}>
+            <svg viewBox="0 0 320 200" width="300" height="188" style={{display:'block',margin:'0 auto'}}>
+              {/* axes */}
+              <line x1={40} y1={10} x2={40} y2={170} stroke="#566b5e" strokeWidth={1}/>
+              <line x1={40} y1={170} x2={310} y2={170} stroke="#566b5e" strokeWidth={1}/>
+              {/* axis labels */}
+              <text x={175} y={188} textAnchor="middle" fill="#566b5e" fontSize={9} fontFamily="IBM Plex Mono,monospace">Punto de rocío (°C) →</text>
+              <text x={10} y={95} textAnchor="middle" fill="#566b5e" fontSize={9} fontFamily="IBM Plex Mono,monospace" transform="rotate(-90,10,95)">ppm vol</text>
+              {/* curve (exponential relationship) */}
+              {[[-80,0.5],[-60,2.5],[-40,12],[-20,50],[-10,110],[0,240],[10,480],[20,960]].map(([dp,ppm],i,arr)=>{
+                if(i===0) return null;
+                const prev=arr[i-1];
+                const x1=40+(prev[0]+100)/120*270;
+                const y1=170-Math.min(prev[1]/1000*160,155);
+                const x2=40+(dp+100)/120*270;
+                const y2=170-Math.min(ppm/1000*160,155);
+                return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#35b07a" strokeWidth={2}/>;
+              })}
+              {/* reference points */}
+              {[[-80,0.5,'−80°C\n0.5 ppm'],[-40,12,'−40°C\n12 ppm'],[-10,110,'−10°C\n110 ppm'],[0,240,'0°C\n240 ppm']].map(([dp,ppm,label],i)=>{
+                const x=40+(dp+100)/120*270;
+                const y=170-Math.min(ppm/1000*160,155);
+                const lines=label.split('\n');
+                return(
+                  <g key={i}>
+                    <circle cx={x} cy={y} r={3} fill={i===0?'#c85a3a':i===1?'#d4ab40':'#35b07a'} stroke="#0f1712" strokeWidth={1}/>
+                    {lines.map((l,j)=><text key={j} x={x+5} y={y-8+j*10} fill="#90a89a" fontSize={8} fontFamily="IBM Plex Mono,monospace">{l}</text>)}
+                  </g>
+                );
+              })}
+              {/* spec line for gas natural */}
+              <line x1={40+((-8)+100)/120*270} y1={10} x2={40+((-8)+100)/120*270} y2={170} stroke="#c85a3a" strokeWidth={1} strokeDasharray="5,3"/>
+              <text x={40+((-8)+100)/120*270+3} y={30} fill="#c85a3a" fontSize={8} fontFamily="IBM Plex Mono,monospace">Spec. gas\nnatural\n(−8°C dp)</text>
+            </svg>
+            <div style={{fontSize:10,color:'#566b5e',textAlign:'center',fontFamily:'IBM Plex Mono,monospace',marginTop:4}}>Relación punto de rocío / concentración de agua a 1 bar — ISO 18453</div>
+          </div>
+          <div style={{marginTop:10,fontSize:12,color:'#90a89a',lineHeight:1.6}}>
+            <strong style={{color:'#eef4ef'}}>Especificación gas natural (ISO 13686 / EASEE-gas):</strong> punto de rocío de agua ≤ −8°C a presión de suministro. Equivale a ≈ 80–120 ppm vol según la presión del gasoducto.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Instalación y Mantenimiento del Analizador</div>
+    <div className="sec-sub">API RP 551 §7.4 — Sistema de muestreo, calibración y diagnóstico</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Sistema de muestreo — reglas críticas</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#90a89a',marginBottom:8}}>
+            El sistema de muestreo es el componente más crítico de un analizador de punto de rocío. Un error aquí invalida la medición completa.
+          </p>
+          {[
+            {t:'Temperatura de línea de muestra',d:'Debe ser ≥ 10°C por encima del punto de rocío esperado. Si la línea se enfría por debajo del punto de rocío, el agua condensa en la línea y el sensor lee demasiado bajo.'},
+            {t:'Materiales de la línea',d:'Acero inoxidable 316L electropulido o tubo de Silcosteel®. NUNCA cobre o latón (adsorben agua, dan lecturas erróneas durante horas después de un evento de humedad).'},
+            {t:'Válvulas y accesorios',d:'Solo válvulas de acero inoxidable con asientos de metal o PTFE. Válvulas de bola con sello de nitrilo adsorben agua — prohibidas en líneas de punto de rocío.'},
+            {t:'Caudal de muestra',d:'Típicamente 0.5–2 SLPM. Caudales altos mejoran el tiempo de respuesta pero pueden sobreenfriar la célula de medición en sensores QCM.'},
+            {t:'Presión de muestra',d:'Reducir al mínimo necesario para el sensor. Una caída de presión adiabática puede enfriar el gas y condensar agua antes de llegar al sensor.'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#35b07a',flexShrink:0,fontSize:12,marginTop:1}}>▸</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:600,color:'#eef4ef',marginBottom:2}}>{r.t}</div>
+                <div style={{fontSize:11,color:'#90a89a',lineHeight:1.45}}>{r.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Calibración y verificación en campo</div>
+          {[
+            {c:'badge-g',l:'SPAN HÚMEDO',t:'Usar gas de referencia certificado con punto de rocío conocido (trazable a NIST/NPL). Validez del certificado: máximo 6 meses para punto de rocío < −40°C.'},
+            {c:'badge-g',l:'SPAN SECO',t:'Gas de cero: N₂ o aire seco con punto de rocío < −80°C. Verificar que el sensor regrese a cero estable (< 2°C de la referencia) tras la exposición al gas húmedo.'},
+            {c:'badge-b',l:'CHILLED MIRROR',t:'El método primario de referencia (ISO 6327): espejo metálico enfriado por Peltier hasta que condensa el rocío, medido con detector óptico. Exactitud: ±0.1°C dp. Usado para calibrar los analizadores en campo.'},
+            {c:'badge-y',l:'FRECUENCIA',t:'QCM/capacitivo: verificación mensual con gas de referencia. Calibración completa cada 6 meses. TDLAS: calibración anual si la ventana óptica está limpia.'},
+            {c:'badge-r',l:'CONTAMINACIÓN',t:'Si el sensor estuvo expuesto a glicol, aminas o líquidos: regenerar completamente (flujo de N₂ seco > 48 h) antes de recalibrar. Los sensores QCM contaminados deben reemplazarse.'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span className={`badge ${r.c}`} style={{flexShrink:0,marginTop:1}}>{r.l}</span>
+              <span style={{fontSize:11,color:'#90a89a',lineHeight:1.5}}>{r.t}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginTop:0}}>
+          <div className="card-h">Alarmas recomendadas por API RP 551</div>
+          {[
+            {a:'ALTO punto de rocío',v:'> −5°C dp (gas spec −8°C)', c:'#c85a3a'},
+            {a:'MUY ALTO punto de rocío',v:'> 0°C dp — posible condensación',c:'#c85a3a'},
+            {a:'Fallo de caudal de muestra',v:'< 0.3 SLPM',c:'#d4ab40'},
+            {a:'Temperatura de línea baja',v:'< Tdp + 5°C',c:'#d4ab40'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{width:8,height:8,borderRadius:'50%',background:r.c,flexShrink:0,marginTop:4,display:'inline-block'}}/>
+              <div style={{flex:1,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontSize:12,color:'#eef4ef'}}>{r.a}</span>
+                <span style={{fontSize:11,color:'#566b5e',fontFamily:'IBM Plex Mono,monospace'}}>{r.v}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const apps=[
+    {
+      titulo:'Gas natural en gasoducto',
+      req:'Punto de rocío ≤ −8°C a presión de suministro (EASEE-gas)',
+      sensor:'QCM o sensor capacitivo de Al₂O₃',
+      loc:'Después del punto de entrega, antes de la compresión',
+      riesgo:'Condensación de agua forma hidratos de gas (clathrates) que taponan válvulas y reguladores. A −5°C y 70 bar, el hidrato de metano es termodinámicamente estable.',
+      badge:'badge-g',
+    },
+    {
+      titulo:'Gas de instrumento (instrument gas)',
+      req:'Punto de rocío ≤ −40°C (ISO 8573-1 Clase 2)',
+      sensor:'Sensor capacitivo compacto o QCM de bajo rango',
+      loc:'Después del secador de gas de instrumento (desiccant dryer)',
+      riesgo:'Gas húmedo en instrumentos neumáticos: corrosión, hielo en válvulas de control en zonas frías, fallo de posicionadores y convertidores I/P.',
+      badge:'badge-b',
+    },
+    {
+      titulo:'Salida de deshidratador TEG',
+      req:'Punto de rocío ≤ −20 a −40°C según contrato',
+      sensor:'QCM de alta gama o TDLAS in-situ',
+      loc:'Corriente de gas seco saliendo del absorbedor de glicoletilénglicol (TEG)',
+      riesgo:'Si el glicoletilénglicol arrastra al gas de salida, envenena el sensor QCM. Instalar filtro coalescente de alta eficiencia aguas arriba del analizador.',
+      badge:'badge-y',
+    },
+    {
+      titulo:'GLP (propano/butano) en cisterna',
+      req:'Agua libre < 10 ppm vol (EN 589)',
+      sensor:'Célula electrolítica P₂O₅ o sensor capacitivo',
+      loc:'Llenado de cisternas, previo a carga de buque o tren',
+      riesgo:'Agua en GLP a presión: al expandirse a baja T forma hielo que bloquea reguladores de GLP doméstico. Especificación muy estricta.',
+      badge:'badge-r',
+    },
+    {
+      titulo:'Aire comprimido de planta',
+      req:'Punto de rocío ≤ −20°C a presión de servicio (ISO 8573-1 Clase 3)',
+      sensor:'Sensor capacitivo económico',
+      loc:'Después del secador frigorífico + desiccant, en distribución principal',
+      riesgo:'Aire húmedo corroe tuberías de cobre y latón en distribución. En zonas frías exteriores, puede congelar los actuadores neumáticos en condiciones de invierno.',
+      badge:'badge-b',
+    },
+  ];
+  return(<div>
+    <div className="sec-title">Aplicaciones Industriales — Punto de Rocío</div>
+    <div className="sec-sub">API RP 551 §7.4 — Especificaciones y riesgos por industria</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {apps.map((a,i)=>(
+        <div key={i} className="card" style={{marginBottom:0,padding:'11px 14px'}}>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
+            <span className={`badge ${a.badge}`} style={{flexShrink:0}}>{a.badge==='badge-g'?'GAS NAT':a.badge==='badge-b'?'INSTR/AIRE':a.badge==='badge-y'?'TEG':'GLP'}</span>
+            <span style={{fontSize:12,fontWeight:700,color:'#eef4ef'}}>{a.titulo}</span>
+          </div>
+          <div className="row" style={{paddingTop:4}}>
+            <span style={{fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',flexShrink:0,width:60}}>ESPEC.</span>
+            <span style={{fontSize:11,color:'#eef4ef'}}>{a.req}</span>
+          </div>
+          <div className="row">
+            <span style={{fontSize:10,color:'#5b9bef',fontFamily:'IBM Plex Mono,monospace',flexShrink:0,width:60}}>SENSOR</span>
+            <span style={{fontSize:11,color:'#90a89a'}}>{a.sensor}</span>
+          </div>
+          <div className="row">
+            <span style={{fontSize:10,color:'#566b5e',fontFamily:'IBM Plex Mono,monospace',flexShrink:0,width:60}}>UBIC.</span>
+            <span style={{fontSize:11,color:'#90a89a'}}>{a.loc}</span>
+          </div>
+          <div style={{fontSize:11,color:'#c85a3a',background:'rgba(200,90,58,0.07)',borderRadius:4,padding:'5px 8px',marginTop:4}}>⚠ {a.riesgo}</div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'Tecnologías de medición',C:Scene1},
+  {id:2,label:'Instalación y calibración',C:Scene2},
+  {id:3,label:'Aplicaciones industriales',C:Scene3},
+];
+
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Clase 12.5 — Analizadores de Humedad y Punto de Rocío</div>
+          <div className="topbar-sub">API RP 551 §7.4 · Módulo 12 — Instrumentación API RP 551</div>
+        </div>
+        <div className="scene-badge">ESCENA {sc} / {SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=>(
+            <div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>
+              {String(s.id).padStart(2,'0')} · {s.label}
+            </div>
+          ))}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(110,210,150,0.1)',marginTop:8}}>
+            <div style={{fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#566b5e',lineHeight:1.5}}>Seleccionar e instalar analizadores de humedad y punto de rocío para gas natural y procesos industriales según API RP 551.</div>
+          </div>
+        </div>
+        <div className="main">
+          <cur.C/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

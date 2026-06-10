@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.1 — HAZOP</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.blue{color:#3b82f6;}.green{color:#22c55e;}.amber{color:#f59e0b;}.red{color:#ef4444;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#3b82f6;padding:6px 8px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;}
+td{padding:5px 8px;border-bottom:1px solid #0f1729;color:#cbd5e1;font-size:11px;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:1px;}
+.tag-blue{background:#1e40af44;color:#93c5fd;border:1px solid #1e40af66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const guias=[
+    {palabra:'MORE OF / HIGH',param:'Presión, temperatura, flujo, nivel',consecuencia:'Sobrepresión, sobretemperatura, overflow'},
+    {palabra:'LESS OF / LOW',param:'Presión, temperatura, flujo, nivel',consecuencia:'Subpresión, quench, starvation'},
+    {palabra:'NO / NONE',param:'Flujo, refrigeración, alimentación',consecuencia:'Pérdida total de flujo, runaway reaction'},
+    {palabra:'REVERSE',param:'Flujo',consecuencia:'Flujo inverso, retorno de productos, backfire'},
+    {palabra:'OTHER THAN / AS WELL AS',param:'Composición, fase',consecuencia:'Producto fuera de especificación, bifásico'},
+    {palabra:'PART OF',param:'Composición',consecuencia:'Concentración incorrecta de reactivos'},
+    {palabra:'EARLY / LATE',param:'Tiempo de reacción, apertura de válvula',consecuencia:'Reacción prematura o tardía'},
+  ];
+  return(<div>
+    <div className="sec-title">HAZOP — Metodología</div>
+    <div className="sec-sub">HAZard and OPerability Study · La herramienta central de identificación de peligros</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es HAZOP?</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginBottom:8}}>
+            HAZOP es un método estructurado y sistemático de identificación de peligros y problemas de operabilidad. Fue desarrollado por ICI (Imperial Chemical Industries) en los años 60 y hoy es el estándar de la industria de proceso.
+          </p>
+          <div className="def-box">
+            <span className="blue" style={{fontWeight:700}}>Principio:</span> Aplicar <strong>"palabras guía"</strong> a los parámetros de proceso para identificar desviaciones que puedan causar peligros o problemas de operabilidad.
+          </div>
+        </div>
+        <div className="card" style={{marginTop:8}}>
+          <div className="card-h">Cuándo se realiza el HAZOP</div>
+          {[
+            {fase:'P&ID preliminar (30%)','momento':'HAZOP conceptual — identifica peligros mayores'},
+            {fase:'P&ID definitivo (90%)','momento':'HAZOP detallado — identifica todas las SIF requeridas'},
+            {fase:'Modificaciones','momento':'HAZOP de cambio — evalúa impacto del MOC'},
+          ].map((f,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid #1e3a5f22',fontSize:11}}>
+              <span style={{color:'#3b82f6',fontWeight:700}}>{f.fase}: </span>
+              <span style={{color:'#94a3b8'}}>{f.momento}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Palabras Guía y Desviaciones</div>
+          <table>
+            <thead><tr><th>Palabra Guía</th><th>Parámetro</th><th>Consecuencia típica</th></tr></thead>
+            <tbody>
+              {guias.map((g,i)=>(
+                <tr key={i}>
+                  <td><span className="tag tag-amber">{g.palabra}</span></td>
+                  <td style={{color:'#94a3b8',fontSize:10}}>{g.param}</td>
+                  <td style={{fontSize:10,color:'#fca5a5'}}>{g.consecuencia}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const roles=[
+    {rol:'Líder HAZOP',req:'Entrenamiento en metodología HAZOP. Independiente del proyecto.',resp:'Facilitar la sesión, asegurar sistematismo, documentar decisiones.'},
+    {rol:'Secretario',req:'Conocimiento del proceso y terminología.',resp:'Registrar causas, consecuencias, protecciones y recomendaciones en hoja de trabajo.'},
+    {rol:'Ingeniero de Proceso',req:'Experto en el proceso y química involucrada.',resp:'Identificar consecuencias y mecanismos de reacción.'},
+    {rol:'Ingeniero de Instrumentación',req:'Experto en SIS, transmisores y válvulas.',resp:'Evaluar la efectividad de protecciones existentes y recomendar SIF.'},
+    {rol:'Ingeniero de Seguridad',req:'Conocimiento de riesgos de proceso y normativas.',resp:'Evaluar tolera­bilidad de riesgos y compliance normativo.'},
+    {rol:'Operador senior',req:'Experiencia en operación real de la planta.',resp:'Aportar conocimiento de condiciones operativas reales y modos de falla.'},
+  ];
+  return(<div>
+    <div className="sec-title">El Equipo HAZOP</div>
+    <div className="sec-sub">Roles, competencias y responsabilidades</div>
+    <div className="grid2" style={{gap:10}}>
+      {roles.map((r,i)=>(
+        <div key={i} className="card" style={{padding:'10px 12px'}}>
+          <div style={{fontSize:12,fontWeight:700,color:'#3b82f6',marginBottom:3}}>{r.rol}</div>
+          <div style={{fontSize:10,color:'#f59e0b',marginBottom:4}}>Req: {r.req}</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.4}}>{r.resp}</div>
+        </div>
+      ))}
+    </div>
+    <div className="def-box" style={{marginTop:8}}>
+      <span className="blue" style={{fontWeight:700}}>IEC 61511 §11:</span> El equipo HAZOP debe incluir personas con <strong>competencias en el proceso, instrumentación, seguridad y operación</strong>. El líder debe ser independiente del equipo de diseño.
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const rows=[
+    {nodo:'Nodo 1 — Línea de alimentación al reactor',param:'Flujo',desv:'NO FLOW',causa:'FV-101 bloqueada (falla cerrado)',conseq:'Pérdida de alimentación → temperatura asciende → runaway',safeguard:'TAH-101 (alarma)',recom:'Agregar SIF: TAHH-101 → ESD reactor (SIL 2)'},
+    {nodo:'Nodo 1 — Línea de alimentación al reactor',param:'Temperatura',desv:'HIGH TEMP',causa:'Falla de refrigeración (FCW)',conseq:'Temperatura excesiva → reacción fuera de control → explosión',safeguard:'TAH-101',recom:'LOPA requerido — probablemente SIL 3'},
+    {nodo:'Nodo 2 — Refrigeración del reactor',param:'Flujo',desv:'LOW FLOW',causa:'Bomba de agua de enfriamiento falla',conseq:'Temperatura sube → runaway → pérdida de contención',safeguard:'FAL-201 (alarma)',recom:'SIF: FALL-201 → trip bomba reserva + ESD'},
+  ];
+  return(<div>
+    <div className="sec-title">Hoja de Trabajo HAZOP</div>
+    <div className="sec-sub">Ejemplo: Reactor exotérmico con alimentación controlada</div>
+    <div className="card" style={{padding:'10px 12px',marginBottom:8}}>
+      <div className="card-h">Fragmento de hoja HAZOP — Reactor Batch R-101</div>
+      <div style={{overflowX:'auto'}}>
+        <table style={{minWidth:900}}>
+          <thead>
+            <tr>
+              <th>Nodo/Ítem</th>
+              <th>Parámetro</th>
+              <th>Desviación</th>
+              <th>Causa</th>
+              <th>Consecuencia</th>
+              <th>Salvaguarda existente</th>
+              <th>Recomendación</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r,i)=>(
+              <tr key={i}>
+                <td style={{fontSize:9,color:'#64748b',maxWidth:100}}>{r.nodo}</td>
+                <td><span className="tag tag-blue">{r.param}</span></td>
+                <td><span className="tag tag-amber">{r.desv}</span></td>
+                <td style={{fontSize:9}}>{r.causa}</td>
+                <td style={{fontSize:9,color:'#fca5a5'}}>{r.conseq}</td>
+                <td style={{fontSize:9,color:'#94a3b8'}}>{r.safeguard}</td>
+                <td style={{fontSize:9,color:'#86efac'}}>{r.recom}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div className="grid2" style={{gap:10}}>
+      <div className="def-box">
+        <span className="blue" style={{fontWeight:700}}>Resultado del HAZOP:</span> Para cada escenario con riesgo inaceptable, el HAZOP recomienda una SIF con su SIL objetivo preliminar. Luego el LOPA confirma el SIL cuantitativamente.
+      </div>
+      <div className="card">
+        <div className="card-h">De HAZOP a SIF — el proceso</div>
+        {['HAZOP identifica escenario peligroso','Se evalúan salvaguardas existentes','Si el riesgo residual es inaceptable → se recomienda SIF','LOPA cuantifica el SIL objetivo','La SIF se especifica en el SRS'].map((s,i)=>(
+          <div key={i} style={{fontSize:11,color:'#cbd5e1',padding:'3px 0',display:'flex',gap:6}}>
+            <span style={{color:'#3b82f6',fontWeight:700,flexShrink:0}}>{i+1}.</span><span>{s}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene4(){
+  const [activeWord,setActiveWord]=useState(null);
+  const words=[
+    {w:'HIGH',color:'#ef4444',ejemplos:['PAHH: presión alta alta → trip','TAHH: temperatura alta alta → ESD','LAHH: nivel alto alto → paro de bomba']},
+    {w:'LOW',color:'#3b82f6',ejemplos:['PALL: presión baja baja → trip','TALL: temperatura baja baja → alarma','FALL: flujo bajo bajo → paro de equipo']},
+    {w:'NO',color:'#6366f1',ejemplos:['No flujo → starvation del proceso','No refrigeración → runaway','No señal → falla de sensor']},
+    {w:'REVERSE',color:'#f59e0b',ejemplos:['Flujo inverso → retorno a tanque','Bomba en inverso → cavitación','Corriente inversa → daño a equipo']},
+  ];
+  return(<div>
+    <div className="sec-title">Identificación de Causas y Consecuencias</div>
+    <div className="sec-sub">De la desviación al escenario peligroso — metodología paso a paso</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">Explorador de desviaciones</div>
+          <p style={{fontSize:11,color:'#64748b',marginBottom:8}}>Selecciona una palabra guía para ver ejemplos de SIF típicas:</p>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+            {words.map((w,i)=>(
+              <button key={i} onClick={()=>setActiveWord(activeWord===w.w?null:w.w)}
+                style={{background:activeWord===w.w?w.color:'transparent',color:activeWord===w.w?'#fff':w.color,border:`1px solid ${w.color}`,borderRadius:6,padding:'5px 14px',cursor:'pointer',fontSize:12,fontWeight:700,transition:'all .2s'}}>
+                {w.w}
+              </button>
+            ))}
+          </div>
+          {activeWord&&(()=>{
+            const found=words.find(x=>x.w===activeWord);
+            return(<div className="card" style={{borderLeft:`3px solid ${found.color}`}}>
+              <div className="card-h" style={{color:found.color}}>Desviación: {found.w} — SIF típicas</div>
+              {found.ejemplos.map((e,i)=>(
+                <div key={i} style={{fontSize:11,color:'#cbd5e1',padding:'4px 0',borderBottom:'1px solid #1e3a5f22'}}>🛡️ {e}</div>
+              ))}
+            </div>);
+          })()}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Proceso de análisis de un escenario HAZOP</div>
+          {[
+            {n:1,paso:'Definir el nodo',detail:'Sección del P&ID a analizar (línea, equipo, sistema)'},
+            {n:2,paso:'Seleccionar parámetro',detail:'Presión, temperatura, flujo, nivel, composición'},
+            {n:3,paso:'Aplicar palabra guía',detail:'HIGH, LOW, NO, REVERSE, OTHER THAN...'},
+            {n:4,paso:'Identificar causas',detail:'¿Qué puede causar esa desviación?'},
+            {n:5,paso:'Evaluar consecuencias',detail:'¿Qué daño puede ocurrir si se materializa?'},
+            {n:6,paso:'Listar salvaguardas existentes',detail:'Alarmas, válvulas, procedimientos actuales'},
+            {n:7,paso:'Recomendar acción',detail:'SIF, alarma adicional, cambio de diseño'},
+          ].map((s,i)=>(
+            <div key={i} style={{display:'flex',gap:8,padding:'5px 0',borderBottom:'1px solid #1e3a5f22'}}>
+              <div style={{width:20,height:20,borderRadius:'50%',background:'#3b82f6',color:'#fff',fontSize:9,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{s.n}</div>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:'#e2e8f0'}}>{s.paso}</div>
+                <div style={{fontSize:10,color:'#64748b'}}>{s.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Metodología HAZOP',comp:<Scene1/>},
+  {id:2,label:'El equipo HAZOP',comp:<Scene2/>},
+  {id:3,label:'Hoja de trabajo — ejemplo',comp:<Scene3/>},
+  {id:4,label:'Causas y consecuencias',comp:<Scene4/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 2 · Lección 2.1 — Identificación de peligros: Metodología HAZOP</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

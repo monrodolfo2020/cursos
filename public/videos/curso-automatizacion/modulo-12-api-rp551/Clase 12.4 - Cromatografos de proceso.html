@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 12.4 — Cromatógrafos de Proceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060b08;font-family:'Space Grotesk',system-ui,sans-serif;color:#eef4ef;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060b08,#0a120d);border-bottom:2px solid rgba(110,210,150,0.3);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#35b07a;}
+.topbar-sub{font-size:11px;color:#90a89a;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(110,210,150,0.1);border:1px solid rgba(110,210,150,0.25);color:#35b07a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a120d;border-right:1px solid rgba(110,210,150,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#566b5e;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#35b07a;border-left-color:#35b07a;background:rgba(110,210,150,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#eef4ef;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(110,210,150,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#35b07a;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#566b5e;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1712;border:1px solid rgba(110,210,150,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#35b07a;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060b08;border-left:3px solid #35b07a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.warn-box{background:rgba(200,90,58,0.07);border-left:3px solid #c85a3a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:6px;}
+.badge-g{background:rgba(110,210,150,0.15);color:#35b07a;border:1px solid rgba(110,210,150,0.3);}
+.badge-r{background:rgba(200,90,58,0.15);color:#c85a3a;border:1px solid rgba(200,90,58,0.3);}
+.badge-b{background:rgba(60,120,210,0.15);color:#5b9bef;border:1px solid rgba(60,120,210,0.3);}
+.badge-y{background:rgba(210,170,50,0.15);color:#d4ab40;border:1px solid rgba(210,170,50,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(110,210,150,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+.tab-btn{padding:7px 16px;border:1px solid rgba(110,210,150,0.25);border-radius:6px;background:transparent;color:#566b5e;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.tab-btn.sel{background:rgba(110,210,150,0.12);border-color:#35b07a;color:#35b07a;font-weight:600;}
+.tab-btn:hover:not(.sel){border-color:rgba(110,210,150,0.5);color:#eef4ef;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function ChromatogramSVG({peaks}){
+  const W=340,H=130,pad=30;
+  const maxY=Math.max(...peaks.map(p=>p.h));
+  return(
+    <svg viewBox={`0 0 ${W} ${H+pad}`} width={W} height={H+pad} style={{display:'block',margin:'0 auto'}}>
+      {/* axes */}
+      <line x1={pad} y1={pad} x2={pad} y2={H+pad} stroke="#566b5e" strokeWidth={1}/>
+      <line x1={pad} y1={H+pad} x2={W-10} y2={H+pad} stroke="#566b5e" strokeWidth={1}/>
+      <text x={W/2} y={H+pad+12} textAnchor="middle" fill="#566b5e" fontSize={9} fontFamily="IBM Plex Mono,monospace">Tiempo de retención →</text>
+      <text x={8} y={H/2+pad} textAnchor="middle" fill="#566b5e" fontSize={9} fontFamily="IBM Plex Mono,monospace" transform={`rotate(-90,8,${H/2+pad})`}>Señal</text>
+      {/* baseline */}
+      <line x1={pad} y1={H+pad} x2={W-10} y2={H+pad} stroke="rgba(110,210,150,0.2)" strokeWidth={1}/>
+      {/* peaks */}
+      {peaks.map((p,i)=>{
+        const bx=pad+p.t*(W-pad-10);
+        const ph=(p.h/maxY)*H*0.85;
+        const w=p.w*15;
+        const color=p.color||'#35b07a';
+        const pts=[];
+        for(let x=bx-w*2;x<=bx+w*2;x+=2){
+          const y=H+pad-ph*Math.exp(-0.5*((x-bx)/w)**2);
+          pts.push(`${x},${y}`);
+        }
+        return(
+          <g key={i}>
+            <polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth={2}/>
+            <line x1={bx} y1={H+pad-ph} x2={bx} y2={H+pad} stroke={color} strokeWidth={1} strokeDasharray="3,2" opacity={0.4}/>
+            <text x={bx} y={H+pad-ph-4} textAnchor="middle" fill={color} fontSize={8} fontFamily="IBM Plex Mono,monospace" fontWeight="600">{p.name}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+const GC_PEAKS=[
+  {name:'N₂',t:0.12,h:0.3,w:0.8,color:'#566b5e'},
+  {name:'CO₂',t:0.22,h:0.6,w:0.9,color:'#5b9bef'},
+  {name:'C₁',t:0.35,h:1.0,w:1.0,color:'#35b07a'},
+  {name:'C₂',t:0.50,h:0.65,w:1.1,color:'#35b07a'},
+  {name:'C₃',t:0.63,h:0.45,w:1.2,color:'#d4ab40'},
+  {name:'iC₄',t:0.73,h:0.22,w:1.1,color:'#d4ab40'},
+  {name:'nC₄',t:0.80,h:0.18,w:1.1,color:'#c85a3a'},
+  {name:'C₅+',t:0.91,h:0.12,w:1.3,color:'#c85a3a'},
+];
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Cromatógrafo de Proceso — Principio y Aplicación</div>
+    <div className="sec-sub">API RP 551 §7.2 — Analizadores en línea para composición de gas y líquido</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué mide un GC de proceso?</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:8}}>
+            El cromatógrafo de gases (GC) separa y cuantifica los componentes de una mezcla gaseosa o líquida mediante diferencias en el tiempo de retención en una columna cromatográfica. A diferencia de los analizadores contínuos, el GC produce un resultado cada ciclo de análisis (típicamente 2–8 minutos).
+          </p>
+          <div className="def-box">
+            <strong style={{color:'#35b07a'}}>API RP 551 §7.2.1:</strong> Los GC de proceso son la herramienta principal para determinar la composición de gas natural, calcular el poder calorífico superior (PCS/HHV) y el índice de Wobbe para medición fiscal y control de calidad de combustible.
+          </div>
+          <div className="card-h" style={{marginTop:10}}>Aplicaciones típicas en refinerías y gas</div>
+          {[
+            {b:'badge-b',l:'GAS NATURAL',t:'Composición C₁–C₆+ para cálculo de PCS e índice de Wobbe (AGA-5)'},
+            {b:'badge-g',l:'DESTILACIÓN',t:'Análisis de fracciones livianas en torres de destilación — control de puntos de corte'},
+            {b:'badge-y',l:'REFORMADO',t:'Control de H₂/HC ratio en reformado catalítico'},
+            {b:'badge-r',l:'EMISIONES',t:'Medición de COVs y H₂S en corrientes de gas de antorcha (Tier 4)'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span className={`badge ${r.b}`} style={{flexShrink:0}}>{r.l}</span>
+              <span style={{fontSize:12,color:'#90a89a'}}>{r.t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Cromatograma típico — gas natural</div>
+          <div style={{background:'#060b08',borderRadius:8,padding:'10px 6px',border:'1px solid rgba(110,210,150,0.1)'}}>
+            <ChromatogramSVG peaks={GC_PEAKS}/>
+            <div style={{fontSize:10,color:'#566b5e',textAlign:'center',fontFamily:'IBM Plex Mono,monospace',marginTop:4}}>Separación de componentes C₁–C₅+ en columna capilar</div>
+          </div>
+          <div style={{marginTop:10,display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+            {GC_PEAKS.map((p,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:11}}>
+                <span style={{width:10,height:10,borderRadius:'50%',background:p.color,flexShrink:0,display:'inline-block'}}/>
+                <span style={{color:'#90a89a',fontFamily:'IBM Plex Mono,monospace'}}>{p.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const [tab,setTab]=useState('sistema');
+  const sistemas={
+    sistema:{
+      title:'Componentes del sistema GC',
+      items:[
+        {n:'Sistema de muestreo (sample conditioning)',d:'Filtra, seca, presuriza y acondiciona el gas antes de entrar al GC. Incluye filtros de 2 μm, reguladores de presión y trampa de líquidos. API RP 551 §7.2.3: el sistema de muestreo es la fuente principal de errores de GC.'},
+        {n:'Válvula de inyección (injection valve)',d:'Válvula rotativa de alta precisión que inyecta un volumen exacto y reproducible de muestra (típicamente 0.25–1 mL) a la columna. La repetibilidad de la válvula define la precisión del análisis.'},
+        {n:'Columna cromatográfica',d:'Tubo de 1–10 m relleno de fase estacionaria (tamiz molecular, Porapak, etc.). La elección de la columna determina qué componentes se separan y en cuánto tiempo.'},
+        {n:'Detector TCD / FID / FPD',d:'TCD (conductividad térmica): universal, detecta todos los gases incluyendo N₂, CO₂, H₂. FID (ionización de llama): selectivo para hidrocarburos, alta sensibilidad. FPD: selectivo para S y P.'},
+        {n:'Gas portador (carrier gas)',d:'Helio o hidrógeno de alta pureza (≥ 99.999%). El helio es preferido en GC analítico por su inercia. El hidrógeno se usa en GC de proceso cuando el costo del helio es limitante.'},
+        {n:'Controlador y software de integración',d:'Calcula el área de cada pico, compara con factores de respuesta calibrados y reporta composición en % molar o másico. Cálculo de PCS, densidad relativa e índice de Wobbe.'},
+      ],
+    },
+    instalacion:{
+      title:'Instalación API RP 551',
+      items:[
+        {n:'Ubicación del GC',d:'Montado en shelter o gabinete de acero inoxidable con control de temperatura (±1°C) para evitar variaciones en los tiempos de retención. Máximo 50 m de la toma de proceso para minimizar tiempo de transporte de muestra.'},
+        {n:'Línea de muestra (sample line)',d:'Acero inoxidable 316L o tubo de Silcosteel® sin trampas de líquido. Pendiente mínima 1:50 hacia el GC. Longitud máxima: 50 m con calefacción si hay riesgo de condensación. Purga continua de muestra.'},
+        {n:'Caudal de muestra',d:'Típicamente 0.5–2 SLPM en la línea de muestra. La velocidad debe ser suficiente para renovar el volumen de la línea en < 1 minuto (tiempo de transporte). API RP 551 §7.2.4 define el cálculo del tiempo de transporte.'},
+        {n:'Retorno de muestra (vent)',d:'El excedente de muestra se ventea a un colector seguro o al proceso. Nunca a atmósfera si el gas contiene H₂S, mercaptanos o componentes tóxicos.'},
+        {n:'Gases de calibración (cal gas)',d:'Mezclas certificadas en cilindros de alta presión, almacenadas cerca del GC. La validez del certificado de calibración no debe superar 12 meses (API RP 551 §7.2.6).'},
+        {n:'Frecuencia de calibración',d:'Calibración automática cada 4–8 horas con gas de referencia certificado. Verificación de linealidad cada 3 meses. Calibración multipoint anual en laboratorio certificado según ISO 17025.'},
+      ],
+    },
+    diagnostico:{
+      title:'Diagnóstico y alarmas',
+      items:[
+        {n:'Suma de componentes',d:'La suma de todas las fracciones molares debe ser 100.00% ± 0.05%. Una desviación indica componentes no calibrados, fuga en la línea de muestra o problema con la columna.'},
+        {n:'Tiempo de retención derivado',d:'Si el tiempo de retención de un componente se aleja > 2% del valor de calibración, hay cambio en la columna (degradación, contaminación) o en el caudal del gas portador.'},
+        {n:'Área del pico de referencia',d:'La línea de base y el área del gas portador deben ser estables ciclo a ciclo. Variaciones > 1% indican fluctuaciones en el caudal de portador o fuga en la válvula de inyección.'},
+        {n:'Falta de separación (co-elución)',d:'Dos componentes con tiempos de retención similares salen juntos como un único pico. Grave en GC de gas natural: C₂/CO₂ pueden co-eluir en columnas deterioradas, afectando el cálculo de PCS.'},
+        {n:'Señal de detector fuera de rango',d:'Si la señal de TCD satura, el componente está fuera del rango de calibración o hay un componente no esperado en la muestra (contaminante). Revisar la composición típica del proceso.'},
+        {n:'Fallo del sistema de muestreo',d:'Presión de muestra fuera de rango → sin muestra → GC reporta último valor válido. Requiere alarma HIGH/LOW en el transmisor de presión de la línea de muestra.'},
+      ],
+    },
+  };
+  const s=sistemas[tab];
+  return(<div>
+    <div className="sec-title">GC de Proceso — Sistema, Instalación y Diagnóstico</div>
+    <div className="sec-sub">API RP 551 §7.2 — Guía completa de configuración y mantenimiento</div>
+    <div style={{display:'flex',gap:8,marginBottom:14}}>
+      {Object.entries(sistemas).map(([k,v])=>(
+        <button key={k} className={`tab-btn${tab===k?' sel':''}`} onClick={()=>setTab(k)}>{v.title}</button>
+      ))}
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {s.items.map((it,i)=>(
+        <div key={i} className="card" style={{marginBottom:0,padding:'11px 14px'}}>
+          <div style={{fontSize:12,fontWeight:700,color:'#eef4ef',marginBottom:5}}>{it.n}</div>
+          <div style={{fontSize:11,color:'#90a89a',lineHeight:1.55}}>{it.d}</div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const apps=[
+    {
+      titulo:'Cálculo de Poder Calorífico Superior (PCS/HHV)',
+      std:'AGA-5, ISO 6976, GPA 2172',
+      desc:'El GC de proceso mide la composición molar del gas natural (C₁–C₆+, N₂, CO₂). Con los poderes caloríficos molares tabulados de cada componente, se calcula el PCS de la mezcla por aditividad. Este valor se usa para facturación energética en transferencia de custodia.',
+      formula:'PCS_mezcla = Σ (xi × PCS_i)',
+      nota:'xi = fracción molar del componente i. PCS en MJ/m³ a condiciones de referencia (15°C, 101.325 kPa).',
+      badge:'badge-g',bl:'FISCAL',
+    },
+    {
+      titulo:'Índice de Wobbe (IW)',
+      std:'ISO 6976, EN 437',
+      desc:'El índice de Wobbe relaciona el PCS con la densidad relativa del gas. Es el parámetro clave para intercambiabilidad de gases en quemadores industriales: dos gases con el mismo IW producen la misma potencia térmica en el quemador sin ajuste de válvulas.',
+      formula:'IW = PCS / √(d)   [d = densidad relativa respecto al aire]',
+      nota:'Control de quemadores en hornos de proceso, calderas y turbinas de gas. Alarmas si IW sale del rango del diseño del quemador.',
+      badge:'badge-b',bl:'COMBUSTIÓN',
+    },
+    {
+      titulo:'Análisis de gas de antorcha (flare gas)',
+      std:'API RP 521, 40 CFR Part 63',
+      desc:'El GC mide continuamente la composición del gas enviado a la antorcha para calcular las toneladas de CO₂ equivalente emitidas. Los reguladores ambientales exigen datos de composición para los reportes de inventario de emisiones (GHG).',
+      formula:'Emisiones (kg/h) = Q × ρ × Σ(xi × FE_i)',
+      nota:'FE_i = factor de emisión de CO₂eq por componente. Q = caudal de gas a antorcha medido por flare meter.',
+      badge:'badge-r',bl:'EMISIONES',
+    },
+    {
+      titulo:'Control de torre de destilación — puntos de corte',
+      std:'API RP 551 §7.2.8',
+      desc:'En torres de fraccionamiento de gas natural o crudo, el GC de proceso mide la composición del destilado y del fondo cada 3–5 minutos. El controlador APC (Advanced Process Control) usa estos datos para ajustar el reflujo y la temperatura de fondo manteniendo el punto de corte dentro de especificación.',
+      formula:'Control: maximizar C₃ en destilado, minimizar C₃ en fondo',
+      nota:'Ciclo de análisis del GC debe ser ≤ 1/3 del tiempo de respuesta del lazo de control para no ser el cuello de botella.',
+      badge:'badge-y',bl:'CONTROL',
+    },
+  ];
+  return(<div>
+    <div className="sec-title">Aplicaciones del GC de Proceso en Planta</div>
+    <div className="sec-sub">API RP 551 §7.2 — Cálculos de composición, calorífico y control</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:11}}>
+      {apps.map((a,i)=>(
+        <div key={i} className="card" style={{marginBottom:0}}>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:6}}>
+            <span className={`badge ${a.badge}`}>{a.bl}</span>
+            <span style={{fontSize:13,fontWeight:700,color:'#eef4ef'}}>{a.titulo}</span>
+          </div>
+          <div style={{fontSize:10,color:'#566b5e',fontFamily:'IBM Plex Mono,monospace',marginBottom:6}}>{a.std}</div>
+          <div style={{fontSize:11,color:'#90a89a',lineHeight:1.55,marginBottom:8}}>{a.desc}</div>
+          <div style={{background:'#060b08',borderRadius:5,padding:'6px 10px',fontFamily:'IBM Plex Mono,monospace',fontSize:11,color:'#35b07a',marginBottom:6}}>{a.formula}</div>
+          <div style={{fontSize:11,color:'#566b5e',borderTop:'1px solid rgba(110,210,150,0.08)',paddingTop:6}}>{a.nota}</div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'Principio y cromatograma',C:Scene1},
+  {id:2,label:'Sistema, instalación, diagnóstico',C:Scene2},
+  {id:3,label:'Aplicaciones en planta',C:Scene3},
+];
+
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Clase 12.4 — Cromatógrafos de Proceso</div>
+          <div className="topbar-sub">API RP 551 §7.2 · Módulo 12 — Instrumentación API RP 551</div>
+        </div>
+        <div className="scene-badge">ESCENA {sc} / {SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=>(
+            <div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>
+              {String(s.id).padStart(2,'0')} · {s.label}
+            </div>
+          ))}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(110,210,150,0.1)',marginTop:8}}>
+            <div style={{fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#566b5e',lineHeight:1.5}}>Comprender el funcionamiento, instalación y aplicaciones del cromatógrafo de proceso según API RP 551 §7.2.</div>
+          </div>
+        </div>
+        <div className="main">
+          <cur.C/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

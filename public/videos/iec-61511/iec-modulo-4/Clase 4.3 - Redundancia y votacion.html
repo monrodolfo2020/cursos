@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 4.3 — Redundancia y votación</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#3b82f6;padding:6px 8px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;}
+td{padding:5px 8px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const arqs=[
+    {name:'1oo1',desc:'Un elemento, sin redundancia.',safe:'Si el elemento falla de forma segura → trip',danger:'Si el elemento falla de forma peligrosa → no hay trip',uso:'SIL 1-2 con buenas tasas λ_DU',pfd:'λ_DU × TI/2',avail:'Alta — sin falsos trips por redundancia'},
+    {name:'1oo2',desc:'Dos elementos en paralelo. Actúa si al menos UNO detecta el peligro.',safe:'Alta disponibilidad de seguridad (más sensible)',danger:'Más propenso a falsos trips',uso:'Prioridad en SEGURIDAD sobre disponibilidad. SIL 2-3',pfd:'(λ_DU × TI)²/3',avail:'Baja — cualquier falla causa trip'},
+    {name:'2oo2',desc:'Dos elementos. Actúa solo si AMBOS detectan el peligro.',safe:'Menos falsos trips',danger:'Si uno falla peligrosamente → el sistema no actúa',uso:'Prioridad en DISPONIBILIDAD. No recomendado para alta seguridad.',pfd:'2 × λ_DU × TI/2',avail:'Muy alta — ambos deben fallar'},
+    {name:'2oo3',desc:'Tres elementos, vota 2 de 3. Balance entre seguridad y disponibilidad.',safe:'Un fallo seguro no causa trip',danger:'Mejor PFD que 1oo1 sin sacrificar disponibilidad',uso:'Balance óptimo. SIL 2-3 en aplicaciones críticas',pfd:'λ_DU² × TI²',avail:'Media — tolerante a un fallo'},
+  ];
+  const [sel,setSel]=useState(0);
+  const a=arqs[sel];
+  return(<div>
+    <div className="sec-title">Arquitecturas MooN de Votación</div>
+    <div className="sec-sub">m de n — arquitecturas de redundancia y votación en SIS</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap'}}>
+          {arqs.map((a,i)=>(
+            <button key={i} onClick={()=>setSel(i)}
+              style={{background:sel===i?'#3b82f6':'transparent',color:sel===i?'#fff':'#94a3b8',border:'1px solid #1e3a5f',borderRadius:6,padding:'6px 14px',cursor:'pointer',fontSize:13,fontWeight:700,transition:'all .2s'}}>
+              {a.name}
+            </button>
+          ))}
+        </div>
+        <div className="card" style={{borderLeft:'3px solid #3b82f6'}}>
+          <div style={{fontSize:16,fontWeight:900,color:'#3b82f6',marginBottom:6}}>{a.name}</div>
+          <p style={{fontSize:12,color:'#cbd5e1',marginBottom:8,lineHeight:1.5}}>{a.desc}</p>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+            <div style={{background:'#14532d33',borderRadius:6,padding:'6px 8px',fontSize:10,color:'#86efac'}}>✓ {a.safe}</div>
+            <div style={{background:'#7f1d1d33',borderRadius:6,padding:'6px 8px',fontSize:10,color:'#fca5a5'}}>✗ {a.danger}</div>
+          </div>
+          <div style={{fontSize:11,color:'#94a3b8',marginBottom:4}}><span style={{color:'#f59e0b',fontWeight:700}}>Uso recomendado:</span> {a.uso}</div>
+          <div style={{fontSize:11,color:'#94a3b8',marginBottom:4}}><span style={{color:'#60a5fa',fontWeight:700,fontFamily:'monospace'}}>PFDavg ≈ </span><span style={{fontFamily:'monospace',color:'#60a5fa'}}>{a.pfd}</span></div>
+          <div style={{fontSize:11,color:'#94a3b8'}}><span style={{color:'#22c55e',fontWeight:700}}>Disponibilidad:</span> {a.avail}</div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Visualización de arquitecturas</div>
+          <div style={{background:'#060a14',borderRadius:8,padding:12}}>
+            {[
+              {n:'1oo1',diag:'[S1] → Trip'},
+              {n:'1oo2',diag:'[S1] ─┐\n       ├─ OR → Trip\n[S2] ─┘'},
+              {n:'2oo2',diag:'[S1] ─┐\n       ├─ AND → Trip\n[S2] ─┘'},
+              {n:'2oo3',diag:'[S1] ─┐\n[S2] ──├─ 2/3 → Trip\n[S3] ─┘'},
+            ].map((d,i)=>(
+              <div key={i} style={{display:'flex',gap:12,alignItems:'center',padding:'5px 0',borderBottom:'1px solid #1e3a5f22'}}>
+                <span style={{fontFamily:'monospace',fontSize:13,fontWeight:700,color:sel===i?'#3b82f6':'#64748b',width:40}}>{d.n}</span>
+                <pre style={{fontSize:9,color:sel===i?'#60a5fa':'#475569',lineHeight:1.4,fontFamily:'monospace'}}>{d.diag}</pre>
+              </div>
+            ))}
+          </div>
+          <div className="def-box" style={{marginTop:8}}>
+            <span style={{color:'#3b82f6',fontWeight:700}}>Trade-off fundamental:</span> Mayor redundancia mejora la seguridad (PFD) pero puede reducir la disponibilidad del proceso (más falsos trips). El 2oo3 es el mejor balance.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const [beta,setBeta]=useState(0.05);
+  const [ldu,setLdu]=useState(1e-6);
+  const [ti,setTi]=useState(8760);
+  const pfd1oo1=ldu*ti/2;
+  const pfd1oo2_ind=(ldu*ti)**2/3;
+  const pfd1oo2_ccf=pfd1oo1*beta+(1-beta)**2*pfd1oo2_ind;
+  const getSIL=(p)=>p<1e-4?'SIL 3':p<1e-3?'SIL 2':p<1e-2?'SIL 1':'< SIL';
+  const silC={'SIL 3':'#f59e0b','SIL 2':'#3b82f6','SIL 1':'#22c55e','< SIL':'#64748b'};
+  return(<div>
+    <div className="sec-title">Factor Beta — Fallas de Causa Común (CCF)</div>
+    <div className="sec-sub">El principal destructor de la redundancia en sistemas SIS</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es el CCF?</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginBottom:8}}>
+            Una Falla de Causa Común (CCF) es una falla que afecta simultáneamente a múltiples elementos redundantes debido a una causa compartida.
+          </p>
+          {[
+            {causa:'Corrosión simultánea',ejemplo:'Dos transmisores del mismo tipo en el mismo fluido'},
+            {causa:'Mismo error de software',ejemplo:'Dos PLCs con el mismo firmware defectuoso'},
+            {causa:'Falla de alimentación',ejemplo:'Dos canales redundantes con la misma fuente UPS'},
+            {causa:'Vibración excesiva',ejemplo:'Tres switches de presión en el mismo soporte mecánico'},
+          ].map((c,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid #1e3a5f22',fontSize:11}}>
+              <span style={{color:'#ef4444',fontWeight:700}}>{c.causa}: </span>
+              <span style={{color:'#94a3b8'}}>{c.ejemplo}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Calculadora PFD con factor β (CCF)</div>
+          {[
+            {label:'λ_DU',val:ldu,set:setLdu,min:1e-8,max:1e-5,step:1e-8,fmt:v=>v.toExponential(1)},
+            {label:'TI (horas)',val:ti,set:setTi,min:720,max:26280,step:720,fmt:v=>v.toLocaleString()},
+            {label:'Factor β (CCF)',val:beta,set:setBeta,min:0.01,max:0.2,step:0.01,fmt:v=>(v*100).toFixed(0)+'%'},
+          ].map((p,i)=>(
+            <div key={i} style={{marginBottom:8}}>
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:2}}>
+                <span>{p.label}</span><span style={{color:'#3b82f6',fontWeight:700,fontFamily:'monospace'}}>{p.fmt(p.val)}</span>
+              </div>
+              <input type="range" min={p.min} max={p.max} step={p.step} value={p.val} onChange={e=>p.set(+e.target.value)}
+                style={{WebkitAppearance:'none',width:'100%',height:4,background:'#1e3a5f',borderRadius:2,outline:'none'}}/>
+            </div>
+          ))}
+          <div style={{background:'#060a14',borderRadius:8,padding:10,fontSize:11}}>
+            {[
+              {label:'1oo1 (sin redundancia)',pfd:pfd1oo1},
+              {label:'1oo2 (independiente)',pfd:pfd1oo2_ind},
+              {label:'1oo2 (con CCF β)',pfd:pfd1oo2_ccf},
+            ].map((r,i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid #1e3a5f22'}}>
+                <span style={{color:'#94a3b8'}}>{r.label}</span>
+                <span style={{fontFamily:'monospace',fontWeight:700,color:silC[getSIL(r.pfd)]}}>{r.pfd.toExponential(2)} → {getSIL(r.pfd)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="def-box" style={{marginTop:8}}>
+            Con β = {(beta*100).toFixed(0)}%, el {(beta*100).toFixed(0)}% de las fallas afectan a ambos canales simultáneamente — eliminando el beneficio de redundancia.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Arquitecturas MooN',comp:<Scene1/>},
+  {id:2,label:'Factor β — CCF',comp:<Scene2/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 4 · Lección 4.3 — Redundancia y votación: 1oo2, 2oo3 y factor β</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

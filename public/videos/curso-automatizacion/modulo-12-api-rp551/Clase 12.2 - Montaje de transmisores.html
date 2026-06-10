@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 12.2 — Montaje de Transmisores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060b08;font-family:'Space Grotesk',system-ui,sans-serif;color:#eef4ef;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060b08,#0a120d);border-bottom:2px solid rgba(110,210,150,0.3);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#35b07a;}
+.topbar-sub{font-size:11px;color:#90a89a;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(110,210,150,0.1);border:1px solid rgba(110,210,150,0.25);color:#35b07a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a120d;border-right:1px solid rgba(110,210,150,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#566b5e;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#35b07a;border-left-color:#35b07a;background:rgba(110,210,150,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#eef4ef;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(110,210,150,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#35b07a;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#566b5e;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.card{background:#0f1712;border:1px solid rgba(110,210,150,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#35b07a;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060b08;border-left:3px solid #35b07a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.warn-box{background:rgba(200,90,58,0.07);border-left:3px solid #c85a3a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:6px;}
+.badge-g{background:rgba(110,210,150,0.15);color:#35b07a;border:1px solid rgba(110,210,150,0.3);}
+.badge-r{background:rgba(200,90,58,0.15);color:#c85a3a;border:1px solid rgba(200,90,58,0.3);}
+.badge-b{background:rgba(60,120,210,0.15);color:#5b9bef;border:1px solid rgba(60,120,210,0.3);}
+.badge-y{background:rgba(210,170,50,0.15);color:#d4ab40;border:1px solid rgba(210,170,50,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(110,210,150,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+.fluid-btn{padding:7px 16px;border:1px solid rgba(110,210,150,0.25);border-radius:6px;background:transparent;color:#566b5e;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.fluid-btn.sel{background:rgba(110,210,150,0.12);border-color:#35b07a;color:#35b07a;font-weight:600;}
+.fluid-btn:hover:not(.sel){border-color:rgba(110,210,150,0.5);color:#eef4ef;}
+.diagram-box{background:#060b08;border:1px solid rgba(110,210,150,0.12);border-radius:8px;padding:10px;text-align:center;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+const FLUIDOS={
+  liquido:{
+    label:'Líquido',
+    color:'#5b9bef',
+    posicion:'LATERAL o ABAJO del proceso',
+    regla:'El transmisor debe montarse por DEBAJO de la toma de proceso para que las líneas de impulso permanezcan siempre llenas de líquido. Se eliminan las bolsas de gas.',
+    lineas:[
+      {c:'✓',t:'Pendiente descendente continua hacia el transmisor (≥ 1:12)'},
+      {c:'✓',t:'Sin sifones ni puntos altos donde pueda acumularse gas'},
+      {c:'✓',t:'Válvula de purga en el punto más alto si hay riesgo de gas'},
+      {c:'✓',t:'Drenar o rellenar el manifold de forma periódica'},
+      {c:'✗',t:'No montar por encima de la toma si el fluido tiene gases disueltos'},
+    ],
+    diagramaLabel:'Transmisor montado BAJO el proceso — líneas llenas',
+    path:'M 60 30 L 60 90 L 200 90 L 200 130',
+    extra:'Fluido llena completamente ambas ramas. Presión transmitida sin error de columna gaseosa.',
+  },
+  gas:{
+    label:'Gas / Vapor seco',
+    color:'#35b07a',
+    posicion:'ARRIBA o LATERAL del proceso',
+    regla:'Para gas, el transmisor se monta por ENCIMA de la toma o al mismo nivel, permitiendo que cualquier condensado drene por gravedad de vuelta al proceso y no se acumule en las líneas.',
+    lineas:[
+      {c:'✓',t:'Pendiente ascendente desde la toma hacia el transmisor'},
+      {c:'✓',t:'Líneas en descenso continuo desde el transmisor al proceso'},
+      {c:'✓',t:'Drenar hacia el proceso — sin trampas de líquido'},
+      {c:'✓',t:'Purga de gas en punto bajo si hay riesgo de líquido'},
+      {c:'✗',t:'No crear bolsas de líquido: invalidarían la lectura por presión hidrostática'},
+    ],
+    diagramaLabel:'Transmisor montado SOBRE el proceso — condensados drenan',
+    path:'M 60 130 L 60 70 L 200 70 L 200 30',
+    extra:'Gas llena las líneas. El condensado eventual escurre de vuelta por gravedad.',
+  },
+  vapor:{
+    label:'Vapor (steam)',
+    color:'#d4ab40',
+    posicion:'LATERAL — con potes de condensado',
+    regla:'El vapor condensa en las líneas. API RP 551 exige potes de condensado (condensate pots) para crear una columna de agua de altura constante y conocida en ambas ramas del DP, eliminar así el error de cabeza variable.',
+    lineas:[
+      {c:'✓',t:'Potes de condensado a la misma altura en ambas ramas (H± < 3 mm)'},
+      {c:'✓',t:'Líneas de liquido entre pote y transmisor — misma regla que líquido'},
+      {c:'✓',t:'Llenar los potes con agua destilada en el arranque inicial'},
+      {c:'✓',t:'Verificar nivel de potes en cada mantenimiento preventivo'},
+      {c:'✗',t:'No permitir que los potes se vacíen: error de cero severo'},
+    ],
+    diagramaLabel:'Potes de condensado a la misma cota — columna constante',
+    path:'M 60 80 L 60 60 L 100 60 M 160 60 L 200 60 L 200 80',
+    extra:'Potes de condensado igualan la columna de líquido. ΔP real = ΔP proceso.',
+  },
+};
+
+function DiagramaMontaje({fluid}){
+  const f=FLUIDOS[fluid];
+  if(fluid==='liquido') return(
+    <svg viewBox="0 0 280 200" width="260" height="185" style={{display:'block',margin:'0 auto'}}>
+      {/* process pipe */}
+      <rect x={10} y={20} width={260} height={22} rx={4} fill="#0a120d" stroke={f.color} strokeWidth={1.5}/>
+      <text x={140} y={34} textAnchor="middle" fill={f.color} fontSize={9} fontFamily="IBM Plex Mono,monospace">PROCESO</text>
+      {/* taps */}
+      <line x1={70} y1={42} x2={70} y2={60} stroke={f.color} strokeWidth={2}/>
+      <line x1={170} y1={42} x2={170} y2={60} stroke={f.color} strokeWidth={2}/>
+      {/* impulse lines going down */}
+      <line x1={70} y1={60} x2={70} y2={130} stroke="#5b9bef" strokeWidth={2}/>
+      <line x1={170} y1={60} x2={170} y2={130} stroke="#5b9bef" strokeWidth={2}/>
+      {/* manifold */}
+      <rect x={55} y={128} width={130} height={18} rx={3} fill="#0f1712" stroke="rgba(110,210,150,0.3)" strokeWidth={1}/>
+      <text x={120} y={140} textAnchor="middle" fill="#90a89a" fontSize={9} fontFamily="IBM Plex Mono,monospace">5-valve manifold</text>
+      {/* transmitter */}
+      <rect x={75} y={155} width={90} height={30} rx={6} fill="#0f1712" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={120} y={174} textAnchor="middle" fill="#35b07a" fontSize={10} fontFamily="IBM Plex Mono,monospace" fontWeight="700">ΔP TRANSMISOR</text>
+      {/* flow arrows */}
+      <polygon points="67,108 73,108 70,116" fill="#5b9bef"/>
+      <polygon points="167,108 173,108 170,116" fill="#5b9bef"/>
+      <text x={40} y={105} fill="#5b9bef" fontSize={9} fontFamily="IBM Plex Mono,monospace">↓ lleno</text>
+    </svg>
+  );
+  if(fluid==='gas') return(
+    <svg viewBox="0 0 280 200" width="260" height="185" style={{display:'block',margin:'0 auto'}}>
+      {/* process pipe */}
+      <rect x={10} y={158} width={260} height={22} rx={4} fill="#0a120d" stroke={f.color} strokeWidth={1.5}/>
+      <text x={140} y={172} textAnchor="middle" fill={f.color} fontSize={9} fontFamily="IBM Plex Mono,monospace">PROCESO</text>
+      {/* taps */}
+      <line x1={70} y1={158} x2={70} y2={130} stroke={f.color} strokeWidth={2}/>
+      <line x1={170} y1={158} x2={170} y2={130} stroke={f.color} strokeWidth={2}/>
+      {/* impulse lines going up */}
+      <line x1={70} y1={130} x2={70} y2={65} stroke="#35b07a" strokeWidth={2}/>
+      <line x1={170} y1={130} x2={170} y2={65} stroke="#35b07a" strokeWidth={2}/>
+      {/* manifold */}
+      <rect x={55} y={48} width={130} height={18} rx={3} fill="#0f1712" stroke="rgba(110,210,150,0.3)" strokeWidth={1}/>
+      <text x={120} y={60} textAnchor="middle" fill="#90a89a" fontSize={9} fontFamily="IBM Plex Mono,monospace">5-valve manifold</text>
+      {/* transmitter */}
+      <rect x={75} y={14} width={90} height={30} rx={6} fill="#0f1712" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={120} y={33} textAnchor="middle" fill="#35b07a" fontSize={10} fontFamily="IBM Plex Mono,monospace" fontWeight="700">ΔP TRANSMISOR</text>
+      {/* gas arrows up */}
+      <polygon points="67,105 73,105 70,97" fill="#35b07a"/>
+      <polygon points="167,105 173,105 170,97" fill="#35b07a"/>
+      <text x={38} y={100} fill="#35b07a" fontSize={9} fontFamily="IBM Plex Mono,monospace">↑ gas</text>
+    </svg>
+  );
+  return(
+    <svg viewBox="0 0 280 200" width="260" height="185" style={{display:'block',margin:'0 auto'}}>
+      {/* steam pipe */}
+      <rect x={10} y={10} width={260} height={22} rx={4} fill="#0a120d" stroke={f.color} strokeWidth={1.5}/>
+      <text x={140} y={24} textAnchor="middle" fill={f.color} fontSize={9} fontFamily="IBM Plex Mono,monospace">PROCESO (VAPOR)</text>
+      {/* taps */}
+      <line x1={70} y1={32} x2={70} y2={65} stroke={f.color} strokeWidth={2} strokeDasharray="4,3"/>
+      <line x1={170} y1={32} x2={170} y2={65} stroke={f.color} strokeWidth={2} strokeDasharray="4,3"/>
+      {/* condensate pots */}
+      <rect x={55} y={60} width={30} height={22} rx={3} fill="#0f1712" stroke={f.color} strokeWidth={1.5}/>
+      <text x={70} y={74} textAnchor="middle" fill={f.color} fontSize={8} fontFamily="IBM Plex Mono,monospace">pot</text>
+      <rect x={155} y={60} width={30} height={22} rx={3} fill="#0f1712" stroke={f.color} strokeWidth={1.5}/>
+      <text x={170} y={74} textAnchor="middle" fill={f.color} fontSize={8} fontFamily="IBM Plex Mono,monospace">pot</text>
+      {/* cota line */}
+      <line x1={40} y1={71} x2={240} y2={71} stroke="rgba(212,171,64,0.3)" strokeWidth={1} strokeDasharray="6,4"/>
+      <text x={245} y={74} fill={f.color} fontSize={8} fontFamily="IBM Plex Mono,monospace">H=cte</text>
+      {/* impulse lines water */}
+      <line x1={70} y1={82} x2={70} y2={130} stroke="#5b9bef" strokeWidth={2}/>
+      <line x1={170} y1={82} x2={170} y2={130} stroke="#5b9bef" strokeWidth={2}/>
+      {/* manifold */}
+      <rect x={55} y={128} width={130} height={18} rx={3} fill="#0f1712" stroke="rgba(110,210,150,0.3)" strokeWidth={1}/>
+      <text x={120} y={140} textAnchor="middle" fill="#90a89a" fontSize={9} fontFamily="IBM Plex Mono,monospace">manifold</text>
+      {/* transmitter */}
+      <rect x={75} y={155} width={90} height={28} rx={6} fill="#0f1712" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={120} y={172} textAnchor="middle" fill="#35b07a" fontSize={10} fontFamily="IBM Plex Mono,monospace" fontWeight="700">ΔP TRANSMISOR</text>
+    </svg>
+  );
+}
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Principios de Montaje — API RP 551 §4.3</div>
+    <div className="sec-sub">Orientación del transmisor según el tipo de fluido medido</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Regla fundamental de montaje</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:8}}>
+            La posición del transmisor respecto a la toma de proceso NO es arbitraria. API RP 551 establece que la orientación debe garantizar que las líneas de impulso permanezcan en un estado predecible y estable.
+          </p>
+          <div className="def-box">
+            <strong style={{color:'#35b07a'}}>Principio:</strong> Las líneas de impulso deben estar completamente llenas del mismo fluido (sin mezcla gas-líquido) y a temperatura uniforme entre ambas ramas para minimizar el error de cero en medidores DP.
+          </div>
+          <div className="card-h" style={{marginTop:10}}>Factores que determinan la orientación</div>
+          {[
+            {f:'Estado del fluido',v:'Gas, líquido o vapor — dicta la posición'},
+            {f:'Temperatura de proceso',v:'Alta T → riesgo de vaporización local'},
+            {f:'Viscosidad',v:'Alta η → considerar calefacción de líneas'},
+            {f:'Precipitación o solidificación',v:'Slurry, betún → líneas calefactadas o purga'},
+            {f:'Presencia de sólidos',v:'Riesgo de obstrucción en tomas'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#35b07a',flexShrink:0,fontSize:11,marginTop:1}}>▸</span>
+              <div>
+                <span style={{fontSize:12,fontWeight:600,color:'#eef4ef'}}>{r.f}: </span>
+                <span style={{fontSize:12,color:'#90a89a'}}>{r.v}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Accesibilidad y seguridad</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:8}}>
+            Además de la correcta orientación por tipo de fluido, API RP 551 §4.3.4 establece requisitos de acceso para el instrumento en operación.
+          </p>
+          {[
+            {c:'badge-g',l:'ACCESO',t:'El instrumento debe ser accesible desde una plataforma permanente o escalera fija para lectura e inspección sin interrumpir el proceso'},
+            {c:'badge-g',l:'VISIBILIDAD',t:'El indicador local (LCD/escala) debe poder leerse en posición de trabajo normal sin necesidad de herramientas o arneses'},
+            {c:'badge-b',l:'VIBRACIÓN',t:'Si hay vibración de la tubería, montar el transmisor en soporte independiente o usar soportes anti-vibración (API RP 551 §4.3.6)'},
+            {c:'badge-r',l:'TEMPERATURA',t:'T ambiente del transmisor debe estar dentro del rango del fabricante. Si T proceso > 120°C, usar capilares o sifones de enfriamiento'},
+            {c:'badge-b',l:'IDENTIFICACIÓN',t:'TAG del instrumento visible desde el piso del área de proceso. Líneas etiquetadas con número de loop'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span className={`badge ${r.c}`} style={{flexShrink:0,marginTop:1}}>{r.l}</span>
+              <span style={{fontSize:12,color:'#90a89a',lineHeight:1.5}}>{r.t}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginTop:0}}>
+          <div className="card-h">Manifolds — estándar de conexión</div>
+          <div style={{fontSize:12,color:'#90a89a',lineHeight:1.6}}>
+            API RP 551 requiere manifold de <strong style={{color:'#eef4ef'}}>3 ó 5 válvulas</strong> para transmisores DP. El de 5 válvulas incluye válvula de cero (ecualizadora) y dos de venteo, facilitando la verificación de cero en servicio sin aislar el proceso completo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const [sel,setSel]=useState('liquido');
+  const f=FLUIDOS[sel];
+  return(<div>
+    <div className="sec-title">Montaje por Tipo de Fluido</div>
+    <div className="sec-sub">Selecciona el fluido para ver las reglas API RP 551 aplicables</div>
+    <div style={{display:'flex',gap:8,marginBottom:14}}>
+      {Object.entries(FLUIDOS).map(([k,v])=>(
+        <button key={k} className={`fluid-btn${sel===k?' sel':''}`} onClick={()=>setSel(k)}>{v.label}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h" style={{color:f.color}}>Posición recomendada — {f.label}</div>
+          <div className="def-box" style={{borderLeftColor:f.color}}>
+            <strong style={{color:f.color}}>Montaje: </strong>{f.posicion}
+          </div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:8,marginTop:6}}>{f.regla}</p>
+          <div className="card-h">Reglas de instalación</div>
+          {f.lineas.map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:r.c==='✓'?'#35b07a':'#c85a3a',flexShrink:0,fontSize:12,marginTop:1}}>{r.c}</span>
+              <span style={{fontSize:12,color:r.c==='✓'?'#eef4ef':'#90a89a',lineHeight:1.45}}>{r.t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Diagrama de montaje</div>
+          <div className="diagram-box" style={{borderColor:f.color+'40'}}>
+            <DiagramaMontaje fluid={sel}/>
+            <div style={{fontSize:11,color:'#566b5e',marginTop:6,fontFamily:'IBM Plex Mono,monospace'}}>{f.diagramaLabel}</div>
+          </div>
+          <div style={{marginTop:10,fontSize:12,color:'#90a89a',lineHeight:1.6,background:'rgba(0,0,0,0.3)',borderRadius:6,padding:'8px 12px'}}>
+            {f.extra}
+          </div>
+        </div>
+        {sel==='vapor' && (
+          <div className="card" style={{marginTop:0,borderColor:'rgba(212,171,64,0.25)'}}>
+            <div className="card-h" style={{color:'#d4ab40'}}>Cálculo del error por desigualdad de potes</div>
+            <div style={{fontSize:12,color:'#90a89a',lineHeight:1.6}}>
+              Si los potes de condensado tienen diferencia de nivel ΔH (metros), el error introducido en el DP es:<br/>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',color:'#eef4ef',fontSize:13}}>ΔP_error = ρ_agua × g × ΔH</span><br/>
+              Para ΔH = 10 mm: error ≈ 98 Pa ≈ 10 mmH₂O — significativo para DP de nivel de baja presión.
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const montajes=[
+    {
+      tipo:'Transmisor de presión manométrica — líquido',
+      pos:'Igual nivel o por debajo de la toma',
+      pendiente:'≥ 1:12 descendente hacia el transmisor',
+      valvula:'Válvula de bloqueo en la toma + válvula de venteo en transmisor',
+      nota:'Si el fluido contiene sólidos o puede solidificarse, usar purga de proceso continua (API RP 551 §4.3.8)',
+    },
+    {
+      tipo:'Transmisor de presión manométrica — gas',
+      pos:'Igual nivel o por encima de la toma',
+      pendiente:'≥ 1:12 descendente desde transmisor al proceso',
+      valvula:'Válvula de bloqueo + válvula de drenaje en punto bajo',
+      nota:'El gas debe ser limpio y seco. Si hay condensados, agregar separador de líquido antes del transmisor',
+    },
+    {
+      tipo:'Transmisor DP — líquido (caudal o nivel)',
+      pos:'Por debajo de la tubería de proceso',
+      pendiente:'Ambas ramas con ≥ 1:12 hacia el transmisor',
+      valvula:'Manifold de 5 válvulas',
+      nota:'Ambas ramas deben tener idéntica pendiente para no introducir diferencias de columna hidrostática',
+    },
+    {
+      tipo:'Transmisor DP — gas (caudal)',
+      pos:'Por encima o al nivel de las tomas',
+      pendiente:'Pendiente ≥ 1:12 de condensados hacia proceso',
+      valvula:'Manifold de 5 válvulas + drenes en puntos bajos',
+      nota:'Evitar que el condensado alcance el cuerpo del transmisor',
+    },
+    {
+      tipo:'Transmisor DP — vapor',
+      pos:'Lateral — potes de condensado al mismo nivel',
+      pendiente:'Líneas agua descendentes hacia transmisor',
+      valvula:'Manifold de 5 válvulas + aislamientos térmicos',
+      nota:'Potes de condensado deben estar a exactamente la misma cota. Verificar en cada parada',
+    },
+    {
+      tipo:'Transmisor de temperatura (termómetro)',
+      pos:'No aplica montaje relativo al proceso',
+      pendiente:'—',
+      valvula:'Termopozo (thermowell) según ASME PTC 19.3',
+      nota:'La penetración del termopozo debe ser ≥ 50% del diámetro interno de la tubería para buena respuesta térmica',
+    },
+  ];
+  return(<div>
+    <div className="sec-title">Tabla Resumen de Montaje — API RP 551</div>
+    <div className="sec-sub">Criterios consolidados por tipo de instrumento y fluido</div>
+    <div style={{overflowY:'auto',maxHeight:550}}>
+      <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,fontFamily:'IBM Plex Mono,monospace'}}>
+        <thead>
+          <tr style={{background:'#0a120d',borderBottom:'2px solid rgba(110,210,150,0.3)'}}>
+            {['Instrumento / Fluido','Posición','Pendiente línea','Válvulas','Nota clave'].map((h,i)=>(
+              <th key={i} style={{padding:'8px 10px',color:'#35b07a',textAlign:'left',letterSpacing:'.08em',fontSize:10}}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {montajes.map((m,i)=>(
+            <tr key={i} style={{background:i%2===0?'#0f1712':'rgba(10,18,13,0.6)',borderBottom:'1px solid rgba(110,210,150,0.08)'}}>
+              <td style={{padding:'8px 10px',color:'#eef4ef',fontWeight:600,fontFamily:'Space Grotesk,sans-serif',fontSize:11}}>{m.tipo}</td>
+              <td style={{padding:'8px 10px',color:'#5b9bef'}}>{m.pos}</td>
+              <td style={{padding:'8px 10px',color:'#90a89a'}}>{m.pendiente}</td>
+              <td style={{padding:'8px 10px',color:'#35b07a'}}>{m.valvula}</td>
+              <td style={{padding:'8px 10px',color:'#566b5e',fontFamily:'Space Grotesk,sans-serif',fontSize:11}}>{m.nota}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div className="warn-box" style={{marginTop:10}}>
+      <strong style={{color:'#c85a3a'}}>API RP 551 §4.3.10 — Calefacción de líneas:</strong> Cuando la temperatura mínima del proceso o ambiente pueda causar solidificación, congelación o alta viscosidad, las líneas de impulso deben calefaccionarse con vapor de baja presión o cable eléctrico trenzado, con aislamiento térmico exterior. La temperatura de la traza debe mantenerse 15–20°C por encima del punto de solidificación del fluido.
+    </div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'Principios generales',C:Scene1},
+  {id:2,label:'Montaje por fluido',C:Scene2},
+  {id:3,label:'Tabla resumen',C:Scene3},
+];
+
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Clase 12.2 — Montaje de Transmisores</div>
+          <div className="topbar-sub">API RP 551 §4.3 · Módulo 12 — Instrumentación API RP 551</div>
+        </div>
+        <div className="scene-badge">ESCENA {sc} / {SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=>(
+            <div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>
+              {String(s.id).padStart(2,'0')} · {s.label}
+            </div>
+          ))}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(110,210,150,0.1)',marginTop:8}}>
+            <div style={{fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#566b5e',lineHeight:1.5}}>Montar transmisores de presión y DP correctamente según el tipo de fluido y los requisitos de API RP 551.</div>
+          </div>
+        </div>
+        <div className="main">
+          <cur.C/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

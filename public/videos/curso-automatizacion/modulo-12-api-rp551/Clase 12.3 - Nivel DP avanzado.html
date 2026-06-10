@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 12.3 — Nivel DP Avanzado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060b08;font-family:'Space Grotesk',system-ui,sans-serif;color:#eef4ef;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060b08,#0a120d);border-bottom:2px solid rgba(110,210,150,0.3);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#35b07a;}
+.topbar-sub{font-size:11px;color:#90a89a;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(110,210,150,0.1);border:1px solid rgba(110,210,150,0.25);color:#35b07a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a120d;border-right:1px solid rgba(110,210,150,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#566b5e;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#35b07a;border-left-color:#35b07a;background:rgba(110,210,150,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#eef4ef;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(110,210,150,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#35b07a;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#566b5e;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1712;border:1px solid rgba(110,210,150,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#35b07a;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060b08;border-left:3px solid #35b07a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.warn-box{background:rgba(200,90,58,0.07);border-left:3px solid #c85a3a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.info-box{background:rgba(91,155,239,0.07);border-left:3px solid #5b9bef;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:6px;}
+.badge-g{background:rgba(110,210,150,0.15);color:#35b07a;border:1px solid rgba(110,210,150,0.3);}
+.badge-r{background:rgba(200,90,58,0.15);color:#c85a3a;border:1px solid rgba(200,90,58,0.3);}
+.badge-b{background:rgba(60,120,210,0.15);color:#5b9bef;border:1px solid rgba(60,120,210,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(110,210,150,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+.tab-btn{padding:7px 16px;border:1px solid rgba(110,210,150,0.25);border-radius:6px;background:transparent;color:#566b5e;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.tab-btn.sel{background:rgba(110,210,150,0.12);border-color:#35b07a;color:#35b07a;font-weight:600;}
+.tab-btn:hover:not(.sel){border-color:rgba(110,210,150,0.5);color:#eef4ef;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function DiagramaWetLeg(){
+  return(
+    <svg viewBox="0 0 300 260" width="280" height="245" style={{display:'block',margin:'0 auto'}}>
+      {/* vessel */}
+      <rect x={20} y={20} width={80} height={200} rx={4} fill="#0a120d" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={60} y={14} textAnchor="middle" fill="#35b07a" fontSize={9} fontFamily="IBM Plex Mono,monospace">VESSEL</text>
+      {/* liquid level */}
+      <rect x={21} y={100} width={78} height={119} rx={0} fill="rgba(91,155,239,0.25)"/>
+      <line x1={21} y1={100} x2={99} y2={100} stroke="#5b9bef" strokeWidth={1.5} strokeDasharray="5,3"/>
+      <text x={60} y={95} textAnchor="middle" fill="#5b9bef" fontSize={9} fontFamily="IBM Plex Mono,monospace">nivel</text>
+      {/* taps */}
+      <line x1={100} y1={30} x2={140} y2={30} stroke="#d4ab40" strokeWidth={2}/>  {/* HP tap */}
+      <line x1={100} y1={210} x2={140} y2={210} stroke="#35b07a" strokeWidth={2}/> {/* LP tap */}
+      <text x={105} y={26} fill="#d4ab40" fontSize={8} fontFamily="IBM Plex Mono,monospace">HP (toma superior)</text>
+      <text x={105} y={225} fill="#35b07a" fontSize={8} fontFamily="IBM Plex Mono,monospace">LP (toma inferior)</text>
+      {/* HP wet leg — filled with reference fluid */}
+      <line x1={140} y1={30} x2={140} y2={240} stroke="#d4ab40" strokeWidth={3}/>
+      <text x={148} y={130} fill="#d4ab40" fontSize={9} fontFamily="IBM Plex Mono,monospace" transform="rotate(90,148,130)">pierna mojada (HP)</text>
+      {/* LP impulse line */}
+      <line x1={140} y1={210} x2={180} y2={210} stroke="#35b07a" strokeWidth={2}/>
+      <line x1={180} y1={210} x2={180} y2={240} stroke="#35b07a" strokeWidth={2}/>
+      {/* transmitter */}
+      <rect x={155} y={238} width={90} height={28} rx={5} fill="#0f1712" stroke="#35b07a" strokeWidth={1.5}/>
+      <line x1={140} y1={240} x2={155} y2={252} stroke="#d4ab40" strokeWidth={2}/>
+      <line x1={180} y1={240} x2={180} y2={252} stroke="#35b07a" strokeWidth={2}/>
+      <text x={200} y={256} textAnchor="middle" fill="#35b07a" fontSize={10} fontFamily="IBM Plex Mono,monospace" fontWeight="700">ΔP TX</text>
+      {/* labels */}
+      <text x={155} y={20} fill="#d4ab40" fontSize={8} fontFamily="IBM Plex Mono,monospace">Referencia constante</text>
+      <text x={155} y={28} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">(pierna mojada llena)</text>
+    </svg>
+  );
+}
+
+function DiagramaDryLeg(){
+  return(
+    <svg viewBox="0 0 300 260" width="280" height="245" style={{display:'block',margin:'0 auto'}}>
+      {/* vessel */}
+      <rect x={20} y={20} width={80} height={200} rx={4} fill="#0a120d" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={60} y={14} textAnchor="middle" fill="#35b07a" fontSize={9} fontFamily="IBM Plex Mono,monospace">VESSEL</text>
+      {/* liquid level */}
+      <rect x={21} y={100} width={78} height={119} rx={0} fill="rgba(91,155,239,0.25)"/>
+      <line x1={21} y1={100} x2={99} y2={100} stroke="#5b9bef" strokeWidth={1.5} strokeDasharray="5,3"/>
+      <text x={60} y={95} textAnchor="middle" fill="#5b9bef" fontSize={9} fontFamily="IBM Plex Mono,monospace">nivel</text>
+      {/* taps */}
+      <line x1={100} y1={30} x2={150} y2={30} stroke="#35b07a" strokeWidth={2}/>
+      <line x1={100} y1={210} x2={150} y2={210} stroke="#35b07a" strokeWidth={2}/>
+      <text x={105} y={26} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">HP tap</text>
+      <text x={105} y={224} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">LP tap</text>
+      {/* HP dry impulse */}
+      <line x1={150} y1={30} x2={150} y2={240} stroke="#35b07a" strokeWidth={2} strokeDasharray="8,4"/>
+      <text x={158} y={120} fill="#35b07a" fontSize={9} fontFamily="IBM Plex Mono,monospace" transform="rotate(90,158,120)">pierna seca (HP)</text>
+      {/* LP impulse */}
+      <line x1={150} y1={210} x2={190} y2={210} stroke="#35b07a" strokeWidth={2}/>
+      <line x1={190} y1={210} x2={190} y2={240} stroke="#35b07a" strokeWidth={2}/>
+      {/* transmitter */}
+      <rect x={160} y={238} width={90} height={28} rx={5} fill="#0f1712" stroke="#35b07a" strokeWidth={1.5}/>
+      <line x1={150} y1={240} x2={162} y2={252} stroke="#35b07a" strokeWidth={2}/>
+      <line x1={190} y1={240} x2={190} y2={252} stroke="#35b07a" strokeWidth={2}/>
+      <text x={205} y={256} textAnchor="middle" fill="#35b07a" fontSize={10} fontFamily="IBM Plex Mono,monospace" fontWeight="700">ΔP TX</text>
+      {/* gas indicator */}
+      <text x={155} y={22} fill="#90a89a" fontSize={8} fontFamily="IBM Plex Mono,monospace">gas (sin liquido)</text>
+      <text x={145} y={180} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">sin condensado</text>
+    </svg>
+  );
+}
+
+function DiagramaSello(){
+  return(
+    <svg viewBox="0 0 300 260" width="280" height="245" style={{display:'block',margin:'0 auto'}}>
+      {/* vessel */}
+      <rect x={20} y={40} width={80} height={180} rx={4} fill="#0a120d" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={60} y={35} textAnchor="middle" fill="#35b07a" fontSize={9} fontFamily="IBM Plex Mono,monospace">VESSEL</text>
+      {/* level */}
+      <rect x={21} y={120} width={78} height={99} rx={0} fill="rgba(200,90,58,0.2)"/>
+      <line x1={21} y1={120} x2={99} y2={120} stroke="#c85a3a" strokeWidth={1.5} strokeDasharray="5,3"/>
+      <text x={60} y={115} textAnchor="middle" fill="#c85a3a" fontSize={9} fontFamily="IBM Plex Mono,monospace">slurry/viscoso</text>
+      {/* diaphragm seals on vessel nozzles */}
+      <rect x={99} y={45} width={14} height={18} rx={2} fill="#d4ab40" stroke="#d4ab40" strokeWidth={1}/>
+      <text x={119} y={57} fill="#d4ab40" fontSize={8} fontFamily="IBM Plex Mono,monospace">sello Ø</text>
+      <rect x={99} y={195} width={14} height={18} rx={2} fill="#d4ab40" stroke="#d4ab40" strokeWidth={1}/>
+      <text x={119} y={207} fill="#d4ab40" fontSize={8} fontFamily="IBM Plex Mono,monospace">sello Ø</text>
+      {/* capillary tubes */}
+      <path d="M 113 54 Q 160 54 160 100 Q 160 150 200 150" fill="none" stroke="#d4ab40" strokeWidth={2.5} strokeDasharray="6,3"/>
+      <path d="M 113 204 Q 160 204 160 175 Q 160 160 200 160" fill="none" stroke="#d4ab40" strokeWidth={2.5} strokeDasharray="6,3"/>
+      <text x={135} y={90} fill="#d4ab40" fontSize={8} fontFamily="IBM Plex Mono,monospace" transform="rotate(-20,135,90)">capilar</text>
+      {/* transmitter */}
+      <rect x={195} y={138} width={85} height={34} rx={5} fill="#0f1712" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={237} y={158} textAnchor="middle" fill="#35b07a" fontSize={10} fontFamily="IBM Plex Mono,monospace" fontWeight="700">ΔP TX</text>
+      {/* fill fluid note */}
+      <rect x={150} y={42} width={130} height={22} rx={4} fill="rgba(212,171,64,0.1)" stroke="rgba(212,171,64,0.3)" strokeWidth={1}/>
+      <text x={215} y={56} textAnchor="middle" fill="#d4ab40" fontSize={9} fontFamily="IBM Plex Mono,monospace">fluido de relleno inerte</text>
+    </svg>
+  );
+}
+
+const METODOS={
+  wet:{
+    label:'Pierna Mojada',
+    color:'#d4ab40',
+    aplica:'Fluidos limpios en vasijas cerradas donde el vapor o gas del espacio superior puede condensar en la línea HP',
+    como:'La línea de alta presión (HP) se mantiene intencionalmente llena de un fluido de referencia (generalmente agua destilada, condensado o el mismo proceso). Esto crea una columna hidrostática constante y conocida que puede compensarse en el span del transmisor.',
+    formula:'ΔP medido = ρ_proceso × g × h_nivel − ρ_ref × g × H_pierna',
+    pros:['Elimina variaciones por condensación en la línea HP','Señal estable — no depende de si hay gas o vapor','Adecuado para procesos a alta presión y temperatura'],
+    cons:['Requiere llenado cuidadoso de la pierna en arranque','Error si la densidad del fluido de referencia varía (T)','Calibración más compleja: span negativo posible'],
+    Diagrama:DiagramaWetLeg,
+  },
+  dry:{
+    label:'Pierna Seca',
+    color:'#35b07a',
+    aplica:'Gases limpios y secos donde no hay condensación posible en las líneas de impulso',
+    como:'Ambas líneas de impulso permanecen llenas de gas del proceso. No hay líquido de referencia. La relación entre ΔP y nivel es directamente proporcional a la densidad del líquido y la altura.',
+    formula:'ΔP = ρ_liquido × g × h_nivel',
+    pros:['Instalación más simple — sin fluido de referencia','Calibración directa sin compensación de pierna','Mínimo mantenimiento si el gas es seco y limpio'],
+    cons:['No apto si el gas puede condensar en la línea HP','Errores si entra líquido en la línea de gas','Solo para gas de proceso limpio y seco'],
+    Diagrama:DiagramaDryLeg,
+  },
+  sello:{
+    label:'Sellos de Diafragma',
+    color:'#c85a3a',
+    aplica:'Fluidos viscosos, corrosivos, con sólidos en suspensión, o que solidifican a temperatura ambiente',
+    como:'Los sellos de diafragma (diaphragm seals) aíslan físicamente el fluido de proceso del cuerpo del transmisor. El diafragma metálico transmite la presión a través de un fluido de relleno inerte (silicona, aceite, glicerina) que llena capilares hasta el transmisor.',
+    formula:'Respuesta de presión: P_tx = P_proceso × (A_diafragma / A_capilar) — transmisión hidrostática sin contacto',
+    pros:['Sin contacto entre proceso y transmisor','Apto para slurry, ácidos, betún, polímeros','Temperatura del proceso aislada del transmisor'],
+    cons:['Efecto de T en el fluido de relleno (error de cero)','Tiempo de respuesta más lento por el capilar','Mayor costo inicial y mantenimiento del fluido de relleno'],
+    Diagrama:DiagramaSello,
+  },
+};
+
+function Scene1(){
+  const [sel,setSel]=useState('wet');
+  const m=METODOS[sel];
+  return(<div>
+    <div className="sec-title">Medición de Nivel por DP — Métodos API RP 551</div>
+    <div className="sec-sub">Selecciona el método para ver los detalles de instalación y cálculo</div>
+    <div style={{display:'flex',gap:8,marginBottom:14}}>
+      {Object.entries(METODOS).map(([k,v])=>(
+        <button key={k} className={`tab-btn${sel===k?' sel':''}`} onClick={()=>setSel(k)}>{v.label}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h" style={{color:m.color}}>Aplica cuando...</div>
+          <div className="def-box" style={{borderLeftColor:m.color,marginBottom:10}}>
+            {m.aplica}
+          </div>
+          <div className="card-h">Principio de operación</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:8}}>{m.como}</p>
+          <div style={{background:'#060b08',borderRadius:6,padding:'8px 12px',marginBottom:8}}>
+            <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,color:'#35b07a'}}>Ecuación: </span>
+            <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,color:'#eef4ef'}}>{m.formula}</span>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            <div>
+              <div className="card-h" style={{color:'#35b07a'}}>✓ Ventajas</div>
+              {m.pros.map((p,i)=>(
+                <div key={i} className="row"><span style={{color:'#35b07a',flexShrink:0}}>+</span><span style={{fontSize:11,color:'#90a89a'}}>{p}</span></div>
+              ))}
+            </div>
+            <div>
+              <div className="card-h" style={{color:'#c85a3a'}}>✗ Limitaciones</div>
+              {m.cons.map((p,i)=>(
+                <div key={i} className="row"><span style={{color:'#c85a3a',flexShrink:0}}>−</span><span style={{fontSize:11,color:'#90a89a'}}>{p}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Diagrama de instalación</div>
+          <div style={{background:'#060b08',border:'1px solid rgba(110,210,150,0.1)',borderRadius:8,padding:10}}>
+            <m.Diagrama/>
+            <div style={{fontSize:11,color:'#566b5e',textAlign:'center',marginTop:6,fontFamily:'IBM Plex Mono,monospace'}}>{m.label} — instalación típica</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Cálculo de Span y Cero — Pierna Mojada</div>
+    <div className="sec-sub">API RP 551 §5.4 — Ejemplo de calibración con pierna mojada</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Datos del ejemplo</div>
+          {[
+            {l:'Vasija',v:'Separador líquido-gas a 10 bar, 80°C'},
+            {l:'Rango de nivel',v:'0 – 800 mm (0 = toma LP, 800 = toma HP)'},
+            {l:'Fluido de proceso',v:'Agua: ρ = 972 kg/m³ a 80°C'},
+            {l:'Fluido de referencia',v:'Agua destilada: ρ_ref = 998 kg/m³ a 20°C'},
+            {l:'Altura pierna mojada',v:'H = 1 000 mm (fija, entre tomas)'},
+            {l:'Transmisor',v:'DP rango –9 810 Pa a +1 622 Pa'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{fontSize:11,fontWeight:600,color:'#eef4ef',flexShrink:0,width:160}}>{r.l}</span>
+              <span style={{fontSize:11,color:'#90a89a'}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Fórmulas</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:12,lineHeight:1.9,color:'#eef4ef'}}>
+            <div>ΔP = ρ_proc × g × h − ρ_ref × g × H</div>
+            <div style={{color:'#566b5e',fontSize:11}}>h = nivel actual (m), H = altura pierna mojada (m)</div>
+          </div>
+          <div className="def-box" style={{marginTop:10}}>
+            <strong style={{color:'#35b07a'}}>LRV (h=0):</strong><br/>
+            ΔP = 972 × 9.81 × 0 − 998 × 9.81 × 1.0<br/>
+            <span style={{color:'#eef4ef',fontFamily:'IBM Plex Mono,monospace'}}>= −9 790 Pa ≈ −9 790 Pa</span>
+          </div>
+          <div className="def-box" style={{marginTop:8,borderLeftColor:'#d4ab40'}}>
+            <strong style={{color:'#d4ab40'}}>URV (h=800 mm):</strong><br/>
+            ΔP = 972 × 9.81 × 0.80 − 998 × 9.81 × 1.0<br/>
+            <span style={{color:'#eef4ef',fontFamily:'IBM Plex Mono,monospace'}}>= 7 624 − 9 790 = −2 166 Pa</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Interpretación del resultado</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:10}}>
+            El transmisor tiene un <strong style={{color:'#c85a3a'}}>span negativo</strong>: cuando el nivel sube, el ΔP medido se vuelve <em>menos negativo</em>. El transmisor debe calibrarse con LRV = −9 790 Pa (4 mA) y URV = −2 166 Pa (20 mA).
+          </p>
+          <div className="warn-box">
+            <strong style={{color:'#c85a3a'}}>Span negativo:</strong> El 4 mA corresponde al nivel cero y el 20 mA al nivel máximo, pero la señal de ΔP en ambos puntos es negativa. El transmisor debe soportar esta configuración. Verificar en el datasheet.
+          </div>
+          <div className="card-h" style={{marginTop:12}}>Efecto de temperatura en la pierna mojada</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a'}}>
+            Si la temperatura del fluido de referencia en la pierna varía ±10°C, la densidad cambia ≈ 4 kg/m³, generando un error de:<br/>
+            <span style={{fontFamily:'IBM Plex Mono,monospace',color:'#eef4ef'}}>Δerror = 4 × 9.81 × 1.0 ≈ 39 Pa</span><br/>
+            En un span de 7 624 Pa, eso es ≈ <span style={{color:'#c85a3a'}}>0.5%</span> — significativo en nivel de alta exactitud. Aislar térmicamente la pierna mojada.
+          </p>
+        </div>
+        <div className="card" style={{marginTop:0}}>
+          <div className="card-h">Verificación de cero en campo</div>
+          <div style={{fontSize:12,color:'#90a89a',lineHeight:1.6}}>
+            Con el manifold de 5 válvulas: cerrar las válvulas HP y LP, abrir la ecualizadora. El transmisor debe leer el ΔP de la pierna mojada sola (−9 790 Pa ≈ 4 mA). Si no coincide, la pierna no está completamente llena o hay variación de temperatura.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const casos=[
+    {
+      titulo:'Vasija con vapor en espacio superior — alta T',
+      metodo:'Pierna mojada con agua destilada',
+      por:'El vapor condensa en la línea HP. Al mantener la pierna siempre llena de agua, la columna de referencia es constante aunque cambie el nivel.',
+      precaucion:'Verificar que la pierna no se evapore durante una parada larga del proceso.',
+      badge:'badge-b',btext:'VAPOR',
+    },
+    {
+      titulo:'Tanque de ácido sulfúrico concentrado',
+      metodo:'Sellos de diafragma con fluido de relleno PTFE/Halar',
+      por:'El ácido atacaría las líneas de impulso de acero y el cuerpo del transmisor. El sello de diafragma de Hastelloy C o titanio aísla el proceso.',
+      precaucion:'El fluido de relleno de silicona estándar puede degradarse con H₂SO₄ fumante. Usar relleno de perfluoro-carbono (PFPE).',
+      badge:'badge-r',btext:'CORROSIVO',
+    },
+    {
+      titulo:'Separador de gas-condensado (offshore)',
+      metodo:'Pierna mojada o sello de diafragma con compensación de T',
+      por:'Alta presión y presencia de hidrocarburos pesados. La pierna mojada con condensado de proceso es preferida por su robustez.',
+      precaucion:'Si el condensado puede solidificarse (parafinas), usar líneas calefactadas o sellos de diafragma con fluido de relleno de alta T.',
+      badge:'badge-b',btext:'OFFSHORE',
+    },
+    {
+      titulo:'Reactor de polímero (alta viscosidad)',
+      metodo:'Sellos de diafragma de gran área con extensión de cuello largo',
+      por:'El polímero fundido no puede entrar en líneas de impulso. El sello de cuello largo (extended neck) mantiene el diafragma alejado de la zona caliente.',
+      precaucion:'El tiempo de respuesta puede ser >10 s con capilares largos. No usar para control de nivel con lazo cerrado rápido.',
+      badge:'badge-r',btext:'POLÍMERO',
+    },
+    {
+      titulo:'Silos de sólidos (granos, polvos)',
+      metodo:'Pierna seca — DP de presión diferencial con purga de aire',
+      por:'Los sólidos no conducen presión como líquidos. Se mide el peso del sólido mediante celdas de carga o DP de presión en la base.',
+      precaucion:'Para polvo fino, puede usarse purga continua de aire seco en las tomas para evitar obstrucción. Caudal de purga < 0.1 l/min para no afectar la lectura.',
+      badge:'badge-g',btext:'SÓLIDOS',
+    },
+  ];
+  return(<div>
+    <div className="sec-title">Casos Especiales de Medición de Nivel DP</div>
+    <div className="sec-sub">API RP 551 §5.4 — Aplicaciones no convencionales y selección de método</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {casos.map((c,i)=>(
+        <div key={i} className="card" style={{marginBottom:0}}>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
+            <span className={`badge ${c.badge}`}>{c.btext}</span>
+            <span style={{fontSize:13,fontWeight:600,color:'#eef4ef'}}>{c.titulo}</span>
+          </div>
+          <div style={{fontSize:11,marginBottom:6}}>
+            <span style={{color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>MÉTODO: </span>
+            <span style={{color:'#eef4ef'}}>{c.metodo}</span>
+          </div>
+          <div style={{fontSize:11,color:'#90a89a',lineHeight:1.5,marginBottom:6}}>{c.por}</div>
+          <div style={{fontSize:11,color:'#c85a3a',background:'rgba(200,90,58,0.07)',borderRadius:4,padding:'4px 8px'}}>
+            ⚠ {c.precaucion}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'Métodos DP (wet/dry/sello)',C:Scene1},
+  {id:2,label:'Cálculo span pierna mojada',C:Scene2},
+  {id:3,label:'Casos especiales',C:Scene3},
+];
+
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Clase 12.3 — Nivel DP Avanzado</div>
+          <div className="topbar-sub">API RP 551 §5.4 · Módulo 12 — Instrumentación API RP 551</div>
+        </div>
+        <div className="scene-badge">ESCENA {sc} / {SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=>(
+            <div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>
+              {String(s.id).padStart(2,'0')} · {s.label}
+            </div>
+          ))}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(110,210,150,0.1)',marginTop:8}}>
+            <div style={{fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#566b5e',lineHeight:1.5}}>Calcular y configurar medidores de nivel DP con pierna mojada, seca y sellos de diafragma según API RP 551.</div>
+          </div>
+        </div>
+        <div className="main">
+          <cur.C/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 4.1 — Arquitectura de un SIS</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#3b82f6;padding:6px 8px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;}
+td{padding:5px 8px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const [active,setActive]=useState(null);
+  const subsystems=[
+    {id:'sensor',label:'Subsistema Sensor',icon:'📡',color:'#22d3ee',
+     desc:'Detecta la variable de proceso (presión, temperatura, nivel, flujo). Genera la señal de entrada al logic solver.',
+     items:['Transmisores 4-20 mA con diagnóstico HART','Switches de proceso (presión, temperatura, nivel)','Detectores de gas y llama','Válvulas de corte con feedback de posición'],
+     req:'Certificado SIL. Tiempo de respuesta < 1/4 del tiempo de proceso. Instalación independiente del BPCS.'},
+    {id:'logic',label:'Logic Solver',icon:'🖥️',color:'#3b82f6',
+     desc:'Evalúa las señales de los sensores y ejecuta la lógica de seguridad. Es el "cerebro" del SIS.',
+     items:['PLC de seguridad certificado SIL (ej: S7-1500 FS, Allen-Bradley GuardLogix)','Relés de seguridad (para SIF simples, SIL 1-2)','Sistemas TMR (Triple Modular Redundant) para SIL 3','Safety Manager (Honeywell, Yokogawa, Emerson)'],
+     req:'Certificado SIL igual o mayor al SIL objetivo. Software de aplicación desarrollado según IEC 61511 §12.'},
+    {id:'actuator',label:'Elemento Final',icon:'🔧',color:'#22c55e',
+     desc:'Ejecuta la acción de seguridad cuando el logic solver la demanda. Lleva el proceso al estado seguro.',
+     items:['Válvulas ESD con actuador neumático o eléctrico','Motores con contactor de seguridad','Quemadores con válvulas de corte de gas','Sistemas de inyección (inhibidores, gas inerte)'],
+     req:'Posición de falla (FC, FO, FL) definida. Partial Stroke Test (PST) para válvulas ESD. Certificado SIL.'},
+  ];
+  return(<div>
+    <div className="sec-title">Los Tres Subsistemas del SIS</div>
+    <div className="sec-sub">Sensor → Logic Solver → Elemento Final — la cadena de seguridad completa</div>
+    <div style={{display:'flex',gap:0,alignItems:'stretch',marginBottom:10}}>
+      {subsystems.map((s,i)=>(
+        <div key={i} style={{flex:1,cursor:'pointer',transition:'all .2s'}} onClick={()=>setActive(active===s.id?null:s.id)}>
+          <div style={{background:active===s.id?`${s.color}22`:'#0d1425',border:`1px solid ${active===s.id?s.color:'#1e3a5f'}`,borderRadius:i===0?'10px 0 0 10px':i===2?'0 10px 10px 0':'0',padding:'12px 14px',height:'100%',transition:'all .2s'}}>
+            <div style={{fontSize:22,marginBottom:5}}>{s.icon}</div>
+            <div style={{fontSize:13,fontWeight:700,color:s.color,marginBottom:4}}>{s.label}</div>
+            <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.4,marginBottom:8}}>{s.desc}</p>
+            {active===s.id&&(
+              <div>
+                <div style={{fontSize:10,fontWeight:700,color:s.color,marginBottom:4}}>EJEMPLOS:</div>
+                {s.items.map((item,j)=>(
+                  <div key={j} style={{fontSize:10,color:'#cbd5e1',padding:'2px 0'}}>• {item}</div>
+                ))}
+                <div style={{marginTop:8,fontSize:10,color:'#f59e0b'}}>📋 {s.req}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:8}}>
+      <span style={{fontSize:11,color:'#22d3ee'}}>📡 Sensor</span>
+      <span style={{color:'#3b82f6',fontSize:18}}>→</span>
+      <span style={{fontSize:11,color:'#3b82f6'}}>🖥️ Logic Solver</span>
+      <span style={{color:'#3b82f6',fontSize:18}}>→</span>
+      <span style={{fontSize:11,color:'#22c55e'}}>🔧 Elemento Final</span>
+      <span style={{color:'#3b82f6',fontSize:18}}>→</span>
+      <span style={{fontSize:11,color:'#e2e8f0'}}>✅ Estado Seguro</span>
+    </div>
+    <div className="def-box">
+      <span style={{color:'#3b82f6',fontWeight:700}}>Regla de independencia IEC 61511 §11.2.10:</span> Cada subsistema del SIS debe ser independiente del BPCS. No pueden compartir fuentes de alimentación, sensores ni módulos de E/S sin evaluación formal de impacto en la independencia.
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const sensors=[
+    {tipo:'Transmisor de presión',ejemplos:'Rosemount 3051S, Endress+Hauser PMC71',silMax:'SIL 2 single / SIL 3 con redundancia',app:'PAHH, PALL en reactores, compresores'},
+    {tipo:'Transmisor de temperatura',ejemplos:'Rosemount 644, ABB TTH300',silMax:'SIL 2 single',app:'TAHH en intercambiadores, reactores'},
+    {tipo:'Transmisor de nivel',ejemplos:'Rosemount 3300 radar, Endress+Hauser FMP51',silMax:'SIL 2-3 según tipo',app:'LAHH en tanques de almacenamiento'},
+    {tipo:'Detector de gas',ejemplos:'MSA Ultima X, Honeywell XNX',silMax:'SIL 1-2',app:'Detección de fuga, atmósferas peligrosas'},
+    {tipo:'Switch de presión',ejemplos:'Barton 288, Ashcroft B4',silMax:'SIL 1',app:'Aplicaciones simples — evitar en SIL 2+'},
+  ];
+  return(<div>
+    <div className="sec-title">Sensores para SIS</div>
+    <div className="sec-sub">Tipos, ejemplos y capacidades SIL — subsistema de entrada</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">Requisitos clave para sensores en SIS</div>
+          {[
+            {req:'Certificación SIL',det:'El sensor debe tener certificación SIL emitida por TÜV, exida o FM. Se verifica en el Functional Safety Manual (FSM).'},
+            {req:'Diagnóstico automático',det:'El sensor debe detectar sus propias fallas. HART permite diagnóstico remoto del estado del transmisor.'},
+            {req:'Independencia',det:'El sensor del SIS debe ser diferente (o evaluado formalmente) del sensor del BPCS. No compartir señales.'},
+            {req:'Tiempo de respuesta',det:'El tiempo de respuesta del sensor debe ser menor al tiempo de proceso requerido en el SRS.'},
+            {req:'Prueba periódica',det:'Los transmisores deben ser probados periódicamente (proof test) para detectar fallos DU ocultos.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid #1e3a5f22'}}>
+              <span style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>{r.req}: </span>
+              <span style={{fontSize:11,color:'#94a3b8'}}>{r.det}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Sensores certificados SIL — ejemplos</div>
+          <table>
+            <thead><tr><th>Tipo</th><th>Ejemplo</th><th>SIL máx</th><th>Aplicación</th></tr></thead>
+            <tbody>
+              {sensors.map((s,i)=>(
+                <tr key={i}>
+                  <td style={{fontWeight:600}}>{s.tipo}</td>
+                  <td style={{fontSize:9,color:'#94a3b8'}}>{s.ejemplos}</td>
+                  <td style={{color:'#3b82f6',fontWeight:700,fontSize:10}}>{s.silMax}</td>
+                  <td style={{fontSize:9,color:'#94a3b8'}}>{s.app}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="def-box" style={{marginTop:8}}>
+          <span style={{color:'#3b82f6',fontWeight:700}}>Nota práctica:</span> Un transmisor certificado SIL 2 en modo 1oo1 logra SIL 2. Para SIL 3, se necesita arquitectura 1oo2 o 2oo3 de transmisores SIL 2.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const logicSolvers=[
+    {tipo:'PLC de Seguridad',ejemplos:'S7-1500 F, GuardLogix, SIL PLC de Hima',sil:'SIL 1-3',pros:'Flexible, programable, diagnósticos avanzados',cons:'Requiere programación certificada'},
+    {tipo:'Safety Manager / DCS',ejemplos:'Honeywell FSC, Yokogawa ProSafe-RS',sil:'SIL 3',pros:'Integración con DCS, gestión centralizada',cons:'Alto costo, requiere ingeniería especializada'},
+    {tipo:'TMR (Triple Redundante)',ejemplos:'Triconex T3000, ICS Triplex',sil:'SIL 3',pros:'Alta disponibilidad y seguridad',cons:'Costo alto, complejo en mantenimiento'},
+    {tipo:'Relé de seguridad',ejemplos:'Pilz PNOZ, Schmersal SRB',sil:'SIL 1-2',pros:'Simple, bajo costo, fácil instalar',cons:'Lógica limitada, no programable'},
+  ];
+  return(<div>
+    <div className="sec-title">Logic Solvers para SIS</div>
+    <div className="sec-sub">PLCs de seguridad, Safety Managers y relés — el subsistema lógico</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        {logicSolvers.map((l,i)=>(
+          <div key={i} className="card" style={{marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+              <div style={{fontSize:12,fontWeight:700,color:'#3b82f6'}}>{l.tipo}</div>
+              <span style={{fontSize:10,background:'#1e3a8a44',color:'#93c5fd',padding:'2px 8px',borderRadius:4}}>{l.sil}</span>
+            </div>
+            <div style={{fontSize:10,color:'#64748b',marginBottom:5}}>Ej: {l.ejemplos}</div>
+            <div style={{display:'flex',gap:8,fontSize:10}}>
+              <span style={{color:'#22c55e'}}>✓ {l.pros}</span>
+              <span style={{color:'#ef4444'}}>✗ {l.cons}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Requisitos del software de aplicación SIS</div>
+          <p style={{fontSize:11,color:'#cbd5e1',lineHeight:1.6,marginBottom:8}}>
+            El software aplicativo (la lógica programada) también debe cumplir IEC 61511 §12 y IEC 61508-3:
+          </p>
+          {[
+            'Desarrollo con plan de seguridad del software',
+            'Lenguaje certificado (Ladder, FBD, SFC según IEC 61131-3)',
+            'Revisión independiente del código',
+            'Pruebas funcionales documentadas (V&V)',
+            'Control de versiones con historial de cambios',
+            'Restricción de acceso a cambios en línea',
+          ].map((r,i)=>(
+            <div key={i} style={{fontSize:11,color:'#cbd5e1',padding:'3px 0',display:'flex',gap:6}}>
+              <span style={{color:'#3b82f6',flexShrink:0}}>✓</span><span>{r}</span>
+            </div>
+          ))}
+        </div>
+        <div className="def-box" style={{marginTop:8}}>
+          <span style={{color:'#3b82f6',fontWeight:700}}>Regla práctica:</span> Un PLC estándar NO puede usarse como logic solver para SIS. Debe ser un PLC de seguridad certificado con el hardware y el sistema operativo certificados SIL por un tercero (TÜV, exida).
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Los 3 subsistemas',comp:<Scene1/>},
+  {id:2,label:'Sensores para SIS',comp:<Scene2/>},
+  {id:3,label:'Logic Solvers',comp:<Scene3/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 4 · Lección 4.1 — Arquitectura de un SIS: sensores, lógica y actuadores</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

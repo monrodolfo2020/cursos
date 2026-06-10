@@ -16,7 +16,7 @@ async function main() {
         "Domina los fundamentos de la instrumentación y automatización industrial. Aprende sobre sensores de temperatura, RTD, termocuplas y los sistemas que controlan los procesos industriales modernos.",
       instructor: "Instrumex",
       level: "Principiante",
-      category: "Ingeniería Industrial",
+      category: "Instrumentación Industrial",
       totalMinutes: 28,
       lessonCount: 3,
       lessons: {

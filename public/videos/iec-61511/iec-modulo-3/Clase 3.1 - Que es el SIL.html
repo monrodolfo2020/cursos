@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.1 — ¿Qué es el SIL?</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#3b82f6;padding:7px 10px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;}
+td{padding:6px 10px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;border:1px solid #1e3a5f;cursor:pointer;margin:5px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#3b82f655;background:#3b82f608;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+.btn-blue{background:#3b82f6;color:#fff;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const silLevels=[
+    {sil:1,pfd:'0.1 – 0.01',rrf:'10 – 100',color:'#22c55e',bar:25,desc:'Aplicaciones de seguridad moderada. Paros de bomba, alarmas de proceso con actuación.'},
+    {sil:2,pfd:'0.01 – 0.001',rrf:'100 – 1,000',color:'#3b82f6',bar:50,desc:'Sistemas ESD en plantas químicas y petroquímicas. El nivel más común en la industria.'},
+    {sil:3,pfd:'0.001 – 0.0001',rrf:'1,000 – 10,000',color:'#f59e0b',bar:75,desc:'HIPPS, SIS en LNG, reactores de alta presión. Requiere arquitecturas redundantes.'},
+    {sil:4,pfd:'0.0001 – 0.00001',rrf:'10,000 – 100,000',color:'#ef4444',bar:100,desc:'Aplicaciones nucleares. Prácticamente no aplica a IEC 61511 (industria de proceso).'},
+  ];
+  return(<div>
+    <div className="sec-title">SIL — Los 4 Niveles de Integridad</div>
+    <div className="sec-sub">Safety Integrity Level — cuantificando el riesgo reducido por el SIS</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        {silLevels.map((s,i)=>(
+          <div key={i} className="card" style={{borderLeft:`3px solid ${s.color}`,padding:'10px 12px',marginBottom:8}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+              <span style={{fontSize:18,fontWeight:900,color:s.color}}>SIL {s.sil}</span>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:10,color:'#64748b'}}>PFDavg</div>
+                <div style={{fontSize:11,fontFamily:'monospace',color:s.color}}>{s.pfd}</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:10,color:'#64748b'}}>RRF</div>
+                <div style={{fontSize:11,fontFamily:'monospace',color:'#60a5fa'}}>{s.rrf}</div>
+              </div>
+            </div>
+            <div style={{height:4,background:'#1e3a5f',borderRadius:2,marginBottom:6}}>
+              <div style={{height:'100%',width:`${s.bar}%`,background:s.color,borderRadius:2}}/>
+            </div>
+            <p style={{fontSize:11,color:'#94a3b8',lineHeight:1.4}}>{s.desc}</p>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">¿Cómo interpretar el SIL?</div>
+          <div className="def-box">
+            El SIL expresa cuánto debe <strong>reducir el riesgo</strong> el SIS. Un SIL 2 significa que el SIS reduce la frecuencia del evento peligroso por un factor de 100 a 1,000.
+          </div>
+          <div style={{marginTop:10}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#e2e8f0',marginBottom:8}}>Ejemplo práctico:</div>
+            {[
+              'Sin SIS: frecuencia evento peligroso = 0.1/año',
+              'Con SIS SIL 2 (PFD = 0.01): frecuencia mitigada = 0.1 × 0.01 = 0.001/año',
+              'RRF = 1/0.01 = 100 → el SIS redujo el riesgo 100 veces',
+            ].map((e,i)=>(
+              <div key={i} style={{fontSize:11,color:'#cbd5e1',padding:'4px 0',display:'flex',gap:6}}>
+                <span style={{color:'#3b82f6',fontWeight:700}}>{i+1}.</span><span>{e}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card" style={{marginTop:8}}>
+          <div className="card-h">Distribución de SIL en la industria de proceso</div>
+          {[
+            {sil:'SIL 1',pct:55,color:'#22c55e'},
+            {sil:'SIL 2',pct:38,color:'#3b82f6'},
+            {sil:'SIL 3',pct:6,color:'#f59e0b'},
+            {sil:'SIL 4',pct:1,color:'#ef4444'},
+          ].map((s,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+              <span style={{width:40,fontSize:11,fontWeight:700,color:s.color}}>{s.sil}</span>
+              <div style={{flex:1,height:10,background:'#1e3a5f',borderRadius:4}}>
+                <div style={{height:'100%',width:`${s.pct}%`,background:s.color,borderRadius:4}}/>
+              </div>
+              <span style={{fontSize:11,color:'#64748b',width:30}}>{s.pct}%</span>
+            </div>
+          ))}
+          <p style={{fontSize:10,color:'#64748b',marginTop:4}}>Fuente: estimación basada en encuestas CCPS y datos de proyectos de certificación.</p>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const [pfd,setPfd]=useState(0.01);
+  const rrf=Math.round(1/pfd);
+  const sil=pfd<1e-4?'SIL 4':pfd<1e-3?'SIL 3':pfd<1e-2?'SIL 2':pfd<1e-1?'SIL 1':'< SIL 1';
+  const silColor={'SIL 4':'#ef4444','SIL 3':'#f59e0b','SIL 2':'#3b82f6','SIL 1':'#22c55e','< SIL 1':'#64748b'}[sil];
+  return(<div>
+    <div className="sec-title">Factor de Reducción de Riesgo (RRF)</div>
+    <div className="sec-sub">La relación matemática entre PFD, RRF y SIL</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">Relación PFD ↔ RRF ↔ SIL</div>
+          <div style={{background:'#060a14',border:'1px solid #3b82f633',borderRadius:8,padding:12,textAlign:'center',marginBottom:10}}>
+            <div style={{fontFamily:'monospace',fontSize:15,color:'#60a5fa',marginBottom:4}}>RRF = 1 / PFDavg</div>
+            <div style={{fontFamily:'monospace',fontSize:15,color:'#60a5fa'}}>PFDavg = 1 / RRF</div>
+          </div>
+          <div style={{marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8',marginBottom:4}}>
+              <span>PFDavg del SIS</span>
+              <span style={{color:'#3b82f6',fontWeight:700,fontFamily:'monospace'}}>{pfd.toExponential(2)}</span>
+            </div>
+            <input type="range" min={0.00001} max={0.2} step={0.00001} value={pfd} onChange={e=>setPfd(+e.target.value)}
+              style={{WebkitAppearance:'none',width:'100%',height:4,background:'#1e3a5f',borderRadius:2,outline:'none'}}/>
+          </div>
+          <div style={{background:'#060a14',borderRadius:8,padding:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,textAlign:'center'}}>
+              <div>
+                <div style={{fontSize:10,color:'#64748b'}}>PFDavg</div>
+                <div style={{fontFamily:'monospace',fontSize:13,color:'#f59e0b',fontWeight:700}}>{pfd.toExponential(2)}</div>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:'#64748b'}}>RRF</div>
+                <div style={{fontFamily:'monospace',fontSize:13,color:'#60a5fa',fontWeight:700}}>{rrf.toLocaleString()}</div>
+              </div>
+              <div>
+                <div style={{fontSize:10,color:'#64748b'}}>SIL</div>
+                <div style={{fontSize:20,fontWeight:900,color:silColor}}>{sil}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="def-box" style={{marginTop:8}}>
+          <span style={{color:'#3b82f6',fontWeight:700}}>RRF = {rrf.toLocaleString()}</span> significa que el SIS reduce el riesgo {rrf.toLocaleString()} veces. Si sin SIS el riesgo era 1 evento cada 10 años, con el SIS es 1 evento cada {(10*rrf).toLocaleString()} años.
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Tabla de referencia SIL</div>
+          <table>
+            <thead><tr><th>SIL</th><th>PFDavg mín</th><th>PFDavg máx</th><th>RRF mín</th><th>RRF máx</th></tr></thead>
+            <tbody>
+              {[
+                {sil:'SIL 1',pmin:'0.01',pmax:'0.1',rmin:'10',rmax:'100',c:'#22c55e'},
+                {sil:'SIL 2',pmin:'0.001',pmax:'0.01',rmin:'100',rmax:'1,000',c:'#3b82f6'},
+                {sil:'SIL 3',pmin:'0.0001',pmax:'0.001',rmin:'1,000',rmax:'10,000',c:'#f59e0b'},
+                {sil:'SIL 4',pmin:'0.00001',pmax:'0.0001',rmin:'10,000',rmax:'100,000',c:'#ef4444'},
+              ].map((r,i)=>(
+                <tr key={i}>
+                  <td style={{fontWeight:700,color:r.c}}>{r.sil}</td>
+                  <td style={{fontFamily:'monospace'}}>{r.pmin}</td>
+                  <td style={{fontFamily:'monospace'}}>{r.pmax}</td>
+                  <td style={{fontFamily:'monospace',color:'#60a5fa'}}>{r.rmin}</td>
+                  <td style={{fontFamily:'monospace',color:'#60a5fa'}}>{r.rmax}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{fontSize:10,color:'#64748b',marginTop:6}}>Los rangos de PFD definen el SIL. Si PFDavg = 0.003, el SIS es SIL 2 (dentro del rango 0.001 – 0.01).</p>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const [cur,setCur]=useState(0);
+  const [ans,setAns]=useState({});
+  const qs=[
+    {q:'Un SIS tiene PFDavg = 0.005. ¿A qué SIL pertenece?',opts:['SIL 1','SIL 2','SIL 3','SIL 4'],correct:1,exp:'PFDavg = 0.005 está en el rango 0.001 – 0.01, que corresponde a SIL 2.'},
+    {q:'¿Qué significa un RRF de 1,000?',opts:['El SIS falla 1 de cada 1000 demandas','El SIS reduce el riesgo 1,000 veces','El SIS tiene PFDavg = 0.1','El SIS requiere 1,000 pruebas'],correct:1,exp:'RRF = 1/PFDavg. RRF = 1,000 significa PFDavg = 0.001 → SIL 3. El riesgo se reduce 1,000 veces.'},
+    {q:'¿Cuál es el SIL máximo recomendado en la industria de proceso (IEC 61511)?',opts:['SIL 2','SIL 3','SIL 4','No hay límite'],correct:1,exp:'IEC 61511 cubre hasta SIL 3 para la industria de proceso. SIL 4 corresponde a aplicaciones nucleares (IEC 61508) y actualmente no es práctico con un solo SIS.'},
+    {q:'Si el SIL objetivo es SIL 2, ¿qué rango de PFDavg debe lograr el SIS?',opts:['0.1 a 0.01','0.01 a 0.001','0.001 a 0.0001','0.1 a 0.001'],correct:1,exp:'SIL 2 requiere PFDavg entre 0.001 y 0.01. El SIS debe ser diseñado, verificado y probado para lograr y mantener este rango.'},
+  ];
+  function answer(qi,oi){if(ans[qi]!==undefined)return;setAns(p=>({...p,[qi]:oi}));}
+  const q=qs[cur];const a=ans[cur];
+  const score=Object.keys(ans).filter(k=>ans[k]===qs[k].correct).length;
+  return(<div>
+    <div className="sec-title">Quiz — Módulo 3 · Lección 3.1</div>
+    <div className="sec-sub">SIL: definición, rangos y RRF</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
+            <span style={{fontSize:12,color:'#94a3b8'}}>Pregunta {cur+1}/{qs.length}</span>
+            <span style={{fontSize:12,fontWeight:700,color:'#22c55e'}}>{score}/{Object.keys(ans).length} ✓</span>
+          </div>
+          <p style={{fontSize:13,fontWeight:600,color:'#e2e8f0',lineHeight:1.5,marginBottom:12}}>{q.q}</p>
+          {q.opts.map((o,i)=>(
+            <div key={i} className={'quiz-opt'+(a===i?(i===q.correct?' correct':' wrong'):(a!==undefined&&i===q.correct?' correct':''))} onClick={()=>answer(cur,i)}>
+              <span style={{width:18,height:18,border:'1px solid #3b82f644',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#3b82f6',flexShrink:0}}>{String.fromCharCode(65+i)}</span>
+              <span>{o}</span>
+            </div>
+          ))}
+          {a!==undefined&&<div style={{marginTop:8,padding:8,background:'#060a14',borderRadius:6,fontSize:11,color:'#cbd5e1'}}><span style={{fontWeight:700,color:a===q.correct?'#22c55e':'#ef4444'}}>{a===q.correct?'✓ Correcto':'✗ Incorrecto'}: </span>{q.exp}</div>}
+          <div style={{display:'flex',gap:8,marginTop:10}}>
+            {cur>0&&<button className="btn-blue" style={{background:'transparent',border:'1px solid #3b82f644',color:'#94a3b8'}} onClick={()=>setCur(p=>p-1)}>← Ant</button>}
+            {cur<qs.length-1&&<button className="btn-blue" onClick={()=>setCur(p=>p+1)}>Sig →</button>}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Resumen de la lección</div>
+          {['SIL 1-4: niveles discretos de integridad de seguridad.','PFDavg define el SIL: cuanto menor, mayor el SIL.','RRF = 1/PFDavg: mide cuánto reduce el riesgo el SIS.','SIL 2 es el más común en la industria de proceso.','SIL 3 es el máximo práctico en IEC 61511.','La determinación del SIL viene del LOPA o la matriz de riesgo.'].map((p,i)=>(
+            <div key={i} style={{display:'flex',gap:6,padding:'5px 0',borderBottom:'1px solid #1e3a5f22',fontSize:11,color:'#cbd5e1'}}>
+              <span style={{color:'#3b82f6',flexShrink:0}}>✓</span><span>{p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Los 4 niveles SIL',comp:<Scene1/>},
+  {id:2,label:'PFD, RRF y SIL',comp:<Scene2/>},
+  {id:3,label:'Quiz de comprensión',comp:<Scene3/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 3 · Lección 3.1 — ¿Qué es el SIL? Definición y rangos</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

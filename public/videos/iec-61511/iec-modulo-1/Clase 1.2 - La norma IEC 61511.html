@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.2 — La norma IEC 61511</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.blue{color:#3b82f6;}.cyan{color:#22d3ee;}.green{color:#22c55e;}.red{color:#ef4444;}.amber{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-blue{background:#1e40af44;color:#93c5fd;border:1px solid #1e40af66;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;border:1px solid #1e3a5f;cursor:pointer;margin:5px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#3b82f655;background:#3b82f608;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+.btn-blue{background:#3b82f6;color:#fff;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const partes=[
+    {n:'Parte 1',titulo:'Estructura, definiciones, sistema de gestión de seguridad funcional y especificaciones de aplicación del SIS',
+     key:['Ciclo de vida de seguridad (16 fases)','Sistema de gestión de seguridad funcional (FSMSS)','Competencias y responsabilidades del personal','Auditorías y revisiones funcionales']},
+    {n:'Parte 2',titulo:'Directrices para aplicación de la Parte 1',
+     key:['Guía informativa (no normativa)','Ejemplos de aplicación HAZOP/LOPA','Selección de métodos para determinación SIL','Cálculos de PFDavg para arquitecturas comunes']},
+    {n:'Parte 3',titulo:'Guía para determinar los niveles de integridad de seguridad requeridos',
+     key:['Métodos cuantitativos y cualitativos','Matrices de riesgo y grafos de riesgo','Probabilidades de consecuencias','LOPA simplificado para la industria de proceso']},
+  ];
+  return(<div>
+    <div className="sec-title">Estructura de IEC 61511</div>
+    <div className="sec-sub">La norma se divide en 3 partes con diferentes roles</div>
+    {partes.map((p,i)=>(
+      <div key={i} className="card" style={{borderLeft:`3px solid #3b82f6`,marginBottom:10}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+          <div style={{background:'#3b82f6',color:'#fff',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,flexShrink:0}}>{p.n}</div>
+          <div style={{flex:1}}>
+            <p style={{fontSize:12,fontWeight:600,color:'#e2e8f0',marginBottom:6,lineHeight:1.4}}>{p.titulo}</p>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+              {p.key.map((k,j)=><span key={j} className="tag tag-blue">{k}</span>)}
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+    <div className="def-box">
+      <span className="blue" style={{fontWeight:700}}>Nota importante:</span> La <strong>Parte 1</strong> es normativa (requisitos obligatorios). Las <strong>Partes 2 y 3</strong> son informativas (guías recomendadas). Un proyecto que cumple la Parte 1 cumple la norma.
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const fases=[
+    {n:'1',fase:'Análisis de peligros y riesgo del EUC',clave:'HAZOP, LOPA, identificación de SIF'},
+    {n:'2',fase:'Asignación de funciones de seguridad',clave:'SIL target, PFD requerida, tiempo de respuesta'},
+    {n:'3',fase:'Especificación de requisitos de seguridad (SRS)',clave:'Descripción funcional y de integridad del SIS'},
+    {n:'4',fase:'Diseño del SIS',clave:'Arquitectura, selección de equipos certificados'},
+    {n:'5',fase:'Instalación e inspección del SIS',clave:'Montaje, cableado, documentación as-built'},
+    {n:'6',fase:'Pre-arranque y validación del SIS',clave:'FAT, SAT, pruebas funcionales'},
+    {n:'7',fase:'Operación y mantenimiento',clave:'Proof tests, gestión de bypass, registros'},
+    {n:'8',fase:'Modificación y retrofit',clave:'Gestión del cambio (MOC), revalidación SIL'},
+    {n:'9',fase:'Descomisionamiento',clave:'Procedimiento formal de retirada del SIS'},
+  ];
+  return(<div>
+    <div className="sec-title">El Ciclo de Vida de Seguridad</div>
+    <div className="sec-sub">IEC 61511 Parte 1 — 16 fases del ciclo de vida (versión resumida)</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        {fases.slice(0,5).map((f,i)=>(
+          <div key={i} style={{display:'flex',gap:8,padding:'7px 0',borderBottom:'1px solid #1e3a5f22'}}>
+            <div style={{width:24,height:24,borderRadius:'50%',background:'#3b82f6',color:'#fff',fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{f.n}</div>
+            <div>
+              <div style={{fontSize:12,fontWeight:600,color:'#e2e8f0'}}>{f.fase}</div>
+              <div style={{fontSize:10,color:'#64748b'}}>{f.clave}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div>
+        {fases.slice(5).map((f,i)=>(
+          <div key={i} style={{display:'flex',gap:8,padding:'7px 0',borderBottom:'1px solid #1e3a5f22'}}>
+            <div style={{width:24,height:24,borderRadius:'50%',background:'#3b82f6',color:'#fff',fontSize:10,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{f.n}</div>
+            <div>
+              <div style={{fontSize:12,fontWeight:600,color:'#e2e8f0'}}>{f.fase}</div>
+              <div style={{fontSize:10,color:'#64748b'}}>{f.clave}</div>
+            </div>
+          </div>
+        ))}
+        <div className="def-box" style={{marginTop:8}}>
+          El ciclo de vida no es lineal — existe un ciclo de <strong>modificación</strong> que permite actualizar el SIS durante su vida operativa manteniendo el cumplimiento normativo.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const alcances=[
+    {sector:'Refinerías de petróleo',ejemplo:'ESD de columna de destilación, protección de reactor hidrotratador'},
+    {sector:'Plantas petroquímicas',ejemplo:'SIS de reactor de etileno, protección de compresor de alta presión'},
+    {sector:'Plantas químicas',ejemplo:'Protección de reactor exotérmico, control de sobrepresión'},
+    {sector:'Plantas de gas natural',ejemplo:'HIPPS, ESD de tren de compresión, protección de separadores'},
+    {sector:'Almacenamiento GNL/GLP',ejemplo:'ESD de cargadero, protección de tanques criogénicos'},
+    {sector:'Industria farmacéutica',ejemplo:'SIS de reactores con procesos exotérmicos, autoclaves'},
+    {sector:'Industria de papel/celulosa',ejemplo:'Protección de calderas de recuperación, digestores'},
+    {sector:'Energía — turbinas y calderas',ejemplo:'Protección de sobregiro de turbina, SIS de caldera'},
+  ];
+  return(<div>
+    <div className="sec-title">Alcance y Sectores de Aplicación</div>
+    <div className="sec-sub">¿A qué instalaciones aplica IEC 61511?</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">Definición de "Industria de Proceso"</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginBottom:8}}>
+            IEC 61511 aplica a plantas donde los <strong>procesos son continuos o semicontinuos</strong> y donde una pérdida de control puede causar liberación de energía o sustancias peligrosas.
+          </p>
+          <div className="def-box">
+            <strong className="blue">Criterio de aplicación:</strong> ¿Puede una falla del equipo bajo control (EUC) causar daño a personas, al medioambiente o pérdidas económicas significativas? Si la respuesta es sí → IEC 61511 aplica.
+          </div>
+        </div>
+        <div className="card" style={{marginTop:8}}>
+          <div className="card-h">¿Qué queda fuera del alcance?</div>
+          {['Maquinaria (aplica IEC 62061 / ISO 13849)','Ferrocarriles (aplica EN 50128)','Sistemas médicos (aplica IEC 62304)','Automóviles (aplica ISO 26262)','Aviación (aplica DO-178C)'].map((e,i)=>(
+            <div key={i} style={{fontSize:11,color:'#94a3b8',padding:'3px 0',borderBottom:'1px solid #1e3a5f22'}}>✗ {e}</div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Sectores y ejemplos de SIS</div>
+          {alcances.map((a,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid #1e3a5f22'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>{a.sector}</div>
+              <div style={{fontSize:10,color:'#94a3b8'}}>{a.ejemplo}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene4(){
+  const reqs=[
+    {num:'4',titulo:'Gestión de la seguridad funcional',desc:'Planificación, recursos, competencias, auditoría'},
+    {num:'8',titulo:'Verificación',desc:'Plan de verificación para cada fase del ciclo de vida'},
+    {num:'9',titulo:'Gestión de cambios',desc:'MOC formal antes de modificar el SIS'},
+    {num:'11',titulo:'HAZOP y análisis de riesgo',desc:'Identificación sistemática de peligros del EUC'},
+    {num:'12',titulo:'Asignación de SIL',desc:'Especificación de SIL objetivo para cada SIF'},
+    {num:'10',titulo:'Especificación de requisitos (SRS)',desc:'Documento maestro de todos los requisitos del SIS'},
+    {num:'13',titulo:'Diseño del SIS',desc:'Hardware, software y arquitectura del sistema'},
+    {num:'16',titulo:'Operación y mantenimiento',desc:'Proof tests periódicos, registros, bypass management'},
+  ];
+  return(<div>
+    <div className="sec-title">Requisitos Principales de IEC 61511 Parte 1</div>
+    <div className="sec-sub">Cláusulas normativas clave que debe cumplir todo SIS en la industria de proceso</div>
+    <div className="grid2" style={{gap:10}}>
+      {reqs.map((r,i)=>(
+        <div key={i} className="card" style={{display:'flex',gap:10,alignItems:'flex-start',padding:'10px 12px'}}>
+          <div style={{background:'#1e3a8a',color:'#93c5fd',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700,flexShrink:0}}>§{r.num}</div>
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:'#e2e8f0',marginBottom:2}}>{r.titulo}</div>
+            <div style={{fontSize:11,color:'#64748b'}}>{r.desc}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="def-box" style={{marginTop:8}}>
+      <span className="blue" style={{fontWeight:700}}>Ed. 2 (2016) agregó:</span> Requisitos de evaluación de ciberseguridad (§8.2.4), evaluación de diseño previo (§11.9) y un ciclo de mejora continua del FSMSS.
+    </div>
+  </div>);
+}
+
+function Scene5(){
+  const [cur,setCur]=useState(0);
+  const [ans,setAns]=useState({});
+  const qs=[
+    {q:'¿Cuántas partes tiene IEC 61511 y cuál de ellas es normativa?',opts:['3 partes; todas normativas','3 partes; solo la Parte 1 es normativa','2 partes; ambas normativas','4 partes; las primeras 2 son normativas'],correct:1,exp:'IEC 61511 tiene 3 partes. Solo la Parte 1 es normativa (obligatoria). Las Partes 2 y 3 son informativas y guías de aplicación.'},
+    {q:'¿Qué es el SRS según IEC 61511?',opts:['Safety Risk Study — estudio de riesgos','Safety Requirements Specification — especificación de requisitos del SIS','System Review Standard — estándar de revisión','Safety Response System — sistema de respuesta'],correct:1,exp:'SRS = Safety Requirements Specification. Es el documento maestro que define todos los requisitos funcionales y de integridad del SIS.'},
+    {q:'Una planta de fabricación de automóviles con brazos robóticos, ¿debe cumplir IEC 61511?',opts:['Sí, porque tiene equipos eléctricos','No, ese sector aplica ISO 26262 e IEC 62061','Sí, si la planta usa productos químicos','Depende del país'],correct:1,exp:'IEC 61511 aplica a la industria de proceso (petroquímica, química, gas). La industria automotriz y la maquinaria aplican IEC 62061 e ISO 13849.'},
+    {q:'¿Qué agregó principalmente la Ed. 2 de IEC 61511 (2016) respecto a la Ed. 1?',opts:['Nuevas tablas de SIL','Requisitos de evaluación de ciberseguridad','Nuevos formatos de SRS','Eliminó el concepto de LOPA'],correct:1,exp:'La Ed. 2 de 2016 incorporó requisitos explícitos de evaluación de ciberseguridad (§8.2.4), reconociendo la amenaza de ataques a sistemas de seguridad industriales.'},
+  ];
+  function answer(qi,oi){if(ans[qi]!==undefined)return;setAns(p=>({...p,[qi]:oi}));}
+  const q=qs[cur];const a=ans[cur];
+  const score=Object.keys(ans).filter(k=>ans[k]===qs[k].correct).length;
+  return(<div>
+    <div className="sec-title">Quiz — Lección 1.2</div>
+    <div className="sec-sub">Norma IEC 61511 — estructura y requisitos</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
+            <span style={{fontSize:12,color:'#94a3b8'}}>Pregunta {cur+1}/{qs.length}</span>
+            <span style={{fontSize:12,fontWeight:700,color:'#22c55e'}}>{score}/{Object.keys(ans).length} ✓</span>
+          </div>
+          <p style={{fontSize:13,fontWeight:600,color:'#e2e8f0',lineHeight:1.5,marginBottom:12}}>{q.q}</p>
+          {q.opts.map((o,i)=>(
+            <div key={i} className={'quiz-opt'+(a===i?(i===q.correct?' correct':' wrong'):(a!==undefined&&i===q.correct?' correct':''))} onClick={()=>answer(cur,i)}>
+              <span style={{width:18,height:18,border:'1px solid #3b82f644',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#3b82f6',flexShrink:0}}>{String.fromCharCode(65+i)}</span>
+              <span>{o}</span>
+            </div>
+          ))}
+          {a!==undefined&&<div className="def-box" style={{marginTop:8}}><span style={{fontWeight:700,color:a===q.correct?'#22c55e':'#ef4444'}}>{a===q.correct?'✓ Correcto':'✗ Incorrecto'}</span><p style={{marginTop:4,fontSize:11,color:'#cbd5e1'}}>{q.exp}</p></div>}
+          <div style={{display:'flex',gap:8,marginTop:10}}>
+            {cur>0&&<button className="btn-blue" style={{background:'transparent',border:'1px solid #3b82f644',color:'#94a3b8'}} onClick={()=>setCur(p=>p-1)}>← Ant</button>}
+            {cur<qs.length-1&&<button className="btn-blue" onClick={()=>setCur(p=>p+1)}>Sig →</button>}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Puntos clave — Lección 1.2</div>
+          {['IEC 61511: 3 partes — Parte 1 normativa, 2 y 3 informativas.','El ciclo de vida tiene 16 fases, desde HAZOP hasta descomisionamiento.','Aplica a industria de proceso: petroquímica, química, gas, farmacéutica.','El SRS es el documento maestro de requisitos del SIS.','Ed. 2 (2016) incorporó evaluación de ciberseguridad.','La norma exige gestión formal del cambio (MOC) para modificaciones.'].map((p,i)=>(
+            <div key={i} style={{display:'flex',gap:6,padding:'5px 0',borderBottom:'1px solid #1e3a5f22',fontSize:11,color:'#cbd5e1'}}>
+              <span style={{color:'#3b82f6',fontWeight:700,flexShrink:0}}>✓</span><span>{p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Estructura — 3 partes',comp:<Scene1/>},
+  {id:2,label:'Ciclo de vida de seguridad',comp:<Scene2/>},
+  {id:3,label:'Alcance y sectores',comp:<Scene3/>},
+  {id:4,label:'Requisitos principales',comp:<Scene4/>},
+  {id:5,label:'Quiz de comprensión',comp:<Scene5/>},
+];
+
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 1 · Lección 1.2 — La norma IEC 61511: estructura y alcance</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

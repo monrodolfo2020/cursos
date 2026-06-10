@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 4.2 — Selección de equipos certificados</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#3b82f6;padding:6px 8px;text-align:left;border-bottom:1px solid #1e3a5f;font-size:10px;text-transform:uppercase;}
+td{padding:5px 8px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const certs=[
+    {org:'TÜV Rheinland / TÜV SÜD',pais:'Alemania',reconocimiento:'Global',desc:'Los más reconocidos mundialmente. Sus certificados son aceptados en todos los países. Emiten certificados funcionales para SIL 1-3.'},
+    {org:'exida',pais:'USA',reconocimiento:'Global',desc:'Especialistas en seguridad funcional. Emiten certificados SIL y FMEDA. Muy usados en industria de proceso norteamericana.'},
+    {org:'FM Approvals',pais:'USA',reconocimiento:'Norteamérica',desc:'Factory Mutual. Certificación SIL + ATEX/NEC para dispositivos en atmósferas peligrosas.'},
+    {org:'Intertek (ETL)',pais:'Internacional',reconocimiento:'Global',desc:'Reconocido en certificación eléctrica y SIL. Usado frecuentemente para dispositivos combinados SIL+ATEX.'},
+    {org:'Bureau Veritas',pais:'Francia',reconocimiento:'Global',desc:'Inspección y certificación. Creciente en certificación SIL para el mercado europeo y latinoamericano.'},
+  ];
+  return(<div>
+    <div className="sec-title">Certificación SIL — Organismos y Proceso</div>
+    <div className="sec-sub">¿Quién certifica dispositivos SIL y qué significa ese certificado?</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué significa "certificado SIL"?</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginBottom:8}}>
+            Un certificado SIL emitido por un tercero independiente indica que:
+          </p>
+          {[
+            'El FMEDA del dispositivo fue revisado y aprobado',
+            'Las tasas λ_DD, λ_DU, λ_SD, λ_SU son verificadas',
+            'El SFF calculado cumple con IEC 61508 para el tipo A o B',
+            'El Functional Safety Manual (FSM) está completo y aprobado',
+            'El dispositivo puede usarse en arquitecturas SIS hasta el SIL certificado',
+          ].map((p,i)=>(
+            <div key={i} style={{fontSize:11,color:'#cbd5e1',padding:'3px 0',display:'flex',gap:6}}>
+              <span style={{color:'#3b82f6',flexShrink:0}}>✓</span><span>{p}</span>
+            </div>
+          ))}
+          <div className="def-box" style={{marginTop:8}}>
+            <span style={{color:'#3b82f6',fontWeight:700}}>Importante:</span> El certificado SIL del dispositivo NO garantiza que el SIS completo cumpla el SIL. El sistema integrado debe ser verificado.
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Organismos certificadores reconocidos</div>
+          {certs.map((c,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid #1e3a5f22'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:2}}>
+                <span style={{fontSize:12,fontWeight:700,color:'#3b82f6'}}>{c.org}</span>
+                <span style={{fontSize:9,color:'#64748b'}}>{c.pais} · {c.reconocimiento}</span>
+              </div>
+              <p style={{fontSize:10,color:'#94a3b8',lineHeight:1.4}}>{c.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const fsm=[
+    {sec:'Descripción del dispositivo','contenido':'Modelo, variantes, aplicaciones previstas, condiciones de operación'},
+    {sec:'Datos de confiabilidad','contenido':'λ_DD, λ_DU, λ_SD, λ_SU, SFF, MTTF_D, DC'},
+    {sec:'Tipo A o B','contenido':'Clasificación según IEC 61508 Parte 2 — simple (A) o complejo (B)'},
+    {sec:'Arquitecturas válidas','contenido':'Qué arquitecturas MooN son permitidas para alcanzar cada SIL'},
+    {sec:'Intervalo de prueba','contenido':'TI máximo recomendado para mantener el PFDavg dentro del SIL'},
+    {sec:'Procedimiento de proof test','contenido':'Pasos para probar el dispositivo y verificar λ_DU'},
+    {sec:'Instalación y configuración','contenido':'Requisitos de instalación para mantener la certificación'},
+    {sec:'Restricciones de uso','contenido':'Condiciones ambientales, combinaciones no permitidas'},
+  ];
+  return(<div>
+    <div className="sec-title">Functional Safety Manual (FSM)</div>
+    <div className="sec-sub">El documento clave que acompaña cada dispositivo certificado SIL</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es el FSM?</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginBottom:8}}>
+            El Functional Safety Manual es el documento técnico que el fabricante debe proveer con cada dispositivo certificado SIL. Es obligatorio para el diseño del SIS.
+          </p>
+          <div className="def-box">
+            <span style={{color:'#3b82f6',fontWeight:700}}>IEC 61511 §11.5:</span> El diseñador del SIS <strong>debe revisar el FSM</strong> de cada dispositivo y verificar que las condiciones de uso en el proyecto son compatibles con las condiciones del certificado.
+          </div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginTop:8}}>
+            Si el dispositivo se usa fuera de las condiciones del FSM (temperatura, presión, ciclos de operación), <strong>la certificación SIL puede no ser válida</strong>.
+          </p>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Contenido del FSM — secciones típicas</div>
+          <table>
+            <thead><tr><th>Sección</th><th>Contenido</th></tr></thead>
+            <tbody>
+              {fsm.map((r,i)=>(
+                <tr key={i}><td style={{fontWeight:600,color:'#60a5fa'}}>{r.sec}</td><td style={{fontSize:10,color:'#94a3b8'}}>{r.contenido}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const [step,setStep]=useState(0);
+  const steps=[
+    {t:'Definir el SIL objetivo',d:'Del LOPA: ¿qué SIL necesita esta SIF? SIL 1, 2 o 3.',check:'¿Tengo el SIL objetivo documentado en el SRS?'},
+    {t:'Identificar tipo de dispositivo',d:'¿Necesitas transmisor, válvula, PLC? ¿Variables de proceso?',check:'¿Está definida la variable (presión, temperatura, nivel)?'},
+    {t:'Buscar dispositivos certificados',d:'Consultar base de datos de exida, TÜV o FMEDA del fabricante.',check:'¿El certificado SIL es del nivel requerido?'},
+    {t:'Revisar el FSM',d:'Verificar λ_DU, TI máx, arquitecturas permitidas, condiciones de uso.',check:'¿Las condiciones de proceso son compatibles con el FSM?'},
+    {t:'Verificar el PFDavg del subsistema',d:'Calcular PFDavg con la arquitectura seleccionada y el TI propuesto.',check:'¿El PFDavg calculado está dentro del rango del SIL objetivo?'},
+    {t:'Documentar la selección',d:'Registrar en el dossier del SIS: dispositivo, certificado, FSM, cálculo de PFDavg.',check:'¿El registro de selección está en el dossier de seguridad?'},
+  ];
+  return(<div>
+    <div className="sec-title">Proceso de Selección de Equipos Certificados</div>
+    <div className="sec-sub">Guía paso a paso para seleccionar dispositivos SIL para tu SIS</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">Selección en 6 pasos</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+            {steps.map((s,i)=>(
+              <button key={i} onClick={()=>setStep(i)}
+                style={{background:step===i?'#3b82f6':'transparent',color:step===i?'#fff':'#94a3b8',border:'1px solid #1e3a5f',borderRadius:4,padding:'3px 10px',cursor:'pointer',fontSize:10,fontWeight:700}}>
+                Paso {i+1}
+              </button>
+            ))}
+          </div>
+          <div className="card" style={{borderLeft:'3px solid #3b82f6',background:'#060a14'}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#3b82f6',marginBottom:6}}>Paso {step+1}: {steps[step].t}</div>
+            <p style={{fontSize:12,color:'#cbd5e1',lineHeight:1.6,marginBottom:8}}>{steps[step].d}</p>
+            <div style={{display:'flex',gap:6,alignItems:'flex-start',background:'#0d1425',padding:'8px 10px',borderRadius:6}}>
+              <span style={{color:'#f59e0b',flexShrink:0}}>✓</span>
+              <span style={{fontSize:11,color:'#f59e0b'}}>{steps[step].check}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Errores comunes en selección de equipos SIL</div>
+          {[
+            {err:'Usar dispositivo SIL sin revisar el FSM',imp:'El dispositivo puede no ser válido para las condiciones de proceso'},
+            {err:'Confundir SIL del dispositivo con SIL del sistema',imp:'El SIL del sistema depende de toda la cadena, no solo de un dispositivo'},
+            {err:'Superar el TI máximo del FSM',imp:'La certificación SIL deja de ser válida si se excede el TI recomendado'},
+            {err:'Reutilizar sensores del BPCS sin evaluación',imp:'Viola el requisito de independencia del SIS respecto al BPCS'},
+            {err:'No actualizar el dossier al cambiar dispositivos',imp:'El cambio sin MOC puede invalidar el SIL del sistema completo'},
+          ].map((e,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid #1e3a5f22'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#ef4444'}}>✗ {e.err}</div>
+              <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>Impacto: {e.imp}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Organismos certificadores',comp:<Scene1/>},
+  {id:2,label:'Functional Safety Manual',comp:<Scene2/>},
+  {id:3,label:'Proceso de selección',comp:<Scene3/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 4 · Lección 4.2 — Selección y especificación de equipos certificados</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

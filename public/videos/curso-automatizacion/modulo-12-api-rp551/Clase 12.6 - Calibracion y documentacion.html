@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 12.6 — Calibración y Documentación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060b08;font-family:'Space Grotesk',system-ui,sans-serif;color:#eef4ef;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060b08,#0a120d);border-bottom:2px solid rgba(110,210,150,0.3);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#35b07a;}
+.topbar-sub{font-size:11px;color:#90a89a;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(110,210,150,0.1);border:1px solid rgba(110,210,150,0.25);color:#35b07a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a120d;border-right:1px solid rgba(110,210,150,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#566b5e;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#35b07a;border-left-color:#35b07a;background:rgba(110,210,150,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#eef4ef;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(110,210,150,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#35b07a;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#566b5e;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1712;border:1px solid rgba(110,210,150,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#35b07a;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060b08;border-left:3px solid #35b07a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.warn-box{background:rgba(200,90,58,0.07);border-left:3px solid #c85a3a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:4px;}
+.badge-g{background:rgba(110,210,150,0.15);color:#35b07a;border:1px solid rgba(110,210,150,0.3);}
+.badge-r{background:rgba(200,90,58,0.15);color:#c85a3a;border:1px solid rgba(200,90,58,0.3);}
+.badge-b{background:rgba(60,120,210,0.15);color:#5b9bef;border:1px solid rgba(60,120,210,0.3);}
+.badge-y{background:rgba(210,170,50,0.15);color:#d4ab40;border:1px solid rgba(210,170,50,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(110,210,150,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+.step{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(110,210,150,0.08);align-items:flex-start;}
+.step:last-child{border-bottom:none;}
+.step-num{width:26px;height:26px;border-radius:50%;background:rgba(110,210,150,0.1);border:1px solid rgba(110,210,150,0.3);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#35b07a;flex-shrink:0;}
+.tab-btn{padding:7px 14px;border:1px solid rgba(110,210,150,0.25);border-radius:6px;background:transparent;color:#566b5e;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.tab-btn.sel{background:rgba(110,210,150,0.12);border-color:#35b07a;color:#35b07a;font-weight:600;}
+.tab-btn:hover:not(.sel){border-color:rgba(110,210,150,0.5);color:#eef4ef;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function LoopDiagramSVG(){
+  return(
+    <svg viewBox="0 0 520 320" width="500" height="308" style={{display:'block',margin:'0 auto'}}>
+      {/* Title */}
+      <text x={260} y={16} textAnchor="middle" fill="#35b07a" fontSize={11} fontFamily="IBM Plex Mono,monospace" fontWeight="700">LOOP 101-FIC-001 — Control de Caudal</text>
+      {/* Field element — orifice plate */}
+      <rect x={20} y={40} width={110} height={55} rx={5} fill="#0f1712" stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={75} y={58} textAnchor="middle" fill="#35b07a" fontSize={9} fontFamily="IBM Plex Mono,monospace" fontWeight="700">101-FE-001</text>
+      <text x={75} y={70} textAnchor="middle" fill="#90a89a" fontSize={8} fontFamily="IBM Plex Mono,monospace">Placa orificio</text>
+      <text x={75} y={82} textAnchor="middle" fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">6" ANSI 300 SS316</text>
+      {/* DP Transmitter */}
+      <rect x={20} y={130} width={110} height={60} rx={5} fill="#0f1712" stroke="#5b9bef" strokeWidth={1.5}/>
+      <text x={75} y={148} textAnchor="middle" fill="#5b9bef" fontSize={9} fontFamily="IBM Plex Mono,monospace" fontWeight="700">101-FT-001</text>
+      <text x={75} y={160} textAnchor="middle" fill="#90a89a" fontSize={8} fontFamily="IBM Plex Mono,monospace">Transmisor DP</text>
+      <text x={75} y={172} textAnchor="middle" fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">0–500 mmH₂O / 4–20mA</text>
+      <text x={75} y={182} textAnchor="middle" fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">HART, Ex ia, IS barrier</text>
+      {/* Signal line FE to FT */}
+      <line x1={75} y1={95} x2={75} y2={130} stroke="#566b5e" strokeWidth={1.5} strokeDasharray="5,3"/>
+      <text x={80} y={115} fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">líneas impulso</text>
+      {/* Signal line FT to FIC */}
+      <line x1={130} y1={160} x2={200} y2={160} stroke="#35b07a" strokeWidth={1.5}/>
+      <text x={165} y={155} textAnchor="middle" fill="#35b07a" fontSize={7} fontFamily="IBM Plex Mono,monospace">4–20 mA</text>
+      {/* FIC — Controller */}
+      <rect x={200} y={130} width={120} height={60} rx={5} fill="#0f1712" stroke="#d4ab40" strokeWidth={1.5}/>
+      <text x={260} y={148} textAnchor="middle" fill="#d4ab40" fontSize={9} fontFamily="IBM Plex Mono,monospace" fontWeight="700">101-FIC-001</text>
+      <text x={260} y={160} textAnchor="middle" fill="#90a89a" fontSize={8} fontFamily="IBM Plex Mono,monospace">Controlador PID</text>
+      <text x={260} y={172} textAnchor="middle" fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">DCS Emerson DeltaV</text>
+      <text x={260} y={182} textAnchor="middle" fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">SP: 250 m³/h</text>
+      {/* Control output */}
+      <line x1={320} y1={160} x2={390} y2={160} stroke="#d4ab40" strokeWidth={1.5}/>
+      <text x={355} y={155} textAnchor="middle" fill="#d4ab40" fontSize={7} fontFamily="IBM Plex Mono,monospace">4–20 mA</text>
+      {/* FCV — Control valve */}
+      <rect x={390} y={130} width={110} height={60} rx={5} fill="#0f1712" stroke="#c85a3a" strokeWidth={1.5}/>
+      <text x={445} y={148} textAnchor="middle" fill="#c85a3a" fontSize={9} fontFamily="IBM Plex Mono,monospace" fontWeight="700">101-FCV-001</text>
+      <text x={445} y={160} textAnchor="middle" fill="#90a89a" fontSize={8} fontFamily="IBM Plex Mono,monospace">Válvula control</text>
+      <text x={445} y={172} textAnchor="middle" fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">4" Globe, FA, 0–100%</text>
+      <text x={445} y={182} textAnchor="middle" fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">Cv=120, posicionador</text>
+      {/* Process pipe */}
+      <line x1={10} y1={250} x2={510} y2={250} stroke="#566b5e" strokeWidth={3}/>
+      <text x={260} y={265} textAnchor="middle" fill="#566b5e" fontSize={9} fontFamily="IBM Plex Mono,monospace">6" CS, Sch 40 — Agua de proceso a 80°C, 10 bar</text>
+      {/* FE connection to pipe */}
+      <line x1={75} y1={250} x2={75} y2={40+55} stroke="#35b07a" strokeWidth={1} strokeDasharray="3,3"/>
+      {/* FCV connection to pipe */}
+      <line x1={445} y1={250} x2={445} y2={190} stroke="#c85a3a" strokeWidth={1} strokeDasharray="3,3"/>
+      {/* IS barrier */}
+      <rect x={155} y={200} width={90} height={30} rx={4} fill="rgba(91,155,239,0.08)" stroke="#5b9bef" strokeWidth={1} strokeDasharray="4,2"/>
+      <text x={200} y={214} textAnchor="middle" fill="#5b9bef" fontSize={8} fontFamily="IBM Plex Mono,monospace">Barrera IS</text>
+      <text x={200} y={224} textAnchor="middle" fill="#566b5e" fontSize={7} fontFamily="IBM Plex Mono,monospace">MTL 787+ / Ex ia IIC</text>
+      {/* Calibration data box */}
+      <rect x={10} y={275} width={240} height={38} rx={4} fill="rgba(110,210,150,0.04)" stroke="rgba(110,210,150,0.2)" strokeWidth={1}/>
+      <text x={18} y={289} fill="#35b07a" fontSize={8} fontFamily="IBM Plex Mono,monospace">CALIBRACIÓN: LRV=0, URV=500 mmH₂O | Error±0.1% span</text>
+      <text x={18} y={300} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">Última cal.: 2026-03-15 | Próx.: 2026-09-15 | Cert: CAL-2026-0142</text>
+      <text x={18} y={311} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">Patrón: Betz Dearborn DWT-400, NIST trazable, Cal. válida hasta 2026-12</text>
+      {/* ISA symbol legend */}
+      <rect x={265} y={275} width={245} height={38} rx={4} fill="rgba(110,210,150,0.04)" stroke="rgba(110,210,150,0.2)" strokeWidth={1}/>
+      <text x={273} y={289} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">SIMBOLOGÍA ISA 5.1: F=Caudal · I=Indicador · C=Controlador</text>
+      <text x={273} y={300} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">E=Elem. primario · T=Transmisor · V=Válvula · FA=Falla abierta</text>
+      <text x={273} y={311} fill="#566b5e" fontSize={8} fontFamily="IBM Plex Mono,monospace">Área: 101 — Pretratamiento agua · Loop aprobado: Rev.3 / 2025-11-02</text>
+    </svg>
+  );
+}
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Diagramas de Loop — ISA 5.4 y API RP 551</div>
+    <div className="sec-sub">Documentación técnica del instrumento: la hoja de identidad de cada loop</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es un diagrama de loop?</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:8}}>
+            El <strong style={{color:'#eef4ef'}}>diagrama de loop</strong> (loop diagram) es el documento técnico que muestra, para cada lazo de control o medición, todos los componentes con su TAG, señales de interconexión, rangos, fuente de alimentación, barreras de seguridad intrínseca y datos de calibración. Es el mapa de un lazo individual.
+          </p>
+          <div className="def-box">
+            <strong style={{color:'#35b07a'}}>ISA 5.4 / API RP 551 §9.2:</strong> Cada instrumento en campo debe tener un diagrama de loop vigente que refleje la configuración AS-BUILT. El diagrama es el documento de referencia para calibración, mantenimiento y comisionamiento.
+          </div>
+          <div className="card-h" style={{marginTop:10}}>Elementos mínimos de un diagrama de loop</div>
+          {[
+            'TAG de todos los componentes del lazo (ISA 5.1)',
+            'Señales de interconexión con rango (0–100%, 4–20 mA, HART, FOUNDATION)',
+            'Rangos de calibración: LRV, URV, span, unidades de ingeniería',
+            'Fuente de alimentación: voltaje, corriente, clase de protección Ex',
+            'Barreras IS / separadores galvánicos con modelo y certificado Ex',
+            'Referencia a hoja de datos del instrumento (datasheet)',
+            'Número de revisión, fecha, firma del responsable',
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#35b07a',flexShrink:0,fontSize:11,marginTop:1}}>▸</span>
+              <span style={{fontSize:11,color:'#90a89a'}}>{r}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Ejemplo — Loop 101-FIC-001</div>
+          <div style={{background:'#060b08',border:'1px solid rgba(110,210,150,0.1)',borderRadius:8,padding:8,overflowX:'auto'}}>
+            <LoopDiagramSVG/>
+          </div>
+          <div style={{fontSize:11,color:'#566b5e',marginTop:8,fontFamily:'IBM Plex Mono,monospace',textAlign:'center'}}>Loop de control de caudal con placa orificio, transmisor DP y FCV</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const [tab,setTab]=useState('proc');
+  const proc=[
+    {n:'1. Revisión del loop diagram',d:'Verificar LRV, URV y unidades de ingeniería actuales antes de iniciar. Si el rango cambió desde la última calibración, actualizar el loop diagram primero.'},
+    {n:'2. Obtener patrón trazable',d:'El patrón de calibración debe tener exactitud ≥ 4 veces mejor que el instrumento a calibrar (regla 4:1). Certificado NIST/ENAC vigente (< 12 meses). Verificar que el patrón esté dentro del rango del instrumento.'},
+    {n:'3. Aislar el instrumento',d:'Cerrar válvulas de proceso, ventear la línea de impulso o señal de proceso. Confirmar con el operador que la señal de salida está en modo manual en el DCS. Colocar LOTO si aplica.'},
+    {n:'4. Aplicar puntos de calibración',d:'Mínimo 5 puntos: 0%, 25%, 50%, 75%, 100% del span, en ambas direcciones (ascendente y descendente). Registrar la lectura del instrumento y la lectura del patrón en cada punto.'},
+    {n:'5. Calcular errores',d:'Error = (Lectura instrumento − Lectura patrón) / Span × 100%. Comparar con la exactitud del instrumento (datasheet). Si el error > tolerancia, ajustar cero y span. Repetir los puntos.'},
+    {n:'6. Documentar y etiquetar',d:'Llenar el formato de calibración con todos los datos. Pegar etiqueta de calibración en el instrumento con fecha, técnico y próxima fecha. Archivar en el sistema de gestión de calibraciones.'},
+  ];
+  const doc=[
+    {n:'Hoja de calibración (cal record)',d:'Registro con: fecha, TAG, número de serie, patrón usado (modelo, serial, cert.), puntos As Found y As Left, errores, ajuste realizado, firma del técnico y del revisor. Retener por al menos 5 años (API RP 551 §9.3.4).'},
+    {n:'Etiqueta de calibración en campo',d:'Pegada sobre el instrumento: fecha de calibración, fecha de vencimiento, número de certificado o trabajo, iniciales del técnico. Color codificado por trimestre según sistema de planta.'},
+    {n:'Certificado de patrón (cal certificate)',d:'Del laboratorio acreditado ISO 17025. Adjuntar fotocopia al expediente del instrumento. Si el patrón vence durante la campaña de calibración, toda la campaña queda inválida — verificar antes de comenzar.'},
+    {n:'Historial del instrumento',d:'Base de datos con todos los registros de calibración, reparaciones y cambios de configuración de cada instrumento desde su instalación. Permite análisis de drift (deriva sistemática) y decisión de reemplazo.'},
+    {n:'As Found / As Left',d:'As Found: estado del instrumento antes de cualquier ajuste. As Left: estado después del ajuste. Si As Found está dentro de tolerancia, no se ajusta (registro de "verificación sin ajuste"). Ambos valores se documentan.'},
+  ];
+  const items=tab==='proc'?proc:doc;
+  return(<div>
+    <div className="sec-title">Procedimiento de Calibración y Documentación</div>
+    <div className="sec-sub">API RP 551 §9.3 — Proceso paso a paso y registros requeridos</div>
+    <div style={{display:'flex',gap:8,marginBottom:14}}>
+      <button className={`tab-btn${tab==='proc'?' sel':''}`} onClick={()=>setTab('proc')}>Procedimiento de calibración</button>
+      <button className={`tab-btn${tab==='doc'?' sel':''}`} onClick={()=>setTab('doc')}>Documentación requerida</button>
+    </div>
+    <div className="grid2">
+      <div>
+        {items.slice(0,Math.ceil(items.length/2)).map((it,i)=>(
+          <div key={i} className="card" style={{marginBottom:8,padding:'11px 14px'}}>
+            {tab==='proc'
+              ? <div className="step">
+                  <div className="step-num">{i+1}</div>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:'#eef4ef',marginBottom:4}}>{it.n.replace(/^\d+\.\s/,'')}</div>
+                    <div style={{fontSize:11,color:'#90a89a',lineHeight:1.55}}>{it.d}</div>
+                  </div>
+                </div>
+              : <>
+                  <div style={{fontSize:12,fontWeight:700,color:'#eef4ef',marginBottom:5}}>{it.n}</div>
+                  <div style={{fontSize:11,color:'#90a89a',lineHeight:1.55}}>{it.d}</div>
+                </>
+            }
+          </div>
+        ))}
+      </div>
+      <div>
+        {items.slice(Math.ceil(items.length/2)).map((it,i)=>(
+          <div key={i} className="card" style={{marginBottom:8,padding:'11px 14px'}}>
+            {tab==='proc'
+              ? <div className="step">
+                  <div className="step-num">{Math.ceil(items.length/2)+i+1}</div>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:'#eef4ef',marginBottom:4}}>{it.n.replace(/^\d+\.\s/,'')}</div>
+                    <div style={{fontSize:11,color:'#90a89a',linHeight:1.55}}>{it.d}</div>
+                  </div>
+                </div>
+              : <>
+                  <div style={{fontSize:12,fontWeight:700,color:'#eef4ef',marginBottom:5}}>{it.n}</div>
+                  <div style={{fontSize:11,color:'#90a89a',lineHeight:1.55}}>{it.d}</div>
+                </>
+            }
+          </div>
+        ))}
+        {tab==='proc' && (
+          <div className="warn-box" style={{marginTop:0}}>
+            <strong style={{color:'#c85a3a'}}>API RP 551 §9.3.5 — Tolerancia de ajuste:</strong> Si el error As Found está dentro de la tolerancia especificada, NO se debe ajustar el instrumento. Ajustar un instrumento que está dentro de spec introduce variabilidad innecesaria. Solo ajustar cuando el As Found supera la tolerancia.
+          </div>
+        )}
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const traz=[
+    {nivel:'Patrón primario (BIPM)',desc:'Bureau Internacional de Pesas y Medidas — define las unidades SI. Nunca sale del laboratorio internacional.',color:'#35b07a'},
+    {nivel:'Patrón nacional (NIST/CEM)',desc:'Laboratorios nacionales de metrología. Calibran los patrones de referencia de los laboratorios acreditados.',color:'#35b07a'},
+    {nivel:'Laboratorio acreditado ISO 17025',desc:'Calibra los patrones de transferencia de las empresas. Emite certificados con incertidumbre declarada. Acreditación verificable.',color:'#5b9bef'},
+    {nivel:'Patrón de trabajo (planta)',desc:'Multímetro, calibrador de presión, generador de señal usados en campo. Calibrados contra el lab. acreditado.',color:'#d4ab40'},
+    {nivel:'Instrumento de proceso (campo)',desc:'El transmisor, válvula o analizador que mide el proceso. Calibrado con el patrón de trabajo.',color:'#90a89a'},
+  ];
+  const gest=[
+    {t:'Inventario de instrumentos calibrables',d:'Lista de todos los instrumentos que requieren calibración periódica, con TAG, descripción, rango, tolerancia, frecuencia y laboratorio responsable. API RP 551 §9.3.1 exige que cada instrumento de medición fiscal o de seguridad esté en este registro.'},
+    {t:'Intervalos de calibración basados en riesgo',d:'La frecuencia de calibración no debe ser fija para todos los instrumentos. API RP 551 §9.3.2: usar el historial de deriva (drift) para ajustar la frecuencia. Si un instrumento nunca supera el 30% de su tolerancia en 12 meses, extender a 18 o 24 meses.'},
+    {t:'Gestión de instrumentos fuera de tolerancia',d:'Si el As Found supera la tolerancia: 1) documentar el periodo afectado, 2) evaluar el impacto en los datos de proceso o fiscales, 3) escalar a ingeniería si los datos comprometidos afectan decisiones ya tomadas (facturación, reporting regulatorio).'},
+    {t:'Control de patrones',d:'Los patrones de trabajo deben estar en un sistema de gestión de equipos de medición (GMAO/CMMS). Alertas automáticas de vencimiento de certificado con 30 días de anticipación. Nunca usar un patrón con certificado vencido.'},
+  ];
+  return(<div>
+    <div className="sec-title">Trazabilidad Metrológica y Gestión del Programa</div>
+    <div className="sec-sub">API RP 551 §9.3 + ISO 10012 — Cadena de trazabilidad y gestión del sistema de calibración</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Cadena de trazabilidad metrológica</div>
+          <p style={{fontSize:12,color:'#90a89a',lineHeight:1.6,marginBottom:10}}>
+            La <strong style={{color:'#eef4ef'}}>trazabilidad metrológica</strong> es la cadena de calibraciones que vincula ininterrumpidamente la medición del instrumento de campo con las unidades SI a través de patrones de referencia con incertidumbre declarada.
+          </p>
+          {traz.map((t,i)=>(
+            <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start',padding:'6px 0',borderBottom:'1px solid rgba(110,210,150,0.08)'}}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0,width:24}}>
+                <div style={{width:14,height:14,borderRadius:'50%',background:t.color,opacity:0.85,flexShrink:0}}/>
+                {i<traz.length-1 && <div style={{width:2,height:18,background:'rgba(110,210,150,0.2)',margin:'3px 0'}}/>}
+              </div>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:t.color,marginBottom:2}}>{t.nivel}</div>
+                <div style={{fontSize:11,color:'#90a89a',lineHeight:1.45}}>{t.desc}</div>
+              </div>
+            </div>
+          ))}
+          <div className="def-box" style={{marginTop:10}}>
+            <strong style={{color:'#35b07a'}}>ISO 10012 / API RP 551 §9.3.3:</strong> La incertidumbre de medición debe declararse en cada nivel de la cadena. La incertidumbre del instrumento de proceso es la combinación cuadrática de las incertidumbres de todos los eslabones superiores más la del instrumento mismo.
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Gestión del programa de calibración</div>
+          {gest.map((g,i)=>(
+            <div key={i} style={{padding:'7px 0',borderBottom:'1px solid rgba(110,210,150,0.08)'}}>
+              <div style={{fontSize:12,fontWeight:700,color:'#eef4ef',marginBottom:4}}>{g.t}</div>
+              <div style={{fontSize:11,color:'#90a89a',lineHeight:1.5}}>{g.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginTop:0,borderColor:'rgba(212,171,64,0.25)'}}>
+          <div className="card-h" style={{color:'#d4ab40'}}>Instrumentos fiscales — requisitos adicionales</div>
+          <div style={{fontSize:12,color:'#90a89a',lineHeight:1.6}}>
+            Los instrumentos en lazos de medición fiscal (transferencia de custodia) están sujetos a requisitos adicionales de API MPMS, AGA-7/9, ISO 17089: calibración por laboratorio independiente, testigos del comprador y vendedor, certificados con firma notariada en algunos países. Los registros deben archivarse durante al menos el plazo legal del contrato más 3 años.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'Diagramas de loop (ISA 5.4)',C:Scene1},
+  {id:2,label:'Procedimiento y documentación',C:Scene2},
+  {id:3,label:'Trazabilidad y gestión',C:Scene3},
+];
+
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Clase 12.6 — Calibración y Documentación</div>
+          <div className="topbar-sub">API RP 551 §9 · ISA 5.4 · ISO 10012 · Módulo 12 — Instrumentación API RP 551</div>
+        </div>
+        <div className="scene-badge">ESCENA {sc} / {SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=>(
+            <div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>
+              {String(s.id).padStart(2,'0')} · {s.label}
+            </div>
+          ))}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(110,210,150,0.1)',marginTop:8}}>
+            <div style={{fontSize:10,color:'#35b07a',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#566b5e',lineHeight:1.5}}>Ejecutar y documentar calibraciones de instrumentos con trazabilidad metrológica completa según API RP 551 §9 e ISO 10012.</div>
+          </div>
+        </div>
+        <div className="main">
+          <cur.C/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

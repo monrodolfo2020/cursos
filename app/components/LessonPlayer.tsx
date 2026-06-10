@@ -33,6 +33,14 @@ const MODULE_META: Record<string, { label: string; icon: string }> = {
   "modulo-9":                 { label: "Módulo 9 — Seguridad Industrial",    icon: "🦺" },
   "modulo-10":                { label: "Módulo 10 — Tecnologías Avanzadas",  icon: "🚀" },
   "modulo-11":                { label: "Módulo 11 — Proyecto Capstone",      icon: "🏆" },
+  "modulo-12-api-rp551":      { label: "Módulo 12 — Instrumentación API RP 551", icon: "📖" },
+  // IEC 61511 course
+  "iec-modulo-1":             { label: "Módulo 1 — Introducción y Fundamentos",      icon: "🏭" },
+  "iec-modulo-2":             { label: "Módulo 2 — Análisis de Peligros",            icon: "⚠️" },
+  "iec-modulo-3":             { label: "Módulo 3 — Niveles de Integridad SIL",       icon: "🎯" },
+  "iec-modulo-4":             { label: "Módulo 4 — Diseño del SIS",                  icon: "🔧" },
+  "iec-modulo-5":             { label: "Módulo 5 — Ciclo de Vida",                   icon: "📋" },
+  "iec-modulo-6":             { label: "Módulo 6 — Operación y Mantenimiento",       icon: "🔄" },
 };
 
 function getModuleKey(videoPath: string): string {

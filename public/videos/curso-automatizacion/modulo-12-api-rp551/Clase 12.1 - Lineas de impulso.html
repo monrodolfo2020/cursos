@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 12.1 — Líneas de Impulso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060b08;font-family:'Space Grotesk',system-ui,sans-serif;color:#eef4ef;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060b08,#0a120d);border-bottom:2px solid rgba(110,210,150,0.3);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#35b07a;}
+.topbar-sub{font-size:11px;color:#90a89a;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(110,210,150,0.1);border:1px solid rgba(110,210,150,0.25);color:#35b07a;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a120d;border-right:1px solid rgba(110,210,150,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#566b5e;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#35b07a;border-left-color:#35b07a;background:rgba(110,210,150,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#eef4ef;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(110,210,150,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#35b07a;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#566b5e;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1712;border:1px solid rgba(110,210,150,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#35b07a;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060b08;border-left:3px solid #35b07a;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:6px;}
+.badge-g{background:rgba(110,210,150,0.15);color:#35b07a;border:1px solid rgba(110,210,150,0.3);}
+.badge-r{background:rgba(200,90,58,0.15);color:#c85a3a;border:1px solid rgba(200,90,58,0.3);}
+.badge-b{background:rgba(60,120,210,0.15);color:#5b9bef;border:1px solid rgba(60,120,210,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(110,210,150,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Líneas de Impulso — Definición y Propósito</div>
+    <div className="sec-sub">API RP 551 §4.2 — El enlace entre el proceso y el transmisor</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es una línea de impulso?</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#90a89a',marginBottom:10}}>
+            Una <strong style={{color:'#eef4ef'}}>línea de impulso</strong> (impulse line) es el tramo de tubería o manguito que conecta la toma de proceso con el transmisor de presión, nivel o caudal. Su función es transmitir fielmente la presión del proceso al elemento de medición.
+          </p>
+          <div className="def-box">
+            <span style={{color:'#35b07a',fontWeight:700}}>API RP 551 §4.2.1:</span> Las líneas de impulso deben diseñarse para minimizar errores de medición debidos a: cabeza estática de fluido, temperatura diferencial entre ramas y acumulación de gas o condensado.
+          </div>
+          <div className="card-h" style={{marginTop:10}}>Errores que genera una mala línea de impulso</div>
+          {[
+            {e:'Gas atrapado en línea de líquido',i:'Presión aparente inferior a la real — lectura baja'},
+            {e:'Líquido acumulado en línea de gas',i:'Presión aparente superior a la real — lectura alta'},
+            {e:'Temperatura diferencial entre ramas',i:'Densidades distintas → error de cero en DP'},
+            {e:'Línea obstruida o solidificada',i:'Transmisor no responde — lectura fija o errática'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#c85a3a',flexShrink:0,fontSize:11,marginTop:1}}>✗</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:600,color:'#eef4ef'}}>{r.e}</div>
+                <div style={{fontSize:11,color:'#566b5e',marginTop:2}}>→ {r.i}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Materiales y especificación</div>
+          {[
+            {mat:'SS 316L',uso:'Servicio general — agua, hidrocarburos limpios, vapor ≤ 400°C',rec:true},
+            {mat:'SS 316 + revestimiento PTFE',uso:'Ácidos diluidos, amoniaco, servicios corrosivos',rec:true},
+            {mat:'Hastelloy C-276',uso:'Ácido sulfúrico concentrado, hipoclorito, halogenados',rec:false},
+            {mat:'Acero al carbono (A106)',uso:'Servicios no corrosivos sin humedad — gas natural seco',rec:false},
+          ].map((r,i)=>(
+            <div key={i} className="row" style={{alignItems:'center'}}>
+              <span className={`badge ${r.rec?'badge-g':'badge-b'}`}>{r.mat}</span>
+              <span style={{fontSize:11,color:'#90a89a'}}>{r.uso}</span>
+            </div>
+          ))}
+          <div className="card-h" style={{marginTop:12}}>Dimensiones mínimas API RP 551</div>
+          {[
+            {d:'Diámetro nominal mínimo',v:'DN 10 (3/8") — recomendado DN 14 (1/2")'},
+            {d:'Espesor de pared',v:'SCH 80 mínimo en servicio con H₂S'},
+            {d:'Conexión al proceso',v:'1/2" NPT o 1/2" Swagelok tubing típico'},
+            {d:'Longitud máxima práctica',v:'≤ 15 m (mayor longitud → mayor tiempo de respuesta)'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{fontSize:11,color:'#566b5e',width:160,flexShrink:0}}>{r.d}</span>
+              <span style={{fontSize:12,color:'#eef4ef',fontFamily:'IBM Plex Mono,monospace'}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="def-box" style={{borderColor:'#c85a3a'}}>
+          <span style={{color:'#c85a3a',fontWeight:700}}>Error común:</span> Usar tubing de 1/4" para reducir costo. Esto aumenta el tiempo de respuesta y facilita el taponamiento en servicios viscosos o que solidifican. API RP 551 recomienda ≥ 1/2".
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const [fluid,setFluid]=useState('gas');
+  const configs={
+    gas:{
+      label:'Gas / Vapor seco',color:'#5b9bef',
+      rule:'Transmisor ARRIBA del punto de toma. La línea sube desde el proceso hacia el transmisor.',
+      why:'Cualquier condensado que se forme escurrirá de regreso hacia el proceso por gravedad, manteniéndose la línea llena de gas.',
+      slope:'Pendiente mínima 1:12 subiendo hacia el transmisor',
+      valve:'Válvula de drenaje en el punto más bajo (toma de proceso)',
+      nota:'Si se espera condensación, instalar condensate pot con drenaje automático.',
+      items:[
+        'Proceso → toma → línea sube → transmisor',
+        'Válvula de bloqueo (block valve) cerca de la toma',
+        'Sin trampas ni loops que acumulen líquido',
+        'Drenaje en punto bajo si hay posibilidad de condensado',
+      ]
+    },
+    liquid:{
+      label:'Líquido / Slurry',color:'#35b07a',
+      rule:'Transmisor A NIVEL o ABAJO del punto de toma. La línea desciende o es horizontal hacia el transmisor.',
+      why:'Cualquier burbuja de gas que se forme subirá de regreso al proceso por flotabilidad, manteniéndose la línea llena de líquido.',
+      slope:'Pendiente mínima 1:12 bajando hacia el transmisor (o subiendo si el transmisor está arriba y se acepta corregir cabeza)',
+      valve:'Válvula de venteo (vent valve) en el punto más alto',
+      nota:'Si el transmisor se monta arriba por accesibilidad, corregir el span por la cabeza estática del líquido en la línea.',
+      items:[
+        'Proceso → toma → línea baja → transmisor',
+        'Venteo en punto alto para purgar burbujas',
+        'Sin loops ascendentes que atrapen gas',
+        'Válvula de bloqueo y manifold de 3 válvulas',
+      ]
+    },
+    steam:{
+      label:'Vapor saturado / sobrecalentado',color:'#c85a3a',
+      rule:'Usar condensate pots (ollas de condensado) entre la toma y el transmisor. NUNCA conectar vapor directamente al transmisor.',
+      why:'El vapor sobrecalentado (>200°C) destruye los sellos del transmisor. El condensate pot crea una barrera de condensado líquido que protege el instrumento.',
+      slope:'Línea horizontal con ligera pendiente hacia el condensate pot',
+      valve:'Válvulas de bloqueo en toma y en salida del pot',
+      nota:'Ambos condensate pots (alta y baja presión en DP) deben tener la MISMA altura para que el error por cabeza diferencial sea cero.',
+      items:[
+        'Proceso → toma → condensate pot → transmisor',
+        'Pot montado a nivel, transmisor debajo del pot',
+        'Ambos pots a idéntica altura (DP)',
+        'Purgar líneas con vapor antes de arranque',
+      ]
+    },
+  };
+  const c=configs[fluid];
+  return(<div>
+    <div className="sec-title">Configuración por Tipo de Fluido</div>
+    <div className="sec-sub">API RP 551 §4.2.3 — La regla de oro: gas sube, líquido baja, vapor usa pot</div>
+    <div style={{display:'flex',gap:8,marginBottom:12}}>
+      {Object.entries(configs).map(([k,v])=>(
+        <button key={k} onClick={()=>setFluid(k)}
+          style={{flex:1,background:fluid===k?v.color+'22':'transparent',color:fluid===k?v.color:'#566b5e',border:`1px solid ${fluid===k?v.color:v.color+'44'}`,borderRadius:7,padding:'8px 0',cursor:'pointer',fontSize:12,fontWeight:700,fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.06em',transition:'all .2s'}}>
+          {v.label}
+        </button>
+      ))}
+    </div>
+    <div className="grid2" style={{gap:12,alignItems:'start'}}>
+      <div>
+        <div className="card" style={{borderLeft:`3px solid ${c.color}`}}>
+          <div style={{fontSize:14,fontWeight:700,color:c.color,marginBottom:10}}>{c.rule}</div>
+          <div className="def-box" style={{borderColor:c.color,marginBottom:8}}>
+            <span style={{color:c.color,fontWeight:700}}>¿Por qué?</span> {c.why}
+          </div>
+          {[
+            {l:'Pendiente',v:c.slope},
+            {l:'Válvula de servicio',v:c.valve},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{fontSize:11,color:'#566b5e',width:120,flexShrink:0,fontFamily:'IBM Plex Mono,monospace'}}>{r.l}</span>
+              <span style={{fontSize:12,color:'#eef4ef'}}>{r.v}</span>
+            </div>
+          ))}
+          <div className="def-box" style={{borderColor:'#f59e0b',marginTop:8,fontSize:11}}>
+            <span style={{color:'#f59e0b',fontWeight:700}}>Nota: </span>{c.nota}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Checklist de instalación</div>
+          {c.items.map((it,i)=>(
+            <div key={i} className="row">
+              <span style={{color:c.color,flexShrink:0,fontSize:13}}>✓</span>
+              <span style={{fontSize:12,color:'#eef4ef'}}>{it}</span>
+            </div>
+          ))}
+        </div>
+        {fluid==='steam'&&(
+          <div style={{background:'#0f1712',border:'1px solid rgba(200,90,58,0.3)',borderRadius:10,padding:'12px 14px',marginTop:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#c85a3a',fontFamily:'IBM Plex Mono,monospace',marginBottom:8,letterSpacing:'.1em',textTransform:'uppercase'}}>Condensate Pot — Diagrama</div>
+            <svg viewBox="0 0 380 160" style={{width:'100%',height:120}}>
+              {/* pipe */}
+              <rect x="10" y="30" width="80" height="20" rx="3" fill="#1a2820" stroke="rgba(110,210,150,0.3)" strokeWidth="1.5"/>
+              <text x="50" y="25" fill="#566b5e" fontSize="11" textAnchor="middle" fontFamily="IBM Plex Mono">vapor</text>
+              {/* pot */}
+              <rect x="100" y="10" width="60" height="80" rx="6" fill="#0f1712" stroke="#c85a3a" strokeWidth="2"/>
+              <text x="130" y="57" fill="#c85a3a" fontSize="10" textAnchor="middle" fontFamily="IBM Plex Mono">POT</text>
+              <line x1="90" y1="40" x2="100" y2="40" stroke="#c85a3a" strokeWidth="2"/>
+              {/* condensate line down */}
+              <line x1="160" y1="50" x2="220" y2="50" stroke="rgba(110,210,150,0.6)" strokeWidth="2"/>
+              {/* TX */}
+              <rect x="220" y="35" width="60" height="30" rx="5" fill="#0a120d" stroke="rgba(110,210,150,0.4)" strokeWidth="1.5"/>
+              <text x="250" y="55" fill="#35b07a" fontSize="12" textAnchor="middle" fontFamily="IBM Plex Mono" fontWeight="700">TX</text>
+              {/* second leg */}
+              <rect x="290" y="10" width="60" height="80" rx="6" fill="#0f1712" stroke="#c85a3a" strokeWidth="2"/>
+              <text x="320" y="57" fill="#c85a3a" fontSize="10" textAnchor="middle" fontFamily="IBM Plex Mono">POT</text>
+              <line x1="280" y1="50" x2="290" y2="50" stroke="rgba(110,210,150,0.6)" strokeWidth="2"/>
+              {/* equal height arrow */}
+              <line x1="130" y1="100" x2="130" y2="130" stroke="#566b5e" strokeWidth="1" strokeDasharray="4 3"/>
+              <line x1="320" y1="100" x2="320" y2="130" stroke="#566b5e" strokeWidth="1" strokeDasharray="4 3"/>
+              <line x1="130" y1="125" x2="320" y2="125" stroke="#566b5e" strokeWidth="1.5"/>
+              <text x="225" y="148" fill="#566b5e" fontSize="11" textAnchor="middle" fontFamily="IBM Plex Mono">misma altura → ΔH = 0</text>
+            </svg>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const [sel,setSel]=useState(0);
+  const manifolds=[
+    {name:'Manifold de 3 válvulas',color:'#35b07a',
+     vals:['V1: bloqueo lado alto (H)', 'V2: bloqueo lado bajo (L)', 'V3: ecualizadora (bypass)'],
+     uso:'Transmisores de presión diferencial (DP). Permite aislar el transmisor, ecualizar la presión en ambos lados y purgar sin sacar el instrumento de servicio.',
+     proc:['1. Para poner en servicio: abrir V3 (iguala presión). Abrir V1, luego V2. Cerrar V3. Verificar cero.','2. Para sacar de servicio: abrir V3. Cerrar V2, luego V1.','3. Para cero: abrir V3, ajustar, cerrar V3.']},
+    {name:'Manifold de 5 válvulas',color:'#5b9bef',
+     vals:['V1, V2: bloqueo H y L', 'V3: ecualizadora', 'V4: venteo/drenaje H', 'V5: venteo/drenaje L'],
+     uso:'Para servicios con fluidos peligrosos o que requieren purga individual de cada rama. Añade válvulas de venteo que permiten despresurizar cada lado del transmisor de forma independiente.',
+     proc:['1. Mismo procedimiento que 3 válvulas para puesta/salida de servicio.','2. V4 y V5 se usan para purgar o drenar cada ramal sin afectar el otro.','3. Esencial en servicios con H₂S, HF, o fluidos tóxicos — permite aislar y purgar antes de desconectar.']},
+    {name:'Válvulas de bloqueo + venteo',color:'#c85a3a',
+     vals:['1 válvula de bloqueo (block)', '1 válvula de venteo o drenaje', 'Aplicación: presión simple (no DP)'],
+     uso:'Para transmisores de presión manométrica o absoluta. La válvula de bloqueo aísla el transmisor; la de venteo permite despresurizar el lado del instrumento para mantenimiento.',
+     proc:['1. Cerrar válvula de bloqueo para aislar.','2. Abrir válvula de venteo/drenaje para despresurizar.','3. Instrumento puede retirarse de forma segura.']},
+  ];
+  const m=manifolds[sel];
+  return(<div>
+    <div className="sec-title">Manifolds y Válvulas de Servicio</div>
+    <div className="sec-sub">API RP 551 §4.3 — Herramientas para operar el transmisor en servicio</div>
+    <div style={{display:'flex',gap:6,marginBottom:12}}>
+      {manifolds.map((mv,i)=>(
+        <button key={i} onClick={()=>setSel(i)}
+          style={{flex:1,background:sel===i?mv.color+'22':'transparent',color:sel===i?mv.color:'#566b5e',border:`1px solid ${sel===i?mv.color:mv.color+'44'}`,borderRadius:7,padding:'7px 0',cursor:'pointer',fontSize:11,fontWeight:700,fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.04em',transition:'all .2s'}}>
+          {mv.name}
+        </button>
+      ))}
+    </div>
+    <div className="grid2" style={{gap:12,alignItems:'start'}}>
+      <div>
+        <div className="card" style={{borderLeft:`3px solid ${m.color}`}}>
+          <div className="card-h">Válvulas incluidas</div>
+          {m.vals.map((v,i)=>(
+            <div key={i} className="row">
+              <span style={{color:m.color,flexShrink:0,fontSize:12,width:20}}>{i+1}</span>
+              <span style={{fontSize:12,color:'#eef4ef',fontFamily:'IBM Plex Mono,monospace'}}>{v}</span>
+            </div>
+          ))}
+          <div className="card-h" style={{marginTop:12}}>Aplicación</div>
+          <p style={{fontSize:12,color:'#90a89a',lineHeight:1.6}}>{m.uso}</p>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Procedimiento de operación</div>
+          {m.proc.map((p,i)=>(
+            <div key={i} style={{padding:'8px 0',borderBottom:'1px solid rgba(110,210,150,0.08)',fontSize:12,color:'#eef4ef',lineHeight:1.5}}>
+              {p}
+            </div>
+          ))}
+        </div>
+        <div className="def-box" style={{marginTop:8,borderColor:'#f59e0b'}}>
+          <span style={{color:'#f59e0b',fontWeight:700}}>API RP 551 §4.3.4:</span> El procedimiento de operación del manifold debe estar documentado en el procedimiento de mantenimiento del instrumento. El técnico debe conocerlo de memoria para servicios peligrosos.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Definición y materiales',comp:<Scene1/>},
+  {id:2,label:'Gas, líquido y vapor',comp:<Scene2/>},
+  {id:3,label:'Manifolds y válvulas',comp:<Scene3/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Instrumentación Industrial — API RP 551</div>
+          <div className="topbar-sub">Módulo 12 · Lección 12.1 — Líneas de impulso: diseño e instalación</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 5.3 — Verificación, Validación y Pruebas</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0a0f1e,#0f1a35);border-bottom:2px solid #3b82f6;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#3b82f622;border:1px solid #3b82f655;color:#3b82f6;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e3a5f;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:#3b82f610;font-weight:600;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:#3b82f644;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e3a5f;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 7px 7px 0;padding:10px 14px;margin:7px 0;font-size:12px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Verificación vs Validación</div>
+    <div className="sec-sub">La diferencia fundamental que IEC 61511 exige comprender</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card" style={{borderLeft:'3px solid #3b82f6'}}>
+          <div style={{fontSize:16,fontWeight:700,color:'#3b82f6',marginBottom:6}}>Verificación</div>
+          <div className="def-box" style={{marginBottom:8}}>
+            <em>"¿Estamos construyendo el sistema <strong>correctamente</strong>?"</em>
+          </div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginBottom:8}}>
+            La verificación confirma que cada fase del ciclo de vida cumple con los requisitos definidos en la fase anterior. Es un proceso interno continuo.
+          </p>
+          <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',marginBottom:4}}>Actividades de verificación:</div>
+          {['Revisión del HAZOP vs descripción del EUC','Revisión del SRS vs resultados del HAZOP/LOPA','Revisión del diseño vs el SRS','Revisión del código vs la especificación lógica','FAT vs diseño del SIS'].map((a,i)=>(
+            <div key={i} style={{fontSize:11,color:'#cbd5e1',padding:'3px 0',display:'flex',gap:6}}>
+              <span style={{color:'#3b82f6',flexShrink:0}}>✓</span><span>{a}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderLeft:'3px solid #22c55e'}}>
+          <div style={{fontSize:16,fontWeight:700,color:'#22c55e',marginBottom:6}}>Validación</div>
+          <div className="def-box" style={{borderColor:'#22c55e',marginBottom:8}}>
+            <em>"¿Estamos construyendo <strong>el sistema correcto</strong>?"</em>
+          </div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#cbd5e1',marginBottom:8}}>
+            La validación confirma que el SIS instalado y listo para operar cumple con todos los requisitos del SRS. Se realiza antes del arranque.
+          </p>
+          <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',marginBottom:4}}>Actividades de validación:</div>
+          {['SAT (Site Acceptance Test) completo','Pruebas funcionales de cada SIF en sitio','Verificación de tiempos de respuesta reales','Confirmación de setpoints en campo','Sign-off del responsable de seguridad funcional'].map((a,i)=>(
+            <div key={i} style={{fontSize:11,color:'#cbd5e1',padding:'3px 0',display:'flex',gap:6}}>
+              <span style={{color:'#22c55e',flexShrink:0}}>✓</span><span>{a}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div className="def-box">
+      <span style={{color:'#3b82f6',fontWeight:700}}>IEC 61511 §15:</span> La validación del SIS debe demostrar que el sistema completo satisface todos los requisitos del SRS bajo todas las condiciones relevantes de proceso.
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const fatItems=[
+    {prueba:'Prueba de entradas digitales',desc:'Simular cada señal de entrada al PLC SIS y verificar respuesta lógica correcta'},
+    {prueba:'Prueba de entradas analógicas',desc:'Inyectar señales 4-20 mA de referencia y verificar conversión y setpoints'},
+    {prueba:'Prueba de lógica de seguridad',desc:'Verificar cada SIF: causa → consecuencia lógica → salida'},
+    {prueba:'Prueba de temporizadores',desc:'Confirmar todos los tiempos de retardo y respuesta según el SRS'},
+    {prueba:'Prueba de bypass',desc:'Activar cada bypass y verificar que las alarmas y registros funcionan'},
+    {prueba:'Prueba de comunicaciones',desc:'Verificar interfaz con DCS/HMI y comunicaciones Modbus/OPC-UA'},
+    {prueba:'Prueba de alimentación',desc:'Simular pérdida de alimentación eléctrica — verificar estado seguro por UPS'},
+    {prueba:'Prueba de diagnósticos',desc:'Forzar fallas detectables y verificar alarmas de mantenimiento'},
+  ];
+  const [checked,setChecked]=useState({});
+  function toggle(i){setChecked(p=>({...p,[i]:!p[i]}));}
+  const done=Object.values(checked).filter(Boolean).length;
+  return(<div>
+    <div className="sec-title">FAT — Factory Acceptance Test</div>
+    <div className="sec-sub">Lista de verificación típica de FAT para un SIS</div>
+    <div className="grid2" style={{gap:12}}>
+      <div>
+        <div className="card">
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+            <div className="card-h" style={{margin:0}}>Checklist de FAT</div>
+            <span style={{fontSize:12,fontWeight:700,color:done===fatItems.length?'#22c55e':'#3b82f6'}}>{done}/{fatItems.length} completadas</span>
+          </div>
+          <div style={{height:4,background:'#1e3a5f',borderRadius:2,marginBottom:10}}>
+            <div style={{height:'100%',width:`${(done/fatItems.length)*100}%`,background:done===fatItems.length?'#22c55e':'#3b82f6',borderRadius:2,transition:'width .3s'}}/>
+          </div>
+          {fatItems.map((f,i)=>(
+            <div key={i} onClick={()=>toggle(i)} style={{display:'flex',gap:8,padding:'6px 0',borderBottom:'1px solid #1e3a5f22',cursor:'pointer',alignItems:'flex-start'}}>
+              <div style={{width:16,height:16,border:`1px solid ${checked[i]?'#22c55e':'#3b82f6'}`,borderRadius:3,background:checked[i]?'#22c55e':'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1,transition:'all .15s'}}>
+                {checked[i]&&<span style={{color:'#000',fontSize:9,fontWeight:700}}>✓</span>}
+              </div>
+              <div>
+                <div style={{fontSize:11,fontWeight:600,color:checked[i]?'#64748b':'#e2e8f0'}}>{f.prueba}</div>
+                <div style={{fontSize:9,color:'#475569'}}>{f.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">FAT vs SAT — diferencias</div>
+          {[
+            {prueba:'FAT',lugar:'Fábrica / taller del integrador',obj:'Probar el SIS con hardware y software completo antes de instalar en sitio',ventaja:'Detectar errores sin afectar la planta — menos costoso corregir'},
+            {prueba:'SAT',lugar:'Sitio — planta real',obj:'Probar el SIS instalado en campo con el proceso real o simulado',ventaja:'Confirmar integración con BPCS, P&ID real, cableado y equipos de campo'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'8px 0',borderBottom:'1px solid #1e3a5f22'}}>
+              <div style={{fontSize:13,fontWeight:700,color:'#3b82f6',marginBottom:3}}>{r.prueba}</div>
+              <div style={{fontSize:10,color:'#64748b',marginBottom:3}}>📍 {r.lugar}</div>
+              <div style={{fontSize:11,color:'#cbd5e1',marginBottom:3}}>{r.obj}</div>
+              <div style={{fontSize:10,color:'#22c55e'}}>✓ {r.ventaja}</div>
+            </div>
+          ))}
+        </div>
+        <div className="def-box" style={{marginTop:8}}>
+          <span style={{color:'#3b82f6',fontWeight:700}}>Documentación obligatoria:</span> Todos los resultados del FAT y SAT deben ser documentados y firmados. Forman parte del dossier de seguridad del SIS y son requeridos en auditorías.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const scenes=[
+  {id:1,label:'Verificación vs Validación',comp:<Scene1/>},
+  {id:2,label:'FAT y SAT',comp:<Scene2/>},
+];
+function App(){
+  const [active,setActive]=useState(1);
+  const scene=scenes.find(s=>s.id===active);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">IEC 61511 — Seguridad Funcional en la Industria de Proceso</div>
+          <div className="topbar-sub">Módulo 5 · Lección 5.3 — Verificación, validación y pruebas funcionales</div>
+        </div>
+        <div className="scene-badge">{active}/{scenes.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          {scenes.map(s=>(
+            <div key={s.id} className={'nav-item'+(active===s.id?' active':'')} onClick={()=>setActive(s.id)}>{s.id}. {s.label}</div>
+          ))}
+        </div>
+        <div className="main">{scene.comp}</div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
