@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.2 – Prestaciones y Variabilidad</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:12px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-blue{background:#1e3a5f44;color:#93c5fd;border:1px solid #1e3a5f66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: Variabilidad de proceso ──────────────────────── */
+function Scene1(){
+  const [sigma,setSigma]=useState(2.5);
+  // distribución gaussiana dibujada
+  const pts=[];
+  for(let x=-4;x<=4;x+=0.2){const y=Math.exp(-(x*x)/(2*(sigma/2.5)**2));pts.push([150+x*30,120-y*85]);}
+  const path='M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+  return(<div>
+    <div className="sec-title">Variabilidad de proceso</div>
+    <div className="sec-sub">Banda ±2σ · Calidad del control · Acercar el punto de ajuste al límite · Ahorro económico</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es la variabilidad?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            La variabilidad de proceso es la <b style={{color:'#f59e0b'}}>banda ±2σ</b> alrededor del punto
+            de ajuste donde se dispersa la variable de proceso. Es una medida directa de la <b>rigidez</b>
+            del control: cuanto menor sea, más ajustado opera el lazo.
+          </div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            Reducir la variabilidad permite <b style={{color:'#22c55e'}}>acercar el punto de ajuste al
+            límite de especificación</b> sin violarlo — esto se traduce en mayor productividad, ahorro de
+            energía/materia prima y mejor calidad final.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Simulador — distribución de la VP</div>
+          <svg width="100%" viewBox="0 0 300 140">
+            <rect width="300" height="140" fill="#060a14" rx="6"/>
+            <line x1="150" y1="20" x2="150" y2="125" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,2"/>
+            <text x="150" y="135" textAnchor="middle" fill="#f59e0b" fontSize="8">Punto de ajuste</text>
+            <line x1={150-sigma*30} y1="35" x2={150-sigma*30} y2="120" stroke="#ef4444" strokeWidth="0.8"/>
+            <line x1={150+sigma*30} y1="35" x2={150+sigma*30} y2="120" stroke="#ef4444" strokeWidth="0.8"/>
+            <path d={path} fill="none" stroke="#3b82f6" strokeWidth="2"/>
+            <text x={150-sigma*30-4} y="32" textAnchor="end" fill="#ef4444" fontSize="7">−2σ</text>
+            <text x={150+sigma*30+4} y="32" fill="#ef4444" fontSize="7">+2σ</text>
+          </svg>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',margin:'8px 0 2px'}}>
+            <span>Variabilidad (ancho ±2σ)</span><span style={{color:'#f59e0b'}}>{(sigma*2).toFixed(1)} %</span>
+          </div>
+          <input type="range" min="0.8" max="3.5" step="0.1" value={sigma} onChange={e=>setSigma(+e.target.value)}/>
+          <div style={{fontSize:10,color:sigma<1.5?'#22c55e':sigma<2.5?'#fcd34d':'#ef4444',marginTop:6,fontWeight:600}}>
+            {sigma<1.5?'✓ Control ajustado: el SP puede acercarse al límite → más ganancia económica':
+             sigma<2.5?'~ Control moderado: hay margen de mejora':'✗ Control pobre: el SP debe alejarse del límite → pérdida de productividad'}
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">¿Qué afecta la variabilidad atribuible a la válvula?</div>
+        {[['Banda muerta','Fricción, holgura, wind-up del eje, banda muerta del relé'],
+          ['Tiempo de respuesta','Tiempo muerto + tiempo dinámico (T63)'],
+          ['Histéresis','Diferencia de posición al subir vs. bajar la señal'],
+          ['Tipo y caracterización','Lineal, iso-%, apertura rápida'],
+          ['Dimensionamiento','Una válvula sobredimensionada controla solo en su zona baja'],
+        ].map(([t,d])=>(
+          <div key={t} style={{display:'flex',gap:8,marginBottom:7,alignItems:'flex-start'}}>
+            <div style={{width:5,background:'#f59e0b',alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+            <div><div style={{fontSize:11,color:'#f59e0b',fontWeight:600}}>{t}</div><div style={{fontSize:10,color:'#64748b'}}>{d}</div></div>
+          </div>
+        ))}
+        <div style={{background:'#060a14',borderRadius:6,padding:'8px 11px',marginTop:6}}>
+          <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5}}>
+            Estudios de planta muestran que <b className="gold">un alto porcentaje de los lazos</b> presentan
+            un desempeño deficiente, y la válvula de control es a menudo la principal contribución a la
+            variabilidad evitable.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Banda muerta ─────────────────────────────────── */
+function Scene2(){
+  const [db,setDb]=useState(2);
+  // genera respuesta escalonada con banda muerta
+  return(<div>
+    <div className="sec-title">Banda muerta (dead band)</div>
+    <div className="sec-sub">Rango de señal sin respuesta · Causas: fricción y holgura · Efecto en la VP</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Definición</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            La banda muerta es el rango por el que la señal del controlador (CO) puede variar
+            <b style={{color:'#ef4444'}}> sin producir cambio</b> en la variable de proceso, cuando la
+            señal <b>invierte su dirección</b>. Es el principal contribuyente a la variabilidad evitable.
+          </div>
+          <div className="formula-box">Banda muerta = ancho de señal sin respuesta al invertir dirección</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+            Cuando ocurre una perturbación, el controlador corrige; pero si el cambio de salida cae dentro
+            de la banda muerta, la válvula <b>no se mueve</b> y la corrección se retrasa, ampliando la
+            desviación.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Causas principales</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:6}}>
+            {['Fricción de empaquetadura','Holgura mecánica (backlash)','Wind-up del eje','Banda muerta del relé','Conexiones flojas'].map(c=>(
+              <span key={c} className="tag tag-red">{c}</span>
+            ))}
+          </div>
+          <div style={{fontSize:10,color:'#64748b',lineHeight:1.5}}>
+            La <b className="gold">fricción</b> y la <b className="gold">holgura</b> son las dos causas más
+            habituales. Un posicionador digital de buena calidad y empaquetaduras de baja fricción la reducen
+            drásticamente.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Simulador — lazo de histéresis por banda muerta</div>
+        <svg width="100%" viewBox="0 0 280 220">
+          <rect width="280" height="220" fill="#060a14" rx="6"/>
+          <line x1="40" y1="20" x2="40" y2="190" stroke="#1e2d4a"/>
+          <line x1="40" y1="190" x2="260" y2="190" stroke="#1e2d4a"/>
+          <text x="8" y="105" fill="#64748b" fontSize="8" transform="rotate(-90 12 105)">Posición</text>
+          <text x="150" y="208" textAnchor="middle" fill="#64748b" fontSize="8">Señal CO (%)</text>
+          {/* ideal */}
+          <line x1="40" y1="190" x2="240" y2="30" stroke="#334155" strokeWidth="1" strokeDasharray="3,3"/>
+          <text x="200" y="40" fill="#475569" fontSize="7">ideal</text>
+          {/* curva subida */}
+          <line x1={40+db*8} y1="190" x2={240} y2={30} stroke="#22c55e" strokeWidth="2"/>
+          {/* curva bajada */}
+          <line x1="40" y1="190" x2={240-db*8} y2={30} stroke="#ef4444" strokeWidth="2"/>
+          <text x="120" y="120" fill="#22c55e" fontSize="8">↑ subiendo</text>
+          <text x="150" y="95" fill="#ef4444" fontSize="8">↓ bajando</text>
+          <text x="60" y="178" fill="#f59e0b" fontSize="8">banda muerta</text>
+        </svg>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',margin:'8px 0 2px'}}>
+          <span>Banda muerta</span><span style={{color:'#f59e0b'}}>{db.toFixed(1)} %</span>
+        </div>
+        <input type="range" min="0.2" max="6" step="0.1" value={db} onChange={e=>setDb(+e.target.value)}/>
+        <div style={{fontSize:10,color:db<1?'#22c55e':db<3?'#fcd34d':'#ef4444',marginTop:6,fontWeight:600}}>
+          {db<1?'✓ < 1% — desempeño de control aceptable':db<3?'~ 1–3% — control degradado':'✗ > 3% — la válvula limita seriamente el lazo'}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Tiempo de respuesta T63 ──────────────────────── */
+function Scene3(){
+  const [td,setTd]=useState(0.4);
+  const [tau,setTau]=useState(1.2);
+  const t63=td+tau;
+  // curva de respuesta
+  const pts=[];
+  for(let t=0;t<=6;t+=0.1){
+    let y= t<td?0:(1-Math.exp(-(t-td)/tau));
+    pts.push([30+t*38,170-y*130]);
+  }
+  const path='M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L');
+  return(<div>
+    <div className="sec-title">Tiempo de respuesta de la válvula — T63</div>
+    <div className="sec-sub">Tiempo muerto + tiempo dinámico · Respuesta a cambios pequeños (1%) · Simetría de carrera</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Parámetro T63</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            <b style={{color:'#f59e0b'}}>T63</b> es el tiempo desde el inicio del cambio de señal hasta que
+            la salida alcanza el <b>63%</b> del cambio correspondiente. Incluye dos partes:
+          </div>
+          <div className="formula-box">T63 = tiempo muerto (Td) + tiempo dinámico (τ)</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5,marginBottom:6}}>
+            <b className="gold">Tiempo muerto:</b> retraso antes de que la válvula empiece a moverse
+            (vencer la fricción estática y la banda muerta).
+          </div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+            <b className="gold">Tiempo dinámico:</b> determinado por la dinámica del posicionador + actuador
+            una vez que la válvula ya responde.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">¿Por qué importa la respuesta a cambios pequeños?</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+            La mayoría de los cambios de señal en control regulador son <b>pequeños (≤1%)</b>. Si el conjunto
+            responde rápido a esos micro-cambios, mejora la variabilidad. La <b className="gold">simetría</b>
+            también importa: algunos diseños tienen tiempos muertos 3–5× mayores en una dirección de carrera
+            que en la otra, lo que limita el ajuste del lazo.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Simulador de respuesta escalón</div>
+        <svg width="100%" viewBox="0 0 260 200">
+          <rect width="260" height="200" fill="#060a14" rx="6"/>
+          <line x1="30" y1="20" x2="30" y2="170" stroke="#1e2d4a"/>
+          <line x1="30" y1="170" x2="250" y2="170" stroke="#1e2d4a"/>
+          {/* línea 63% */}
+          <line x1="30" y1={170-0.63*130} x2="250" y2={170-0.63*130} stroke="#f59e0b" strokeWidth="0.7" strokeDasharray="3,2"/>
+          <text x="232" y={170-0.63*130-3} fill="#f59e0b" fontSize="7">63%</text>
+          {/* escalon señal */}
+          <line x1="30" y1="170" x2={30+td*38} y2="170" stroke="#a78bfa" strokeWidth="1.5"/>
+          <line x1={30+td*38} y1="170" x2={30+td*38} y2="40" stroke="#a78bfa" strokeWidth="1.5" strokeDasharray="2,2"/>
+          <text x="40" y="35" fill="#a78bfa" fontSize="7">señal CO</text>
+          {/* respuesta */}
+          <path d={path} fill="none" stroke="#22c55e" strokeWidth="2"/>
+          {/* td marker */}
+          <line x1="30" y1="180" x2={30+td*38} y2="180" stroke="#ef4444" strokeWidth="1.5"/>
+          <text x={30+td*19} y="192" textAnchor="middle" fill="#ef4444" fontSize="7">Td</text>
+          {/* t63 marker */}
+          <line x1={30+t63*38} y1={170-0.63*130} x2={30+t63*38} y2="170" stroke="#f59e0b" strokeWidth="0.7" strokeDasharray="2,2"/>
+          <text x={30+t63*38} y="168" fill="#f59e0b" fontSize="7" textAnchor="middle">T63</text>
+        </svg>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',margin:'6px 0 2px'}}>
+          <span>Tiempo muerto Td</span><span style={{color:'#f59e0b'}}>{td.toFixed(1)} s</span>
+        </div>
+        <input type="range" min="0.1" max="2" step="0.1" value={td} onChange={e=>setTd(+e.target.value)}/>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',margin:'8px 0 2px'}}>
+          <span>Constante dinámica τ</span><span style={{color:'#f59e0b'}}>{tau.toFixed(1)} s</span>
+        </div>
+        <input type="range" min="0.3" max="3" step="0.1" value={tau} onChange={e=>setTau(+e.target.value)}/>
+        <div style={{background:'#060a14',borderRadius:6,padding:'7px 11px',textAlign:'center',marginTop:8}}>
+          <span style={{fontSize:18,fontWeight:700,color:'#f59e0b',fontFamily:'monospace'}}>T63 ≈ {t63.toFixed(1)} s</span>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Histéresis y fricción ───────────────────────── */
+function Scene4(){
+  return(<div>
+    <div className="sec-title">Histéresis, fricción y ganancia instalada</div>
+    <div className="sec-sub">Conceptos que determinan la calidad del control en planta real</div>
+    <div className="grid2">
+      <div className="card">
+        <div className="card-h">Histéresis vs. banda muerta</div>
+        <table>
+          <thead><tr><th>Término</th><th>Definición</th></tr></thead>
+          <tbody>
+            <tr><td><b className="gold">Banda muerta</b></td><td>Rango de señal sin respuesta al invertir dirección</td></tr>
+            <tr><td><b className="gold">Histéresis</b></td><td>Diferencia de posición para la misma señal al subir vs. bajar</td></tr>
+            <tr><td><b className="gold">Holgura</b></td><td>Juego mecánico en acoples (backlash)</td></tr>
+            <tr><td><b className="gold">Zona muerta</b></td><td>Banda muerta intencional para evitar oscilación</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="card">
+        <div className="card-h">Fricción — el enemigo silencioso</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55,marginBottom:6}}>
+          La fricción de la empaquetadura genera banda muerta y aumenta el tiempo muerto. Hay compromiso:
+          empaquetadura más apretada = menos fugas pero más fricción.
+        </div>
+        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+          <span className="tag tag-green">Live-loading (resorte): fricción estable</span>
+          <span className="tag tag-blue">Posicionador digital: compensa la fricción</span>
+          <span className="tag tag-amber">Diagnóstico: tendencia de fricción en servicio</span>
+        </div>
+      </div>
+    </div>
+    <div className="card" style={{marginBottom:0}}>
+      <div className="card-h">Ganancia inherente vs. ganancia instalada</div>
+      <div className="grid2">
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+          La <b className="gold">ganancia inherente</b> es la pendiente de la curva caudal-vs-carrera medida
+          a ΔP constante en banco. En planta, la ΔP varía con el caudal (se reparte entre válvula y línea),
+          deformando esa curva: es la <b className="gold">ganancia instalada</b>.
+        </div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+          Objetivo de diseño: una ganancia instalada lo más <b>constante</b> posible (idealmente entre 0,5 y
+          2,0) en todo el rango de operación. Por eso se elige la característica de flujo según la relación de
+          caída de presión válvula/sistema — tema que profundizaremos en la Clase 1.4.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'La variabilidad de proceso se define como:',opts:['La banda ±2σ de dispersión de la VP alrededor del punto de ajuste','El caudal máximo de la válvula','El tiempo muerto del lazo','La caída de presión en la válvula'],ans:0},
+  {q:'¿Por qué interesa reducir la variabilidad?',opts:['Para aumentar la fricción','Para acercar el punto de ajuste al límite y ganar productividad','Para cerrar la válvula más rápido','Para reducir la rangeabilidad'],ans:1},
+  {q:'La banda muerta es el rango de señal del controlador que:',opts:['Produce máxima respuesta','No produce cambio en la VP al invertir la dirección','Solo aparece en válvulas rotativas','Define el caudal nominal'],ans:1},
+  {q:'Las dos causas más habituales de banda muerta son:',opts:['Temperatura y presión','Fricción y holgura','Cavitación y ruido','Cv y rangeabilidad'],ans:1},
+  {q:'El parámetro T63 mide el tiempo hasta que la salida alcanza:',opts:['El 50% del cambio','El 63% del cambio correspondiente','El 90% del cambio','El 100% del cambio'],ans:1},
+  {q:'T63 está compuesto por:',opts:['Solo el tiempo dinámico','Tiempo muerto + tiempo dinámico','Solo la banda muerta','Cavitación + ruido'],ans:1},
+  {q:'¿Por qué es importante la respuesta a cambios pequeños (≤1%)?',opts:['Porque casi nunca ocurren','Porque la mayoría de los cambios en control regulador son pequeños','Porque solo afectan el cierre','Porque no influyen en la variabilidad'],ans:1},
+  {q:'La diferencia de posición para la misma señal al subir vs. bajar se llama:',opts:['Rangeabilidad','Histéresis','Cavitación','Ganancia'],ans:1},
+  {q:'La ganancia "instalada" se diferencia de la "inherente" porque:',opts:['Se mide a ΔP constante en banco','Considera que la ΔP de la válvula varía con el caudal en planta','No depende de la característica de flujo','Es siempre igual a 1'],ans:1},
+  {q:'Un tiempo muerto asimétrico (3–5× mayor en una dirección) es problemático porque:',opts:['Mejora el cierre','Limita la capacidad de ajustar el lazo','Reduce la fricción','Aumenta la rangeabilidad'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    if(i===q.ans)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(qi+1>=quizData.length)setDone(true);
+      else{setQi(qi+1);setSel(null);}
+    },1200);
+  };
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>
+      {score>=8?'Excelente. Entiendes cómo la válvula afecta la calidad del control.':score>=6?'Buen nivel. Repasa banda muerta y T63.':'Repasa variabilidad, banda muerta y tiempo de respuesta.'}
+    </div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Prestaciones y Variabilidad</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>
+      {quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}
+    </div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}>
+      <div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div>
+    </div>
+    {q.opts.map((o,i)=>{
+      let cls='quiz-opt';
+      if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}
+      return(<div key={i} className={cls} onClick={()=>choose(i)}>
+        <div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+        {o}
+      </div>);
+    })}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. Variabilidad de proceso',comp:Scene1},
+  {id:2,label:'2. Banda muerta',comp:Scene2},
+  {id:3,label:'3. Tiempo de respuesta T63',comp:Scene3},
+  {id:4,label:'4. Histéresis y ganancia',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);
+  const S=SCENES.find(s=>s.id===scene);
+  const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Clase 1.2 — Prestaciones y Variabilidad</div>
+        <div className="topbar-sub">Variabilidad ±2σ · Banda muerta · Tiempo de respuesta T63 · Histéresis · Ganancia instalada</div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

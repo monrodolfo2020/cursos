@@ -750,6 +750,64 @@ const lessons = [
     durationSec: 480,
     videoPath: `${BASE}/modulo-11/Clase 11.8 - Presentacion final y evaluacion.html`,
   },
+  // ── MÓDULO 3 — API RP 551 additions ──────────────────────────────────
+  {
+    order: 105,
+    title: "Medidores de turbina — Principio, tipos e instalación",
+    description: "Principio Q=f/K, factor K y calibración. Turbina axial para líquidos y gas (AGA-7), medidor de inserción paddlewheel. Ventajas, limitaciones y requisitos de tramos rectos según API RP 551 §5.7.",
+    durationSec: 540,
+    videoPath: `${BASE}/modulo-3-sensores/Clase 3.13 - Medidores de turbina.html`,
+  },
+  {
+    order: 106,
+    title: "Selección de medidores de caudal — API RP 551",
+    description: "Matriz de selección de 7 tecnologías por tipo de fluido, exactitud y aplicación. Tramos rectos aguas arriba y abajo por medidor. Medición fiscal y normas AGA-7, AGA-9, ISO 10790 y API MPMS 5.3.",
+    durationSec: 600,
+    videoPath: `${BASE}/modulo-3-sensores/Clase 3.14 - Seleccion de medidores API RP 551.html`,
+  },
+  // ── MÓDULO 12 — API RP 551 Avanzado ─────────────────────────────────
+  {
+    order: 107,
+    title: "Líneas de impulso — Diseño e instalación API RP 551",
+    description: "Definición, errores por mala instalación, materiales (SS316L, Hastelloy, PTFE). Reglas de pendiente y purga por tipo de fluido: gas, líquido y vapor con potes de condensado. Manifolds de 3 y 5 válvulas.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-12-api-rp551/Clase 12.1 - Lineas de impulso.html`,
+  },
+  {
+    order: 108,
+    title: "Montaje de transmisores — Orientación por tipo de fluido",
+    description: "Reglas de montaje de transmisores DP para líquido, gas y vapor. Diagrama de instalación para cada fluido. Calefacción de líneas, accesibilidad y tabla resumen de criterios API RP 551 §4.3.",
+    durationSec: 450,
+    videoPath: `${BASE}/modulo-12-api-rp551/Clase 12.2 - Montaje de transmisores.html`,
+  },
+  {
+    order: 109,
+    title: "Medición de nivel DP avanzado — Pierna mojada, seca y sellos",
+    description: "Pierna mojada vs. pierna seca: principios, diagramas y cálculo de span negativo con ejemplo numérico completo. Sellos de diafragma para fluidos viscosos y corrosivos. Casos especiales: vapor, slurry, reactores de polímero.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-12-api-rp551/Clase 12.3 - Nivel DP avanzado.html`,
+  },
+  {
+    order: 110,
+    title: "Cromatógrafos de proceso — Composición de gas y cálculo de PCS",
+    description: "Principio del GC de proceso, cromatograma de gas natural C₁–C₅+. Sistema de muestreo, columnas, detectores TCD/FID. Cálculo de PCS e índice de Wobbe (AGA-5). Diagnóstico de fallos y aplicaciones en planta.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-12-api-rp551/Clase 12.4 - Cromatografos de proceso.html`,
+  },
+  {
+    order: 111,
+    title: "Analizadores de humedad y punto de rocío",
+    description: "Tecnologías QCM, capacitivo Al₂O₃, TDLAS y electrolítico P₂O₅. Instalación del sistema de muestreo y materiales compatibles. Especificaciones para gas natural, GLP, gas de instrumento y aire comprimido. Calibración con chilled mirror.",
+    durationSec: 450,
+    videoPath: `${BASE}/modulo-12-api-rp551/Clase 12.5 - Analizadores de humedad.html`,
+  },
+  {
+    order: 112,
+    title: "Calibración, trazabilidad y documentación — API RP 551",
+    description: "Diagramas de loop ISA 5.4 con ejemplo completo. Procedimiento de calibración en 6 pasos: As Found/As Left, regla 4:1. Trazabilidad metrológica NIST/ISO 17025. Gestión del programa de calibración e instrumentos fiscales.",
+    durationSec: 480,
+    videoPath: `${BASE}/modulo-12-api-rp551/Clase 12.6 - Calibracion y documentacion.html`,
+  },
 ];
 
 const totalSec = lessons.reduce((s, l) => s + l.durationSec, 0);
@@ -925,6 +983,211 @@ const lessonsSIL = [
 const totalSecSIL = lessonsSIL.reduce((s, l) => s + l.durationSec, 0);
 const totalMinutesSIL = Math.round(totalSecSIL / 60);
 
+const BASE_IEC = "/videos/iec-61511";
+
+const lessonsIEC = [
+  // ── MÓDULO 1 — Introducción y Fundamentos ───────────────────────────────
+  {
+    order: 1,
+    title: "¿Qué es la Seguridad Funcional?",
+    description:
+      "Introducción a la seguridad funcional: definición, diferencia entre seguridad inherente y funcional, accidentes industriales como motivación, y el rol del SIS como capa de protección independiente.",
+    durationSec: 600,
+    videoPath: `${BASE_IEC}/iec-modulo-1/Clase 1.1 - Que es la seguridad funcional.html`,
+  },
+  {
+    order: 2,
+    title: "La Norma IEC 61511",
+    description:
+      "Estructura de IEC 61511 en 3 partes, alcance de la norma en la industria de proceso, sectores de aplicación y los principales requisitos que impone a operadores, diseñadores e integradores de SIS.",
+    durationSec: 600,
+    videoPath: `${BASE_IEC}/iec-modulo-1/Clase 1.2 - La norma IEC 61511.html`,
+  },
+  {
+    order: 3,
+    title: "Terminología Esencial: SIS, SIF, SIL y PFD",
+    description:
+      "Los cuatro conceptos clave que todo profesional de seguridad funcional debe dominar: Sistema Instrumentado de Seguridad, Función Instrumentada de Seguridad, Nivel de Integridad de Seguridad y Probabilidad de Falla bajo Demanda.",
+    durationSec: 600,
+    videoPath: `${BASE_IEC}/iec-modulo-1/Clase 1.3 - Terminologia esencial SIS SIF SIL PFD.html`,
+  },
+  // ── MÓDULO 2 — Análisis de Peligros ─────────────────────────────────────
+  {
+    order: 4,
+    title: "Identificación de Peligros con HAZOP",
+    description:
+      "Metodología HAZOP completa: palabras guía, roles del equipo, hojas de trabajo y aplicación práctica en un reactor exotérmico. La base del análisis de riesgo según IEC 61511.",
+    durationSec: 480,
+    videoPath: `${BASE_IEC}/iec-modulo-2/Clase 2.1 - Identificacion de peligros HAZOP.html`,
+  },
+  {
+    order: 5,
+    title: "Análisis de Capas de Protección (LOPA)",
+    description:
+      "Concepto de capas de protección independientes (IPL), calculadora interactiva de LOPA para determinar la frecuencia mitigada de un escenario peligroso y el SIL objetivo de la SIF requerida.",
+    durationSec: 420,
+    videoPath: `${BASE_IEC}/iec-modulo-2/Clase 2.2 - Analisis de capas de proteccion LOPA.html`,
+  },
+  {
+    order: 6,
+    title: "Frecuencias de Eventos y Consecuencias",
+    description:
+      "Cómo estimar la frecuencia de eventos iniciadores, categorías de consecuencias y construcción de la matriz de riesgo. Herramienta interactiva para clasificar escenarios de proceso.",
+    durationSec: 420,
+    videoPath: `${BASE_IEC}/iec-modulo-2/Clase 2.3 - Frecuencias y consecuencias.html`,
+  },
+  // ── MÓDULO 3 — Niveles de Integridad SIL ────────────────────────────────
+  {
+    order: 7,
+    title: "¿Qué es el SIL?",
+    description:
+      "Los cuatro niveles SIL y sus rangos de PFDavg y RRF. Visualización comparativa y calculadora interactiva para entender el impacto de cada nivel en la reducción del riesgo.",
+    durationSec: 420,
+    videoPath: `${BASE_IEC}/iec-modulo-3/Clase 3.1 - Que es el SIL.html`,
+  },
+  {
+    order: 8,
+    title: "Métodos de Determinación del SIL",
+    description:
+      "Cuatro métodos para asignar el SIL objetivo: Matriz de Riesgo, Gráfico de Riesgo, LOPA y método cuantitativo. Comparativa de aplicabilidad y limitaciones de cada enfoque.",
+    durationSec: 420,
+    videoPath: `${BASE_IEC}/iec-modulo-3/Clase 3.2 - Metodos de determinacion de SIL.html`,
+  },
+  {
+    order: 9,
+    title: "PFD y Tasas de Falla",
+    description:
+      "Modos de falla de componentes: λ_DD, λ_DU, λ_SD y λ_SU. Calculadora de PFDavg para arquitecturas 1oo1, 1oo2, 2oo2 y 2oo3. Entender el impacto de cada parámetro en el SIL.",
+    durationSec: 360,
+    videoPath: `${BASE_IEC}/iec-modulo-3/Clase 3.3 - PFD y tasas de falla.html`,
+  },
+  // ── MÓDULO 4 — Diseño del SIS ────────────────────────────────────────────
+  {
+    order: 10,
+    title: "Arquitectura de un SIS",
+    description:
+      "Los tres subsistemas del SIS: sensores, lógica resolutora y elementos finales. Criterios de selección para cada subsistema y principio de independencia respecto al BPCS.",
+    durationSec: 420,
+    videoPath: `${BASE_IEC}/iec-modulo-4/Clase 4.1 - Arquitectura de un SIS.html`,
+  },
+  {
+    order: 11,
+    title: "Selección de Equipos Certificados SIL",
+    description:
+      "Organismos certificadores (TÜV, exida, FM), qué significa un certificado SIL, el Functional Safety Manual (FSM) y el proceso de selección de dispositivos en 6 pasos.",
+    durationSec: 420,
+    videoPath: `${BASE_IEC}/iec-modulo-4/Clase 4.2 - Seleccion de equipos certificados.html`,
+  },
+  {
+    order: 12,
+    title: "Redundancia y Votación: 1oo2, 2oo3 y Factor β",
+    description:
+      "Arquitecturas MooN de votación: 1oo1, 1oo2, 2oo2 y 2oo3. Trade-off seguridad-disponibilidad. Factor beta para fallas de causa común (CCF) con calculadora interactiva.",
+    durationSec: 360,
+    videoPath: `${BASE_IEC}/iec-modulo-4/Clase 4.3 - Redundancia y votacion.html`,
+  },
+  // ── MÓDULO 5 — Ciclo de Vida y Documentación ────────────────────────────
+  {
+    order: 13,
+    title: "Fases del Ciclo de Vida según IEC 61511",
+    description:
+      "Las 12 fases del ciclo de vida de seguridad: desde el análisis del EUC hasta el descomisionamiento. Entregables por fase y referencia de cláusula en IEC 61511.",
+    durationSec: 360,
+    videoPath: `${BASE_IEC}/iec-modulo-5/Clase 5.1 - Fases del ciclo de vida IEC 61511.html`,
+  },
+  {
+    order: 14,
+    title: "Especificación de Requisitos de Seguridad (SRS)",
+    description:
+      "El documento maestro del SIS: estructura del SRS según IEC 61511 §10, contenido mínimo obligatorio y ejemplo completo de SRS para una SIF de tripeo de reactor por alta temperatura.",
+    durationSec: 360,
+    videoPath: `${BASE_IEC}/iec-modulo-5/Clase 5.2 - Especificacion de requisitos SRS.html`,
+  },
+  {
+    order: 15,
+    title: "Verificación, Validación y Pruebas Funcionales",
+    description:
+      "Diferencia entre verificación y validación según IEC 61511 §15. FAT (Factory Acceptance Test) con checklist interactivo. Comparativa FAT vs SAT y documentación obligatoria.",
+    durationSec: 360,
+    videoPath: `${BASE_IEC}/iec-modulo-5/Clase 5.3 - Verificacion validacion y pruebas funcionales.html`,
+  },
+  // ── MÓDULO 6 — Operación y Mantenimiento ────────────────────────────────
+  {
+    order: 16,
+    title: "Pruebas de Comprobación (Proof Test)",
+    description:
+      "La actividad de mantenimiento más crítica del SIS: intervalos de proof test por SIL, procedimiento de 6 pasos, tipos de cobertura (completo/parcial/PST) y calculadora de impacto en PFDavg.",
+    durationSec: 420,
+    videoPath: `${BASE_IEC}/iec-modulo-6/Clase 6.1 - Pruebas de comprobacion.html`,
+  },
+  {
+    order: 17,
+    title: "Gestión de Bypass y Override",
+    description:
+      "Tipos de bypass en un SIS: mantenimiento, proceso y ingeniería. Requisitos de control según IEC 61511 §16.2.5: PTW, registros, alarmas y medidas compensatorias durante el bypass.",
+    durationSec: 360,
+    videoPath: `${BASE_IEC}/iec-modulo-6/Clase 6.2 - Gestion de bypass y override.html`,
+  },
+  {
+    order: 18,
+    title: "Auditorías y Gestión del Cambio (MOC)",
+    description:
+      "Proceso formal de MOC para el SIS: 6 pasos desde la solicitud hasta el cierre. Auditorías de seguridad funcional y contenido del dossier de seguridad requerido por IEC 61511.",
+    durationSec: 360,
+    videoPath: `${BASE_IEC}/iec-modulo-6/Clase 6.3 - Auditorias y gestion del cambio.html`,
+  },
+];
+
+const totalSecIEC = lessonsIEC.reduce((s, l) => s + l.durationSec, 0);
+const totalMinutesIEC = Math.round(totalSecIEC / 60);
+
+const BASE_VALVES = "/videos/premium/valvulas-control";
+
+const lessonsValves = [
+  {
+    order: 1,
+    title: "Fundamentos de Válvulas de Control",
+    description:
+      "El elemento final de control en el lazo de proceso: anatomía del cuerpo y bonete, válvulas de vástago deslizante vs. rotativas, terminología ISA esencial y modos de falla (fail-safe FC/FO).",
+    durationSec: 720,
+    videoPath: `${BASE_VALVES}/Clase 1.1 - Fundamentos de Valvulas de Control.html`,
+  },
+  {
+    order: 2,
+    title: "Prestaciones y Variabilidad de Proceso",
+    description:
+      "Cómo la válvula afecta la calidad del control: variabilidad ±2σ, banda muerta, fricción y holgura, tiempo de respuesta T63 (tiempo muerto + dinámico), histéresis y ganancia instalada.",
+    durationSec: 720,
+    videoPath: `${BASE_VALVES}/Clase 1.2 - Prestaciones y Variabilidad.html`,
+  },
+  {
+    order: 3,
+    title: "Tipos de Válvulas y Actuadores",
+    description:
+      "Familias de cuerpos (globo, ángulo, jaula, mariposa, bola segmentada, obturador excéntrico), internos guiados por jaula, sistemas de empaquetadura de baja emisión y tipos de actuador neumático y eléctrico.",
+    durationSec: 780,
+    videoPath: `${BASE_VALVES}/Clase 1.3 - Tipos de Valvulas y Actuadores.html`,
+  },
+  {
+    order: 4,
+    title: "Dimensionamiento Cv y Características de Flujo",
+    description:
+      "Coeficiente de dimensionamiento Cv/Kv, ecuación q=Cv·√(ΔP/SG), características de flujo inherentes (apertura rápida, lineal, equiporcentual), autoridad de válvula, ganancia instalada y clases de fuga ISA/IEC.",
+    durationSec: 780,
+    videoPath: `${BASE_VALVES}/Clase 1.4 - Dimensionamiento Cv y Caracteristicas.html`,
+  },
+  {
+    order: 5,
+    title: "Cavitación, Ruido y Accesorios",
+    description:
+      "Vena contracta y flujo estrangulado, cavitación vs. vaporización (flashing) y su mitigación, ruido aerodinámico e hidrodinámico, posicionadores digitales (DVC) con diagnóstico, y la válvula en sistemas de seguridad (SIS, FMEDA, PST).",
+    durationSec: 780,
+    videoPath: `${BASE_VALVES}/Clase 1.5 - Cavitacion Ruido y Accesorios.html`,
+  },
+];
+const totalSecValves = lessonsValves.reduce((s, l) => s + l.durationSec, 0);
+const totalMinutesValves = Math.round(totalSecValves / 60);
+
 async function main() {
   await prisma.lesson.deleteMany();
   await prisma.course.deleteMany();
@@ -937,7 +1200,7 @@ async function main() {
         "Domina la instrumentación industrial de cero a profesional. Siete módulos progresivos: fundamentos de electricidad y física, lectura de P&IDs, señales estándar, sensores, actuadores, control PID y PLCs Siemens — con animaciones interactivas.",
       instructor: "Instrumex",
       level: "Principiante",
-      category: "Ingeniería Industrial",
+      category: "Instrumentación Industrial",
       totalMinutes,
       lessonCount: lessons.length,
       lessons: { create: lessons },
@@ -952,7 +1215,7 @@ async function main() {
         "Versión premium del curso de instrumentación. Clases más profundas y completas, con mayor cobertura teórica, tablas de referencia, ejercicios interactivos y contenido basado en libros técnicos de referencia internacional.",
       instructor: "Instrumex",
       level: "Intermedio",
-      category: "Ingeniería Industrial",
+      category: "Instrumentación Industrial",
       totalMinutes: totalMinutesPro,
       lessonCount: lessonsPro.length,
       lessons: { create: lessonsPro },
@@ -967,14 +1230,44 @@ async function main() {
         "Curso especializado en sistemas instrumentados de seguridad (SIS). Aprende a calcular PFDavg, asignar niveles SIL, diseñar arquitecturas MooN redundantes, aplicar el factor beta para causas comunes (CCF) y ejecutar el ciclo de vida completo según IEC 61511. Incluye análisis de consecuencias (BLEVE, VCE, dispersión tóxica) y el enfoque práctico del GMI SIL Manual.",
       instructor: "Instrumex",
       level: "Avanzado",
-      category: "Seguridad Industrial",
+      category: "Seguridad Funcional",
       totalMinutes: totalMinutesSIL,
       lessonCount: lessonsSIL.length,
       lessons: { create: lessonsSIL },
     },
   });
 
-  console.log(`✅ Seed completado: ${lessons.length} lecciones gratis (${totalMinutes} min) + ${lessonsPro.length} lecciones PRO (${totalMinutesPro} min) + ${lessonsSIL.length} lecciones SIL (${totalMinutesSIL} min)`);
+  await prisma.course.create({
+    data: {
+      slug: "seguridad-funcional-iec-61511",
+      title: "Seguridad Funcional en la Industria de Proceso — IEC 61511",
+      description:
+        "Curso completo basado en la norma IEC 61511 y el manual Rockwell Automation SAFEBK-RM003A-ES-P. Aprende a aplicar el ciclo de vida de seguridad funcional: desde el análisis de peligros (HAZOP/LOPA) hasta el diseño del SIS, cálculo de SIL, arquitecturas MooN, proof testing, gestión de bypass y auditorías. 18 lecciones interactivas en 6 módulos.",
+      instructor: "Instrumex",
+      level: "Avanzado",
+      category: "Seguridad Funcional",
+      totalMinutes: totalMinutesIEC,
+      lessonCount: lessonsIEC.length,
+      lessons: { create: lessonsIEC },
+    },
+  });
+
+  await prisma.course.create({
+    data: {
+      slug: "valvulas-control",
+      title: "Válvulas de Control — Selección, Dimensionamiento y Aplicación",
+      description:
+        "Curso completo sobre el elemento final de control más usado en la industria de proceso. Aprende la anatomía y los tipos de válvulas (globo, mariposa, bola, jaula) y actuadores, cómo afectan la variabilidad del proceso (banda muerta, T63), el dimensionamiento con el coeficiente Cv, las características de flujo y la autoridad de válvula, además de cavitación, vaporización, control de ruido y accesorios (posicionadores digitales, SIS, PST). Basado en la normativa ISA/IEC 60534.",
+      instructor: "Instrumex",
+      level: "Intermedio",
+      category: "Instrumentación Industrial",
+      totalMinutes: totalMinutesValves,
+      lessonCount: lessonsValves.length,
+      lessons: { create: lessonsValves },
+    },
+  });
+
+  console.log(`✅ Seed completado: ${lessons.length} lecciones gratis (${totalMinutes} min) + ${lessonsPro.length} lecciones PRO (${totalMinutesPro} min) + ${lessonsSIL.length} lecciones SIL (${totalMinutesSIL} min) + ${lessonsIEC.length} lecciones IEC 61511 (${totalMinutesIEC} min) + ${lessonsValves.length} lecciones Válvulas (${totalMinutesValves} min)`);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

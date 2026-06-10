@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.1 – Fundamentos de Válvulas de Control</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:12px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-blue{background:#1e3a5f44;color:#93c5fd;border:1px solid #1e3a5f66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: La válvula en el lazo de control ─────────────── */
+function Scene1(){
+  return(<div>
+    <div className="sec-title">La válvula de control en el lazo de proceso</div>
+    <div className="sec-sub">Elemento final de control · Variable manipulada · Bucle de regulación · Normativa ISA/IEC</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es una válvula de control?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            La válvula de control es el <span style={{color:'#f59e0b',fontWeight:600}}>elemento final de control</span> más
+            utilizado en la industria de procesos. Regula el caudal de un fluido para mantener una variable
+            de proceso (presión, flujo, nivel, temperatura) dentro de su rango operativo.
+          </div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            El término "válvula de control" se refiere en realidad a un <span style={{color:'#f59e0b'}}>conjunto</span>:
+            el cuerpo, los internos, un actuador que aporta la fuerza motriz, y accesorios (posicionador,
+            reguladores, transductores).
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">El lazo de control de proceso</div>
+          <svg width="100%" viewBox="0 0 320 150">
+            <rect width="320" height="150" fill="#060a14" rx="6"/>
+            {/* Proceso */}
+            <rect x="120" y="20" width="80" height="34" rx="5" fill="#1e293b" stroke="#f59e0b" strokeWidth="1.2"/>
+            <text x="160" y="41" textAnchor="middle" fill="#f59e0b" fontSize="11" fontWeight="700">PROCESO</text>
+            {/* Sensor */}
+            <rect x="225" y="75" width="70" height="28" rx="5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1"/>
+            <text x="260" y="93" textAnchor="middle" fill="#93c5fd" fontSize="9">Sensor / Tx</text>
+            {/* Controlador */}
+            <rect x="125" y="110" width="70" height="28" rx="5" fill="#1e293b" stroke="#a78bfa" strokeWidth="1"/>
+            <text x="160" y="128" textAnchor="middle" fill="#c4b5fd" fontSize="9">Controlador</text>
+            {/* Válvula */}
+            <rect x="25" y="75" width="70" height="28" rx="5" fill="#78350f" stroke="#f59e0b" strokeWidth="1.2"/>
+            <text x="60" y="90" textAnchor="middle" fill="#fcd34d" fontSize="9" fontWeight="700">VÁLVULA</text>
+            <text x="60" y="100" textAnchor="middle" fill="#fcd34d" fontSize="8">de control</text>
+            {/* Flechas */}
+            <path d="M200 37 L255 37 L260 75" fill="none" stroke="#3b82f6" strokeWidth="1.3" markerEnd="url(#a1)"/>
+            <path d="M225 95 L195 124" fill="none" stroke="#a78bfa" strokeWidth="1.3" markerEnd="url(#a1)"/>
+            <path d="M125 124 L60 103" fill="none" stroke="#f59e0b" strokeWidth="1.3" markerEnd="url(#a1)"/>
+            <path d="M60 75 L120 45" fill="none" stroke="#f59e0b" strokeWidth="1.3" markerEnd="url(#a1)"/>
+            <text x="232" y="55" fill="#3b82f6" fontSize="7">VP medida</text>
+            <text x="196" y="115" fill="#a78bfa" fontSize="7">error</text>
+            <text x="70" y="118" fill="#f59e0b" fontSize="7">salida CO 4-20mA</text>
+            <text x="72" y="58" fill="#f59e0b" fontSize="7">caudal</text>
+            <defs><marker id="a1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8"/></marker></defs>
+          </svg>
+          <div style={{fontSize:9,color:'#64748b',textAlign:'center',marginTop:4}}>La válvula traduce la señal del controlador (CO) en variación de caudal (variable manipulada)</div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Funciones que debe cumplir el cuerpo de válvula</div>
+          {[['Contener el fluido','Sin fugas externas hacia la atmósfera'],
+            ['Capacidad adecuada','Cv suficiente para el caudal de servicio'],
+            ['Resistir el proceso','Erosión, corrosión y temperatura del fluido'],
+            ['Conexiones adecuadas','Bridas/roscas y acople del actuador al vástago'],
+          ].map(([t,d])=>(
+            <div key={t} style={{display:'flex',gap:8,marginBottom:6,alignItems:'flex-start'}}>
+              <div style={{width:5,background:'#f59e0b',alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+              <div><div style={{fontSize:11,color:'#f59e0b',fontWeight:600}}>{t}</div><div style={{fontSize:10,color:'#64748b'}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Dos familias según el elemento de cierre</div>
+          <div style={{marginBottom:8}}>
+            <span className="tag tag-amber">Vástago deslizante</span>
+            <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5,marginTop:3}}>
+              Movimiento <b>lineal</b>: el obturador entra y sale de la superficie de asiento.
+              Ej.: globo, ángulo, jaula. Excelente cierre y caracterización de flujo.
+            </div>
+          </div>
+          <div>
+            <span className="tag tag-blue">Rotativa</span>
+            <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5,marginTop:3}}>
+              Movimiento <b>giratorio</b>: el elemento de cierre rota dentro o fuera del asiento.
+              Ej.: mariposa, bola segmentada, obturador excéntrico. Alta capacidad, baja caída de presión.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Anatomía de la válvula de vástago deslizante ─── */
+function Scene2(){
+  const partes=[
+    ['Vástago','Transmite el empuje del actuador al obturador','#f59e0b'],
+    ['Bonete','Contiene la empaquetadura y guía el vástago; acopla el actuador','#fcd34d'],
+    ['Empaquetadura','Sella alrededor del vástago para evitar fugas (emisiones fugitivas)','#86efac'],
+    ['Obturador','Elemento móvil que modula el paso del fluido (plug)','#f59e0b'],
+    ['Jaula','Guía el obturador y caracteriza el flujo según la forma de sus ventanas','#93c5fd'],
+    ['Anillo de asiento','Superficie fija contra la que cierra el obturador','#c4b5fd'],
+    ['Cuerpo','Contiene el fluido y aloja los internos; conexiones a tubería','#fca5a5'],
+  ];
+  const [sel,setSel]=useState(0);
+  return(<div>
+    <div className="sec-title">Anatomía de la válvula de vástago deslizante</div>
+    <div className="sec-sub">Cuerpo · Bonete · Internos · Carrera (travel) · Conjunto del bonete</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Despiece — pasa el cursor por cada parte</div>
+        <svg width="100%" viewBox="0 0 220 280">
+          <rect width="220" height="280" fill="#060a14" rx="6"/>
+          {/* Actuador (resorte) */}
+          <ellipse cx="110" cy="35" rx="48" ry="22" fill={sel===1?'#78350f':'#1e293b'} stroke="#fcd34d" strokeWidth="1"/>
+          {/* Vástago */}
+          <rect x="105" y="55" width="10" height="55" fill={sel===0?'#f59e0b':'#334155'} stroke="#f59e0b" strokeWidth="0.8"/>
+          {/* Bonete */}
+          <rect x="80" y="95" width="60" height="30" fill={sel===1?'#78350f':'#1e293b'} stroke="#fcd34d" strokeWidth="1"/>
+          {/* Empaquetadura */}
+          <rect x="98" y="80" width="24" height="18" fill={sel===2?'#14532d':'#0f2818'} stroke="#86efac" strokeWidth="1"/>
+          {/* Cuerpo */}
+          <path d="M55 125 L165 125 L175 200 L150 240 L70 240 L45 200 Z" fill={sel===6?'#3a1212':'#1e293b'} stroke="#fca5a5" strokeWidth="1.2"/>
+          {/* Jaula */}
+          <rect x="92" y="140" width="36" height="48" fill={sel===4?'#1e3a5f':'#0f1f33'} stroke="#93c5fd" strokeWidth="1"/>
+          {/* Obturador */}
+          <rect x="100" y="148" width="20" height="30" rx="2" fill={sel===3?'#f59e0b':'#475569'} stroke="#f59e0b" strokeWidth="1"/>
+          {/* Asiento */}
+          <path d="M95 188 L125 188 L120 200 L100 200 Z" fill={sel===5?'#3a2a4f':'#241830'} stroke="#c4b5fd" strokeWidth="1.2"/>
+          {/* entrada salida */}
+          <rect x="20" y="195" width="25" height="22" fill="#0f1729" stroke="#334155"/>
+          <rect x="175" y="195" width="25" height="22" fill="#0f1729" stroke="#334155"/>
+          <text x="14" y="190" fill="#64748b" fontSize="8">IN</text>
+          <text x="190" y="190" fill="#64748b" fontSize="8">OUT</text>
+          <text x="110" y="270" textAnchor="middle" fill="#64748b" fontSize="8">Carrera (travel): recorrido del obturador</text>
+        </svg>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Componentes principales</div>
+        {partes.map(([t,d,c],i)=>(
+          <div key={t} onMouseEnter={()=>setSel(i)}
+            style={{padding:'6px 9px',borderRadius:6,marginBottom:4,cursor:'pointer',
+            background:sel===i?'#f59e0b14':'transparent',border:sel===i?'1px solid #f59e0b44':'1px solid transparent'}}>
+            <div style={{fontSize:11,color:c,fontWeight:600}}>{t}</div>
+            <div style={{fontSize:10,color:'#64748b'}}>{d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="card" style={{marginTop:9,marginBottom:0}}>
+      <div className="card-h">Términos clave del bonete y empaquetadura</div>
+      <div style={{display:'flex',gap:14,flexWrap:'wrap'}}>
+        {[['Bonete con fuelle','Sello metálico que elimina fugas por el vástago en servicios tóxicos'],
+          ['Conjunto del bonete','Bonete + empaquetadura + brida + guía del vástago'],
+          ['Prensaestopas','Cámara que aloja los anillos de empaquetadura'],
+          ['ENVIRO-SEAL','Sistemas de empaquetadura de baja emisión (PTFE / grafito ULF)'],
+        ].map(([t,d])=>(
+          <div key={t} style={{flex:'1 1 200px'}}>
+            <div style={{fontSize:10,color:'#f59e0b',fontWeight:600}}>{t}</div>
+            <div style={{fontSize:9.5,color:'#64748b',lineHeight:1.4}}>{d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Vástago deslizante vs. rotativa ──────────────── */
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Vástago deslizante vs. válvula rotativa</div>
+    <div className="sec-sub">Comparación de arquitecturas · Capacidad · Cierre · Caída de presión · Aplicación</div>
+    <table>
+      <thead><tr><th>Criterio</th><th>Vástago deslizante (globo / jaula)</th><th>Rotativa (mariposa / bola)</th></tr></thead>
+      <tbody>
+        <tr><td><b className="gold">Movimiento</b></td><td>Lineal del obturador</td><td>Giratorio del elemento de cierre</td></tr>
+        <tr><td><b className="gold">Cierre (leakage)</b></td><td>Excelente — hasta Clase VI</td><td>Bueno con asiento blando; menor con metal</td></tr>
+        <tr><td><b className="gold">Caída de presión</b></td><td>Mayor (más turbulencia interna)</td><td>Baja — paso de flujo más directo</td></tr>
+        <tr><td><b className="gold">Capacidad (Cv) / tamaño</b></td><td>Moderada</td><td>Alta capacidad por tamaño; económica en grandes</td></tr>
+        <tr><td><b className="gold">Rangeabilidad</b></td><td>Buena (caracterización por jaula)</td><td>Muy alta en bola segmentada (&gt;300:1)</td></tr>
+        <tr><td><b className="gold">Característica típica</b></td><td>Lineal, iso-% o apertura rápida (intercambiable)</td><td>Aproximadamente equiporcentual</td></tr>
+        <tr><td><b className="gold">Aplicación típica</b></td><td>Control fino, alta P, vapor, cavitación</td><td>Caudales grandes, baja ΔP, pulpa, agua</td></tr>
+      </tbody>
+    </table>
+    <div className="grid2" style={{marginTop:9}}>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Válvula de ángulo</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+          Diseño donde la entrada y la salida son <b>perpendiculares</b>. Usada en agua de alimentación de
+          calderas, drenaje de calentadores y tuberías en espacios reducidos (sirve de codo). Buena para
+          servicios con erosión, flashing y cavitación.
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Válvula de tres vías</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+          Cuerpo con tres lumbreras para <b>mezclar</b> (dos entradas → una salida) o <b>derivar</b>
+          (una entrada → dos salidas). Habitual en control de temperatura por mezcla y by-pass de
+          intercambiadores de calor.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Glosario interactivo ─────────────────────────── */
+function Scene4(){
+  const terms=[
+    ['Variable de proceso (VP)','La magnitud que se desea controlar: presión, caudal, nivel o temperatura.'],
+    ['Punto de ajuste (SP)','Valor deseado de la VP. El controlador minimiza el error VP−SP.'],
+    ['Salida del controlador (CO)','Señal (típ. 4-20 mA) que ordena la posición de la válvula.'],
+    ['Variable manipulada','El caudal que la válvula regula para corregir el error.'],
+    ['Carrera (travel)','Recorrido del obturador entre la posición cerrada y 100% abierta.'],
+    ['Rangeabilidad','Relación entre el máximo y el mínimo caudal controlable (ej. 50:1).'],
+    ['Característica de flujo','Relación entre caudal y carrera (lineal, iso-%, apertura rápida).'],
+    ['Ganancia de válvula','Cambio de caudal por unidad de cambio de carrera; depende de la característica.'],
+    ['Fail-safe','Posición segura del conjunto ante pérdida de aire o señal (FC / FO).'],
+    ['Cv / Kv','Coeficiente de dimensionamiento: capacidad de caudal de la válvula.'],
+  ];
+  const [q,setQ]=useState('');
+  const f=terms.filter(([t,d])=>(t+d).toLowerCase().includes(q.toLowerCase()));
+  return(<div>
+    <div className="sec-title">Glosario esencial de control de procesos</div>
+    <div className="sec-sub">Terminología ISA · Variables del lazo · Conceptos de válvula · Busca un término</div>
+    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar término..."
+      style={{width:'100%',padding:'8px 12px',background:'#060a14',border:'1px solid #1e2d4a',borderRadius:6,color:'#e2e8f0',fontSize:12,marginBottom:10}}/>
+    <div className="grid2">
+      {f.map(([t,d])=>(
+        <div key={t} className="card" style={{marginBottom:9}}>
+          <div className="card-h" style={{marginBottom:3}}>{t}</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>{d}</div>
+        </div>
+      ))}
+      {f.length===0&&<div style={{color:'#64748b',fontSize:12}}>Sin coincidencias.</div>}
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Modos de falla y acción ──────────────────────── */
+function Scene5(){
+  const [air,setAir]=useState(true);
+  const [mode,setMode]=useState('FC');
+  const pos = air ? (mode==='FC'?'ABIERTA':'CERRADA') : (mode==='FC'?'CERRADA':'ABIERTA');
+  return(<div>
+    <div className="sec-title">Acción del actuador y modo de falla (fail-safe)</div>
+    <div className="sec-sub">Aire para abrir (ATO) vs. aire para cerrar (ATC) · Posición segura · Retorno por resorte</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Concepto de modo de falla</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            El actuador de <b style={{color:'#f59e0b'}}>retorno por resorte</b> define una posición segura
+            inherente: si se pierde el aire de instrumentación o la señal, el resorte lleva la válvula a
+            una posición predeterminada. La elección depende de qué estado mantiene el proceso seguro.
+          </div>
+          <div style={{display:'flex',gap:8,marginBottom:6}}>
+            <button className={'btn-outline'+(mode==='FC'?' active':'')} onClick={()=>setMode('FC')}>FC — Falla cerrada</button>
+            <button className={'btn-outline'+(mode==='FO'?' active':'')} onClick={()=>setMode('FO')}>FO — Falla abierta</button>
+          </div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+            {mode==='FC'
+              ?'Aire-para-abrir (ATO): sin aire la válvula cierra. Típico en alimentación de combustible o reactivos.'
+              :'Aire-para-cerrar (ATC): sin aire la válvula abre. Típico en agua de refrigeración o venteo.'}
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Simulador de falla</div>
+          <button className="btn-gold" onClick={()=>setAir(a=>!a)} style={{marginBottom:10}}>
+            {air?'⚡ Cortar aire de instrumentación':'✓ Restaurar aire'}
+          </button>
+          <div style={{background:'#060a14',borderRadius:8,padding:16,textAlign:'center'}}>
+            <div style={{fontSize:11,color:'#64748b'}}>Estado del aire: <b style={{color:air?'#22c55e':'#ef4444'}}>{air?'PRESENTE':'PERDIDO'}</b></div>
+            <div style={{fontSize:11,color:'#64748b',marginTop:4}}>Modo: <b className="gold">{mode}</b></div>
+            <div style={{fontSize:30,fontWeight:700,marginTop:8,color:pos==='ABIERTA'?'#22c55e':'#ef4444'}}>{pos}</div>
+            <div style={{fontSize:10,color:'#64748b'}}>posición de la válvula</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">¿Por qué importa el fail-safe?</div>
+          {['Es la primera capa de protección: ante un fallo de servicios la planta va a un estado seguro.',
+            'En lazos SIS la válvula ESD usa actuador con resorte para garantizar el modo de falla.',
+            'La selección FC/FO se decide en el HAZOP según las consecuencias de cada escenario.',
+            'Un actuador de doble acción (sin resorte) NO tiene fail-safe inherente: requiere acumulador o sistema de respaldo.',
+          ].map((r,i)=>(
+            <div key={i} style={{display:'flex',gap:6,marginBottom:6}}>
+              <span style={{color:'#f59e0b',fontSize:11,flexShrink:0}}>▸</span>
+              <span style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.45}}>{r}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Tipos de actuador (vista previa de Clase 1.3)</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+            {['Neumático de membrana (resorte)','Neumático de pistón','Eléctrico','Electrohidráulico','Rotativo'].map(a=>(
+              <span key={a} className="tag tag-amber">{a}</span>
+            ))}
+          </div>
+          <div style={{fontSize:10,color:'#64748b',marginTop:8,lineHeight:1.5}}>
+            El más común es el <b className="gold">neumático de membrana con resorte</b>: simple, fiable
+            y con modo de falla inherente. Lo veremos en detalle en la clase de tipos de válvulas y actuadores.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 6: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Qué es, con propiedad, una "válvula de control"?',opts:['Únicamente el cuerpo de la válvula','Un conjunto: cuerpo, internos, actuador y accesorios','Solo el actuador neumático','El controlador del lazo'],ans:1},
+  {q:'En el lazo de control, la válvula actúa sobre la:',opts:['Variable de proceso medida','Variable manipulada (el caudal)','Señal del sensor','Ganancia del controlador'],ans:1},
+  {q:'Una válvula de vástago deslizante se caracteriza por:',opts:['Movimiento giratorio del cierre','Movimiento lineal del obturador hacia/desde el asiento','No tener obturador','Ser siempre de tres vías'],ans:1},
+  {q:'¿Qué ventaja tiene típicamente una válvula rotativa frente a una de globo?',opts:['Mejor cierre Clase VI','Menor caída de presión y alta capacidad por tamaño','Mejor control fino a baja apertura','Mayor resistencia a la cavitación'],ans:1},
+  {q:'La parte de la válvula que aloja la empaquetadura y guía el vástago es:',opts:['El obturador','El bonete','El anillo de asiento','La jaula'],ans:1},
+  {q:'Una válvula de ángulo se distingue porque:',opts:['Entrada y salida son perpendiculares entre sí','Tiene tres lumbreras','No usa actuador','Solo trabaja con gases'],ans:0},
+  {q:'El término "carrera" (travel) se refiere a:',opts:['El caudal máximo de la válvula','El recorrido del obturador entre cerrado y 100% abierto','La rangeabilidad','La caída de presión'],ans:1},
+  {q:'En una válvula con modo de falla "FC" (falla cerrada), si se pierde el aire:',opts:['La válvula abre','La válvula cierra por acción del resorte','La válvula queda en su última posición','El controlador la mantiene abierta'],ans:1},
+  {q:'El bonete con fuelle (bellows) se utiliza principalmente para:',opts:['Aumentar la capacidad de caudal','Eliminar fugas por el vástago en servicios tóxicos','Caracterizar el flujo','Reducir el ruido'],ans:1},
+  {q:'¿Qué decide normalmente si una válvula es FC o FO?',opts:['El color de la válvula','El análisis de riesgo HAZOP según las consecuencias','El proveedor del actuador','La presión nominal de la brida'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    if(i===q.ans)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(qi+1>=quizData.length)setDone(true);
+      else{setQi(qi+1);setSel(null);}
+    },1200);
+  };
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>
+      {score>=8?'Excelente. Dominas los fundamentos y la terminología de válvulas de control.':score>=6?'Buen nivel. Repasa anatomía y modos de falla.':'Repasa las partes de la válvula y los términos del lazo de control.'}
+    </div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Fundamentos de Válvulas de Control</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>
+      {quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}
+    </div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}>
+      <div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div>
+    </div>
+    {q.opts.map((o,i)=>{
+      let cls='quiz-opt';
+      if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}
+      return(<div key={i} className={cls} onClick={()=>choose(i)}>
+        <div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+        {o}
+      </div>);
+    })}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. La válvula en el lazo',comp:Scene1},
+  {id:2,label:'2. Anatomía del cuerpo',comp:Scene2},
+  {id:3,label:'3. Deslizante vs. rotativa',comp:Scene3},
+  {id:4,label:'4. Glosario interactivo',comp:Scene4},
+  {id:5,label:'5. Modo de falla / fail-safe',comp:Scene5},
+  {id:6,label:'6. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);
+  const S=SCENES.find(s=>s.id===scene);
+  const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Clase 1.1 — Fundamentos de Válvulas de Control</div>
+        <div className="topbar-sub">Elemento final de control · Anatomía · Vástago deslizante vs rotativa · Terminología ISA · Fail-safe</div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.3 – Tipos de Válvulas y Actuadores</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:210px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:monospace;font-size:12px;color:#fcd34d;text-align:center;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:#1e2d4a;border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#f59e0b;border-radius:50%;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-blue{background:#1e3a5f44;color:#93c5fd;border:1px solid #1e3a5f66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: Familias de cuerpos ─────────────────────────── */
+function Scene1(){
+  const tipos=[
+    {n:'Globo',fam:'Deslizante',cv:'Media',cierre:'Excelente (VI)',dp:'Alta',app:'Control fino, vapor, alta presión',c:'#f59e0b'},
+    {n:'Ángulo',fam:'Deslizante',cv:'Media',cierre:'Muy bueno',dp:'Alta',app:'Calderas, flashing, erosión, sirve de codo',c:'#fcd34d'},
+    {n:'Jaula',fam:'Deslizante',cv:'Media-alta',cierre:'Excelente',dp:'Alta',app:'Caracterización intercambiable, anti-ruido',c:'#86efac'},
+    {n:'Mariposa',fam:'Rotativa',cv:'Muy alta',cierre:'Bueno (asiento blando)',dp:'Muy baja',app:'Grandes caudales, agua, gas, económica',c:'#93c5fd'},
+    {n:'Bola segmentada',fam:'Rotativa',cv:'Alta',cierre:'Muy bueno',dp:'Baja',app:'Pulpa/papel, fibras, rangeabilidad >300:1',c:'#c4b5fd'},
+    {n:'Obturador excéntrico',fam:'Rotativa',cv:'Alta',cierre:'Bueno',dp:'Baja',app:'Erosión, flujo directo, par bajo',c:'#fca5a5'},
+  ];
+  const [sel,setSel]=useState(0);
+  const t=tipos[sel];
+  return(<div>
+    <div className="sec-title">Familias de cuerpos de válvula</div>
+    <div className="sec-sub">Selecciona un tipo para ver sus características · Deslizante vs. rotativa</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Tipos de cuerpo</div>
+        {tipos.map((x,i)=>(
+          <div key={x.n} onClick={()=>setSel(i)}
+            style={{padding:'8px 11px',borderRadius:7,marginBottom:5,cursor:'pointer',
+            background:sel===i?'#f59e0b14':'#060a14',border:sel===i?'1px solid #f59e0b66':'1px solid #1e2d4a'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontSize:12,color:x.c,fontWeight:600}}>{x.n}</span>
+              <span className={'tag '+(x.fam==='Deslizante'?'tag-amber':'tag-blue')} style={{margin:0}}>{x.fam}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h" style={{color:t.c}}>{t.n} — {t.fam}</div>
+        <table>
+          <tbody>
+            <tr><td><b>Capacidad (Cv)</b></td><td>{t.cv}</td></tr>
+            <tr><td><b>Cierre / leakage</b></td><td>{t.cierre}</td></tr>
+            <tr><td><b>Caída de presión</b></td><td>{t.dp}</td></tr>
+            <tr><td><b>Aplicación típica</b></td><td>{t.app}</td></tr>
+          </tbody>
+        </table>
+        <div style={{marginTop:10,fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+          {sel===0&&'La válvula de globo es la más versátil: el obturador se desplaza linealmente contra el asiento. Domina en control de precisión y servicios exigentes.'}
+          {sel===1&&'Diseño con entrada y salida perpendiculares. Ideal en agua de alimentación de calderas y donde el flujo descendente reduce daños por flashing.'}
+          {sel===2&&'Los internos guiados por jaula permiten cambiar la característica de flujo simplemente sustituyendo la jaula, sin tocar obturador ni asiento.'}
+          {sel===3&&'Requiere espacio mínimo y ofrece muy baja caída de presión. Económica en grandes tamaños; característica aproximadamente equiporcentual.'}
+          {sel===4&&'Segmento con muesca en V que genera característica equiporcentual y rangeabilidad superior a 300:1. Muy usada en celulosa y química.'}
+          {sel===5&&'El obturador rota excéntricamente, separándose del asiento al abrir: reduce desgaste y ofrece paso de flujo directo de baja turbulencia.'}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Internos guiados por jaula ──────────────────── */
+function Scene2(){
+  const [open,setOpen]=useState(50);
+  return(<div>
+    <div className="sec-title">Internos guiados por jaula</div>
+    <div className="sec-sub">La jaula guía el obturador y caracteriza el flujo · Cambio de característica sin cambiar obturador</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Cómo funciona la jaula?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            La jaula es un cilindro perforado que <b style={{color:'#f59e0b'}}>guía el obturador</b> y, a la
+            vez, define la <b>característica de flujo</b> según la forma de sus ventanas. Al alejarse el
+            obturador del asiento, las ventanas se van descubriendo y dejan pasar el fluido.
+          </div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+            Ventaja clave: para cambiar la característica (lineal ↔ iso-% ↔ apertura rápida) basta con
+            <b className="gold"> instalar una jaula distinta</b> — sin sustituir el obturador ni el anillo de
+            asiento.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Funciones adicionales de la jaula</div>
+          {[['Caracterización','Forma de ventana = lineal / iso-% / apertura rápida'],
+            ['Anti-ruido','Jaulas con múltiples etapas de orificios reducen el ruido aerodinámico'],
+            ['Anti-cavitación','Reparten la caída de presión en pasos para evitar cavitación'],
+            ['Guiado estable','Alinea obturador y asiento, asegurando buen cierre'],
+          ].map(([t,d])=>(
+            <div key={t} style={{display:'flex',gap:8,marginBottom:6,alignItems:'flex-start'}}>
+              <div style={{width:5,background:'#f59e0b',alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+              <div><div style={{fontSize:10.5,color:'#f59e0b',fontWeight:600}}>{t}</div><div style={{fontSize:9.5,color:'#64748b'}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Apertura de la válvula de jaula</div>
+        <svg width="100%" viewBox="0 0 220 230">
+          <rect width="220" height="230" fill="#060a14" rx="6"/>
+          {/* cuerpo */}
+          <rect x="70" y="30" width="80" height="170" fill="#0f1729" stroke="#334155"/>
+          {/* jaula */}
+          <rect x="85" y="50" width="50" height="130" fill="#0f1f33" stroke="#93c5fd" strokeWidth="1.2"/>
+          {/* ventanas */}
+          {[0,1,2,3].map(r=>(
+            <rect key={r} x="88" y={60+r*30} width="44" height={14} fill={ (200-open*1.5) < (60+r*30) ? '#1e3a5f':'#3b82f6'} opacity="0.7"/>
+          ))}
+          {/* obturador */}
+          <rect x="92" y={50+(100-open)*1.3} width="36" height="50" rx="2" fill="#f59e0b" stroke="#fbbf24"/>
+          {/* vástago */}
+          <rect x="105" y="10" width="10" height={40+(100-open)*1.3} fill="#475569"/>
+          {/* flujo */}
+          <text x="30" y="180" fill="#22c55e" fontSize="9">IN →</text>
+          <text x="160" y="120" fill="#22c55e" fontSize="9">→ OUT</text>
+          <text x="110" y="220" textAnchor="middle" fill="#64748b" fontSize="8">Obturador descubre ventanas de la jaula</text>
+        </svg>
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#64748b',margin:'8px 0 2px'}}>
+          <span>Apertura de la válvula</span><span style={{color:'#f59e0b'}}>{open}%</span>
+        </div>
+        <input type="range" min="0" max="100" step="1" value={open} onChange={e=>setOpen(+e.target.value)}/>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Empaquetadura y emisiones fugitivas ─────────── */
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Empaquetadura y emisiones fugitivas</div>
+    <div className="sec-sub">Sellado del vástago · Compromiso fricción/fuga · Sistemas de baja emisión</div>
+    <div className="grid2">
+      <div className="card">
+        <div className="card-h">El compromiso fundamental</div>
+        <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+          La empaquetadura sella alrededor del vástago. Apretarla más reduce las fugas (emisiones
+          fugitivas a la atmósfera) pero <b style={{color:'#ef4444'}}>aumenta la fricción</b>, degradando el
+          control. Los sistemas modernos rompen este compromiso con resortes de carga viva (live-loading).
+        </div>
+        <div className="formula-box">↑ Apriete → ↓ Fuga  pero  ↑ Fricción</div>
+        <div style={{fontSize:10,color:'#64748b',lineHeight:1.5}}>
+          La regulación de emisiones (VOC, gases tóxicos) hace que el sellado de baja emisión sea cada vez
+          más exigente — certificaciones ISO 15848.
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-h">Materiales y sistemas de empaquetadura</div>
+        <table>
+          <thead><tr><th>Sistema</th><th>Característica</th></tr></thead>
+          <tbody>
+            <tr><td><b className="gold">PTFE</b></td><td>Baja fricción, hasta ~230 °C, químicamente inerte</td></tr>
+            <tr><td><b className="gold">Grafito</b></td><td>Alta temperatura (&gt;400 °C), resistente al fuego</td></tr>
+            <tr><td><b className="gold">Duplex</b></td><td>PTFE + grafito: combina baja fricción y alta T</td></tr>
+            <tr><td><b className="gold">ENVIRO-SEAL</b></td><td>Live-loading con resortes Belleville: baja emisión estable</td></tr>
+            <tr><td><b className="gold">Fuelle (bellows)</b></td><td>Sello metálico hermético para servicios tóxicos</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div className="card" style={{marginBottom:0}}>
+      <div className="card-h">Guiado del obturador</div>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
+        {[['Guía de jaula','El obturador desliza contra la pared interior de la jaula'],
+          ['Guía superior','Un solo buje en el bonete alinea el obturador'],
+          ['Guía de vástago','Buje en el bonete actúa sobre el vástago del obturador'],
+          ['Doble guía (superior+inferior)','Máxima estabilidad para alta ΔP'],
+        ].map(([t,d])=>(
+          <div key={t} style={{flex:'1 1 220px',background:'#060a14',borderRadius:6,padding:'8px 11px'}}>
+            <div style={{fontSize:10.5,color:'#f59e0b',fontWeight:600}}>{t}</div>
+            <div style={{fontSize:9.5,color:'#64748b',lineHeight:1.4}}>{d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Actuadores ───────────────────────────────────── */
+function Scene4(){
+  const act=[
+    {n:'Neumático de membrana (resorte)',pro:'Simple, fiable, fail-safe inherente, económico',con:'Empuje limitado, lento en grandes',fs:'Sí (resorte)',c:'#f59e0b'},
+    {n:'Neumático de pistón',pro:'Gran empuje, carrera larga, alta presión de aire',con:'Doble acción puede no tener fail-safe',fs:'Opcional',c:'#fcd34d'},
+    {n:'Eléctrico (motor)',pro:'No requiere aire, posicionamiento preciso',con:'Lento, sin fail-safe sin batería/resorte',fs:'No inherente',c:'#93c5fd'},
+    {n:'Electrohidráulico',pro:'Empuje enorme, rigidez, control fino',con:'Costoso, complejo, mantenimiento',fs:'Con acumulador',c:'#c4b5fd'},
+    {n:'Rotativo (pistón/scotch-yoke)',pro:'Par alto para mariposa/bola',con:'Linealidad par-ángulo variable',fs:'Con resorte',c:'#86efac'},
+  ];
+  const [sel,setSel]=useState(0);
+  const a=act[sel];
+  return(<div>
+    <div className="sec-title">Actuadores — la fuerza motriz</div>
+    <div className="sec-sub">Tipos · Empuje vs. par · Fail-safe · Selección según cuerpo y ΔP</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Tipos de actuador</div>
+        {act.map((x,i)=>(
+          <div key={x.n} onClick={()=>setSel(i)}
+            style={{padding:'8px 11px',borderRadius:7,marginBottom:5,cursor:'pointer',fontSize:11,
+            color:sel===i?x.c:'#94a3b8',fontWeight:sel===i?600:400,
+            background:sel===i?'#f59e0b14':'#060a14',border:sel===i?'1px solid #f59e0b66':'1px solid #1e2d4a'}}>
+            {x.n}
+          </div>
+        ))}
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h" style={{color:a.c}}>{a.n}</div>
+        <div style={{marginBottom:8}}>
+          <span className="tag tag-green">Ventajas</span>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5,marginTop:3}}>{a.pro}</div>
+        </div>
+        <div style={{marginBottom:8}}>
+          <span className="tag tag-red">Limitaciones</span>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5,marginTop:3}}>{a.con}</div>
+        </div>
+        <div style={{background:'#060a14',borderRadius:6,padding:'8px 11px'}}>
+          <span style={{fontSize:10,color:'#64748b'}}>Modo de falla: </span>
+          <span style={{fontSize:11,color:'#f59e0b',fontWeight:600}}>{a.fs}</span>
+        </div>
+      </div>
+    </div>
+    <div className="card" style={{marginTop:9,marginBottom:0}}>
+      <div className="card-h">Regla de selección rápida</div>
+      <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.6}}>
+        El <b className="gold">neumático de membrana con resorte</b> es la opción por defecto para válvulas
+        de globo por su simplicidad, fiabilidad y modo de falla inherente. Para válvulas grandes o ΔP muy
+        alta se recurre al <b className="gold">pistón neumático</b>; para mariposa/bola se usan
+        <b className="gold"> actuadores rotativos</b>. El <b className="gold">eléctrico</b> se elige donde no
+        hay aire de instrumentación disponible.
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Qué válvula ofrece típicamente la MENOR caída de presión y mayor capacidad por tamaño?',opts:['Globo','Mariposa','Ángulo','Jaula'],ans:1},
+  {q:'La principal ventaja de los internos guiados por jaula es:',opts:['Eliminar el actuador','Cambiar la característica de flujo sustituyendo solo la jaula','Aumentar la fricción del vástago','Eliminar el anillo de asiento'],ans:1},
+  {q:'La válvula de bola segmentada con muesca en V se caracteriza por:',opts:['Característica de apertura rápida y baja rangeabilidad','Característica equiporcentual y rangeabilidad superior a 300:1','No tener asiento','Solo trabajar con gases'],ans:1},
+  {q:'El compromiso fundamental de la empaquetadura es:',opts:['Velocidad vs. precio','Menos fuga implica más fricción','Cv vs. rangeabilidad','Temperatura vs. presión'],ans:1},
+  {q:'El bonete con fuelle (bellows) se usa para:',opts:['Aumentar el Cv','Sellado metálico hermético en servicios tóxicos','Reducir el par del actuador','Caracterizar el flujo'],ans:1},
+  {q:'¿Qué actuador es el más común y tiene modo de falla inherente?',opts:['Eléctrico de motor','Neumático de membrana con resorte','Electrohidráulico','Solenoide'],ans:1},
+  {q:'Para una válvula de mariposa grande con alto par, se suele usar:',opts:['Membrana pequeña sin resorte','Actuador rotativo (pistón/scotch-yoke)','Solo operador manual','Ningún actuador'],ans:1},
+  {q:'Una válvula de ángulo es preferida en servicios con flashing porque:',opts:['Tiene mayor Cv que cualquier otra','Su geometría dirige el flujo reduciendo daños y sirve de codo','No necesita actuador','Elimina la cavitación por completo'],ans:1},
+  {q:'Las jaulas anti-ruido reducen el ruido aerodinámico mediante:',opts:['Aumentar la velocidad del fluido','Múltiples etapas de orificios que reparten la caída de presión','Cerrar la válvula más rápido','Aumentar el Cv'],ans:1},
+  {q:'Un actuador eléctrico de motor, sin batería ni resorte, tiene como desventaja:',opts:['Requerir aire de instrumentación','No tener modo de falla (fail-safe) inherente','Ser siempre demasiado rápido','No poder posicionar con precisión'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);
+  const [sel,setSel]=useState(null);
+  const [score,setScore]=useState(0);
+  const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{
+    if(sel!==null)return;
+    setSel(i);
+    if(i===q.ans)setScore(s=>s+1);
+    setTimeout(()=>{
+      if(qi+1>=quizData.length)setDone(true);
+      else{setQi(qi+1);setSel(null);}
+    },1200);
+  };
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>
+      {score>=8?'Excelente. Conoces los tipos de válvula y actuador y cuándo usar cada uno.':score>=6?'Buen nivel. Repasa jaulas y actuadores.':'Repasa las familias de cuerpos y los tipos de actuador.'}
+    </div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Tipos de Válvulas y Actuadores</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>
+      {quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}
+    </div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}>
+      <div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div>
+    </div>
+    {q.opts.map((o,i)=>{
+      let cls='quiz-opt';
+      if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}
+      return(<div key={i} className={cls} onClick={()=>choose(i)}>
+        <div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>
+        {o}
+      </div>);
+    })}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. Familias de cuerpos',comp:Scene1},
+  {id:2,label:'2. Internos por jaula',comp:Scene2},
+  {id:3,label:'3. Empaquetadura',comp:Scene3},
+  {id:4,label:'4. Actuadores',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);
+  const S=SCENES.find(s=>s.id===scene);
+  const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div>
+        <div className="topbar-title">Clase 1.3 — Tipos de Válvulas y Actuadores</div>
+        <div className="topbar-sub">Globo · Ángulo · Mariposa · Bola segmentada · Jaula · Empaquetadura · Actuadores neumáticos y eléctricos</div>
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(
+          <div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>
+        ))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
