@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.2 – Tags y Tipos de Datos</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:215px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:'Consolas',monospace;font-size:12px;color:#fcd34d;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-blue{background:#1e3a5f44;color:#93c5fd;border:1px solid #1e3a5f66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+.code{font-family:'Consolas',monospace;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: ¿Qué es un tag? ─────────────────────────────── */
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Tags: el direccionamiento basado en nombres</div>
+    <div className="sec-sub">Logix 5000 reemplaza las direcciones físicas por etiquetas con nombre y tipo de dato</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">El cambio de paradigma</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            En los PLC clásicos accedías a la memoria por su dirección física: <span className="code" style={{color:'#fca5a5'}}>I:0/0</span>,
+            <span className="code" style={{color:'#fca5a5'}}> N7:12</span>, <span className="code" style={{color:'#fca5a5'}}>B3:0/4</span>.
+            Tenías que recordar qué guardaba cada palabra.
+          </div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            En Logix 5000 creas un <b className="gold">tag</b>: un nombre con significado más un <b className="gold">tipo de
+            dato</b>. El controlador asigna la memoria automáticamente. El código se vuelve autodescriptivo.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Antes vs. ahora</div>
+          <div className="formula-box" style={{color:'#fca5a5',marginTop:0}}>Clásico:  if I:0/3 then O:2/1</div>
+          <div className="formula-box" style={{marginBottom:0}}>Logix:   if Boton_Marcha then Motor_Bomba</div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Anatomía de la creación de un tag</div>
+        <table>
+          <thead><tr><th>Campo</th><th>Ejemplo</th></tr></thead>
+          <tbody>
+            <tr><td>Name</td><td className="code gold">Nivel_Tanque</td></tr>
+            <tr><td>Data Type</td><td className="code">REAL</td></tr>
+            <tr><td>Scope</td><td>Controller / Program</td></tr>
+            <tr><td>Usage</td><td>Local / Input / Output</td></tr>
+            <tr><td>Style</td><td>Decimal / Hex / Binary</td></tr>
+            <tr><td>Value</td><td className="code">0.0</td></tr>
+          </tbody>
+        </table>
+        <div style={{fontSize:10,color:'#64748b',lineHeight:1.5,marginTop:8}}>
+          El nombre admite letras, números y guion bajo, hasta 40 caracteres. No puede empezar por número.
+          Se editan en la <b className="gold">Tags window</b> o al vuelo escribiéndolos en una instrucción.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Tipos de datos ──────────────────────────────── */
+function Scene2(){
+  const types=[
+    ['BOOL','1 bit','0 ó 1','Estados on/off, banderas','#86efac'],
+    ['SINT','8 bits','-128 … 127','Entero pequeño con signo','#93c5fd'],
+    ['INT','16 bits','-32 768 … 32 767','Entero estándar','#93c5fd'],
+    ['DINT','32 bits','-2 147 483 648 … 2 147 483 647','Entero por defecto en Logix','#f59e0b'],
+    ['LINT','64 bits','±9,2 × 10¹⁸','Entero largo / timestamp','#93c5fd'],
+    ['REAL','32 bits','±3,4 × 10³⁸','Coma flotante (analógicas, PID)','#fcd34d'],
+  ];
+  return(<div>
+    <div className="sec-title">Tipos de datos atómicos (IEC 61131-3)</div>
+    <div className="sec-sub">El controlador trabaja internamente en DINT y REAL · Conoce el rango de cada tipo</div>
+    <div className="card" style={{marginBottom:9}}>
+      <table>
+        <thead><tr><th>Tipo</th><th>Tamaño</th><th>Rango</th><th>Uso típico</th></tr></thead>
+        <tbody>
+          {types.map(([t,s,r,u,c])=>(
+            <tr key={t}><td className="code" style={{color:c,fontWeight:700}}>{t}</td><td>{s}</td><td className="code">{r}</td><td>{u}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Consejo de rendimiento</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+          El procesador Logix está optimizado para <b className="gold">DINT</b> y <b className="gold">REAL</b>.
+          Usar SINT/INT en lógica no ahorra memoria y obliga a conversiones internas. Salvo que comuniques con
+          un dispositivo que lo exija, <b>usa DINT</b> para enteros y REAL para decimales.
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Tipos sin signo y largos</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+          Las versiones modernas añaden enteros sin signo (<span className="code">USINT, UINT, UDINT, ULINT</span>)
+          y <span className="code">LREAL</span> (coma flotante de 64 bits). Útiles para datos crudos de
+          dispositivos y cálculos de alta precisión.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Scope Controller vs Program ─────────────────── */
+function Scene3(){
+  const [scope,setScope]=useState('ctrl');
+  return(<div>
+    <div className="sec-title">Alcance (scope): Controller vs. Program</div>
+    <div className="sec-sub">Dónde "vive" un tag determina quién puede leerlo y escribirlo</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {[['ctrl','Controller (global)'],['prog','Program (local)']].map(([k,l])=>(
+        <button key={k} className={'btn-outline'+(scope===k?' active':'')} onClick={()=>setScope(k)}>{l}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">{scope==='ctrl'?'Controller scope':'Program scope'}</div>
+        <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+          {scope==='ctrl'?<>
+            Un tag de <b className="gold">Controller</b> es <b>global</b>: cualquier programa y rutina del proyecto
+            puede acceder a él. Aquí van las E/S, los datos compartidos entre programas y los tags producidos/consumidos.
+            Aparecen en <i>Controller Tags</i>.
+          </>:<>
+            Un tag de <b className="gold">Program</b> es <b>local</b>: solo lo ven las rutinas de ESE programa.
+            Dos programas distintos pueden tener un tag <span className="code">Aux</span> sin colisionar. Mejora el
+            encapsulamiento y permite reutilizar programas.
+          </>}
+        </div>
+        <div className="formula-box" style={{marginBottom:0}}>
+          {scope==='ctrl'?'Controller Tags → Motor_Run (global)':'MainProgram\\Tags → Aux (local)'}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Regla práctica</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55,marginBottom:8}}>
+          Pon en <b className="gold">Controller scope</b> solo lo que de verdad debe compartirse (E/S, estados de
+          planta, recetas). Todo lo demás —contadores auxiliares, temporizadores internos— déjalo en
+          <b className="gold"> Program scope</b>. Así evitas un mar de tags globales difícil de mantener.
+        </div>
+        <div style={{fontSize:10,color:'#64748b'}}>
+          Si un tag local y uno global comparten nombre, dentro del programa <b>gana el local</b>.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Arrays, UDT, alias, bit addressing ──────────── */
+function Scene4(){
+  const [t,setT]=useState('array');
+  return(<div>
+    <div className="sec-title">Estructuras: arrays, UDT, alias y direccionamiento de bit</div>
+    <div className="sec-sub">Cómo agrupar y referenciar datos complejos</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {[['array','Arrays'],['udt','UDT'],['alias','Alias'],['bit','Bit address']].map(([k,l])=>(
+        <button key={k} className={'btn-outline'+(t===k?' active':'')} onClick={()=>setT(k)}>{l}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">{t==='array'?'Arreglos (Arrays)':t==='udt'?'Tipos definidos por el usuario (UDT)':t==='alias'?'Tags alias':'Direccionamiento de bit'}</div>
+        <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+          {t==='array'&&<>Un array agrupa varios elementos del mismo tipo bajo un nombre, indexados desde 0.
+            Puede ser de 1, 2 ó 3 dimensiones. Se recorre con índices, incluso con un tag como índice (indirección).</>}
+          {t==='udt'&&<>Un <b className="gold">UDT</b> (User-Defined Type) combina varios tipos en una estructura
+            con nombre propio, como un "registro". Ideal para modelar un equipo: <i>Motor</i> con .Run, .Speed, .Fault.
+            Se reutiliza creando muchos tags de ese tipo.</>}
+          {t==='alias'&&<>Un <b className="gold">alias</b> es un segundo nombre que apunta al mismo dato que otro tag.
+            Se usa para dar nombre legible a una E/S física: <span className="code">Boton_Paro</span> como alias de
+            <span className="code"> Local:1:I.Data.3</span>.</>}
+          {t==='bit'&&<>Puedes acceder a un bit individual de un entero con la notación punto: el bit por número
+            (<span className="code">palabra.0</span> a <span className="code">.31</span>) o un miembro de estructura
+            (<span className="code">Timer.DN</span>). También un elemento por índice: <span className="code">datos[4]</span>.</>}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Ejemplo de código</div>
+        <div className="formula-box" style={{marginBottom:0,whiteSpace:'pre-wrap',lineHeight:1.7}}>
+          {t==='array'&&'Recetas : REAL[10]\nValor := Recetas[Indice]\nTemp[1][3] := 75.0   // 2D'}
+          {t==='udt'&&'TYPE Motor:\n  Run   : BOOL\n  Speed : REAL\n  Fault : BOOL\n\nBomba1 : Motor\nBomba1.Run := TRUE'}
+          {t==='alias'&&'Boton_Paro  (alias)\n   ↳ Local:1:I.Data.3\n\nXIC Boton_Paro  // lee la entrada\n               // física directamente'}
+          {t==='bit'&&'Estado.0      // bit 0 del DINT\nTimer1.DN     // bit Done\nTimer1.ACC    // miembro DINT\nDatos[4]      // elemento 5'}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Qué define un tag en Logix 5000?',opts:['Solo una dirección física','Un nombre con significado + un tipo de dato','Únicamente un número de palabra','Un bit de una imagen de E/S'],ans:1},
+  {q:'¿Cuál es el tipo de dato entero por defecto y óptimo en Logix?',opts:['SINT','INT','DINT','LINT'],ans:2},
+  {q:'El tipo REAL almacena:',opts:['Un solo bit','Texto ASCII','Coma flotante de 32 bits','Un entero de 8 bits'],ans:2},
+  {q:'¿Cuál es el rango de un BOOL?',opts:['-128 a 127','0 ó 1','0 a 65535','±3,4×10³⁸'],ans:1},
+  {q:'Un tag con scope Controller es:',opts:['Local a un programa','Global, accesible por todo el proyecto','Solo válido en una rutina','Temporal'],ans:1},
+  {q:'¿Para qué sirve un UDT?',opts:['Para borrar tags','Para combinar varios tipos en una estructura reutilizable','Para acelerar la CPU','Para cambiar de lenguaje'],ans:1},
+  {q:'Un tag alias se usa típicamente para:',opts:['Duplicar memoria','Dar un nombre legible a una E/S física','Crear una tarea','Definir un array'],ans:1},
+  {q:'¿Cómo se accede al bit "Done" de un temporizador llamado T1?',opts:['T1/15','T1.DN','DN:T1','T1[15]'],ans:1},
+  {q:'En un array Recetas de 10 elementos, ¿cuál es el primer índice válido?',opts:['1','0','-1','10'],ans:1},
+  {q:'Si un tag local y uno global comparten nombre, dentro del programa:',opts:['Hay un error fatal','Gana el local','Gana el global','Se promedian'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);const [sel,setSel]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);if(i===q.ans)setScore(s=>s+1);setTimeout(()=>{if(qi+1>=quizData.length)setDone(true);else{setQi(qi+1);setSel(null);}},1200);};
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>{score>=8?'Excelente. Dominas los tags, scopes y tipos de datos de Logix 5000.':score>=6?'Buen nivel. Repasa tipos de datos y direccionamiento de bit.':'Repasa qué es un tag, los tipos DINT/REAL/BOOL y el scope Controller/Program.'}</div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Tags y Tipos de Datos</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>{quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}><div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div></div>
+    {q.opts.map((o,i)=>{let cls='quiz-opt';if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}return(<div key={i} className={cls} onClick={()=>choose(i)}><div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>{o}</div>);})}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. ¿Qué es un tag?',comp:Scene1},
+  {id:2,label:'2. Tipos de datos',comp:Scene2},
+  {id:3,label:'3. Scope Controller/Program',comp:Scene3},
+  {id:4,label:'4. Arrays, UDT, alias y bits',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);const S=SCENES.find(s=>s.id===scene);const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div><div className="topbar-title">Clase 1.2 — Tags y Tipos de Datos</div>
+      <div className="topbar-sub">Direccionamiento por etiquetas · BOOL/SINT/INT/DINT/REAL/LINT · Scope · Arrays · UDT · Alias</div></div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(<div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

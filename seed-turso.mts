@@ -1188,6 +1188,77 @@ const lessonsValves = [
 const totalSecValves = lessonsValves.reduce((s, l) => s + l.durationSec, 0);
 const totalMinutesValves = Math.round(totalSecValves / 60);
 
+const BASE_AB = "/videos/premium/allen-bradley-logix";
+
+const lessonsAB = [
+  {
+    order: 1,
+    title: "Plataforma Logix 5000 y Studio 5000",
+    description:
+      "La arquitectura de control de Allen-Bradley (Rockwell): familias ControlLogix 1756, CompactLogix, GuardLogix y SoftLogix. Anatomía del chasis, red EtherNet/IP, organización del proyecto Controller → Tasks → Programs → Routines y los tipos de tarea (Continuous, Periodic, Event).",
+    durationSec: 720,
+    videoPath: `${BASE_AB}/Clase 1.1 - Plataforma Logix 5000 y Studio 5000.html`,
+  },
+  {
+    order: 2,
+    title: "Tags y Tipos de Datos",
+    description:
+      "El direccionamiento basado en etiquetas (tags) frente a las direcciones físicas. Tipos de datos IEC 61131-3 (BOOL, SINT, INT, DINT, REAL, LINT) y sus rangos, scope Controller vs. Program, alias, arrays, tipos definidos por el usuario (UDT) y direccionamiento de bit.",
+    durationSec: 720,
+    videoPath: `${BASE_AB}/Clase 1.2 - Tags y Tipos de Datos.html`,
+  },
+  {
+    order: 3,
+    title: "Instrucciones de Bit y Lógica Ladder",
+    description:
+      "Lectura del rung y flujo de energía. Instrucciones de bit XIC, XIO, OTE, OTL, OTU y one-shots ONS/OSR/OSF. Construcción del circuito de sello (seal-in) de arranque-paro con simulador interactivo y buenas prácticas de seguridad (paro NC fail-safe, doble bobina).",
+    durationSec: 780,
+    videoPath: `${BASE_AB}/Clase 1.3 - Instrucciones de Bit y Logica Ladder.html`,
+  },
+  {
+    order: 4,
+    title: "Temporizadores y Contadores",
+    description:
+      "La estructura TIMER con base de 1 ms y sus miembros .PRE/.ACC/.EN/.TT/.DN. Temporizadores TON, TOF y RTO retentivo, contadores CTU/CTD y la instrucción RES, con simuladores interactivos de on-delay y conteo por flanco.",
+    durationSec: 780,
+    videoPath: `${BASE_AB}/Clase 1.4 - Temporizadores y Contadores.html`,
+  },
+  {
+    order: 5,
+    title: "Comparación y Matemáticas",
+    description:
+      "Instrucciones de comparación (EQU, NEQ, GEQ, LES, LIM, MEQ) y matemáticas (ADD, SUB, MUL, DIV, MOD, SQR, CPT). Calculadora de caudal interactiva, banderas de estado matemático (overflow, zero), conversión de tipos y escalado de señales analógicas.",
+    durationSec: 780,
+    videoPath: `${BASE_AB}/Clase 1.5 - Comparacion y Matematicas.html`,
+  },
+  {
+    order: 6,
+    title: "Movimiento, Lógica y Datos",
+    description:
+      "Instrucciones de movimiento (MOV, MVM, CLR, COP, FLL) y lógica a nivel de bit (AND, OR, XOR, NOT) con calculadora binaria. Trabajo con arrays, direccionamiento indirecto y construcción de un secuenciador por pasos basado en tabla.",
+    durationSec: 720,
+    videoPath: `${BASE_AB}/Clase 1.6 - Movimiento Logica y Datos.html`,
+  },
+  {
+    order: 7,
+    title: "Control de Programa, Rutinas y AOI",
+    description:
+      "Modularización con subrutinas JSR/SBR/RET, control de flujo (JMP/LBL, MCR, FOR/BRK, AFI). Creación de Add-On Instructions (AOI) reutilizables e introducción al Texto Estructurado (IF, CASE, FOR, WHILE/REPEAT) y los cuatro lenguajes IEC 61131-3.",
+    durationSec: 780,
+    videoPath: `${BASE_AB}/Clase 1.7 - Control de Programa Rutinas y AOI.html`,
+  },
+  {
+    order: 8,
+    title: "Control PID y Proyecto Integrador",
+    description:
+      "La instrucción PID en lazo cerrado: estructura, las tres acciones P-I-D y su efecto, sintonía con simulador interactivo de respuesta del proceso. Proyecto integrador completo de control de nivel de un tanque que reúne sello, escalado, PID, alarmas enclavadas y conteo.",
+    durationSec: 780,
+    videoPath: `${BASE_AB}/Clase 1.8 - Control PID y Proyecto Integrador.html`,
+  },
+];
+const totalSecAB = lessonsAB.reduce((s, l) => s + l.durationSec, 0);
+const totalMinutesAB = Math.round(totalSecAB / 60);
+
 async function main() {
   await prisma.lesson.deleteMany();
   await prisma.course.deleteMany();
@@ -1267,7 +1338,22 @@ async function main() {
     },
   });
 
-  console.log(`✅ Seed completado: ${lessons.length} lecciones gratis (${totalMinutes} min) + ${lessonsPro.length} lecciones PRO (${totalMinutesPro} min) + ${lessonsSIL.length} lecciones SIL (${totalMinutesSIL} min) + ${lessonsIEC.length} lecciones IEC 61511 (${totalMinutesIEC} min) + ${lessonsValves.length} lecciones Válvulas (${totalMinutesValves} min)`);
+  await prisma.course.create({
+    data: {
+      slug: "allen-bradley-logix",
+      title: "Programación de PLC Allen-Bradley Logix 5000 (Studio 5000)",
+      description:
+        "Curso práctico de programación de los controladores Allen-Bradley Logix 5000 (ControlLogix, CompactLogix, GuardLogix) con Studio 5000 Logix Designer. Aprende el direccionamiento basado en tags y los tipos de datos IEC 61131-3, la lógica Ladder (XIC/XIO/OTE/OTL), temporizadores y contadores (TON/TOF/RTO/CTU), comparación y matemáticas (CPT), movimiento y lógica de bits, control de programa con subrutinas y Add-On Instructions (AOI), Texto Estructurado y el control PID en lazo cerrado — con simuladores interactivos y un proyecto integrador de control de tanque. Basado en la normativa ISA/IEC 61131-3.",
+      instructor: "Instrumex",
+      level: "Intermedio",
+      category: "Automatización Industrial",
+      totalMinutes: totalMinutesAB,
+      lessonCount: lessonsAB.length,
+      lessons: { create: lessonsAB },
+    },
+  });
+
+  console.log(`✅ Seed completado: ${lessons.length} lecciones gratis (${totalMinutes} min) + ${lessonsPro.length} lecciones PRO (${totalMinutesPro} min) + ${lessonsSIL.length} lecciones SIL (${totalMinutesSIL} min) + ${lessonsIEC.length} lecciones IEC 61511 (${totalMinutesIEC} min) + ${lessonsValves.length} lecciones Válvulas (${totalMinutesValves} min) + ${lessonsAB.length} lecciones Allen-Bradley Logix (${totalMinutesAB} min)`);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.6 – Movimiento, Lógica y Datos</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:215px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:'Consolas',monospace;font-size:12px;color:#fcd34d;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.code{font-family:'Consolas',monospace;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: Instrucciones de movimiento ─────────────────── */
+function Scene1(){
+  const mv=[
+    ['MOV','Move','Copia Source → Dest (mismo o distinto tipo, convierte)'],
+    ['MVM','Masked Move','Copia solo los bits permitidos por una máscara'],
+    ['CLR','Clear','Pone el destino a 0'],
+    ['COP','Copy File','Copia un bloque de un array a otro (rápido, sin conversión)'],
+    ['FLL','Fill File','Rellena un array con un mismo valor'],
+  ];
+  return(<div>
+    <div className="sec-title">Instrucciones de movimiento de datos</div>
+    <div className="sec-sub">Mover, copiar y limpiar valores entre tags y arrays</div>
+    <div className="card" style={{marginBottom:9}}>
+      <table>
+        <thead><tr><th>Mnem.</th><th>Nombre</th><th>Qué hace</th></tr></thead>
+        <tbody>{mv.map(([m,n,d])=>(<tr key={m}><td className="code gold" style={{fontWeight:700}}>{m}</td><td>{n}</td><td>{d}</td></tr>))}</tbody>
+      </table>
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">MOV vs. COP</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+          <b className="gold">MOV</b> mueve UN valor y <b>convierte</b> el tipo (REAL→DINT redondea).
+          <b className="gold"> COP</b> copia un <b>bloque de bytes</b> tal cual, sin conversión: ideal para arrays
+          y estructuras (UDT) completas, pero ambos tags deben ser compatibles.
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">MVM con máscara</div>
+        <div className="formula-box" style={{marginBottom:0}}>MVM  Source = 16#FFFF<br/>     Mask   = 16#00FF<br/>     Dest  → solo cambian<br/>            los 8 bits bajos</div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Instrucciones lógicas ───────────────────────── */
+function Scene2(){
+  const [a,setA]=useState(12);
+  const [b,setB]=useState(10);
+  const [op,setOp]=useState('AND');
+  const res=op==='AND'?(a&b):op==='OR'?(a|b):op==='XOR'?(a^b):(~a&0xFF);
+  const bin=(n)=>n.toString(2).padStart(8,'0');
+  return(<div>
+    <div className="sec-title">Instrucciones lógicas a nivel de bit</div>
+    <div className="sec-sub">AND · OR · XOR · NOT trabajan bit a bit sobre enteros · Útiles para máscaras y banderas</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Calculadora bit a bit</div>
+        <div style={{display:'flex',gap:6,marginBottom:10}}>
+          {['AND','OR','XOR','NOT'].map(k=>(<button key={k} className={'btn-outline'+(op===k?' active':'')} onClick={()=>setOp(k)}>{k}</button>))}
+        </div>
+        <div style={{marginBottom:8}}>
+          <div style={{fontSize:10,color:'#94a3b8'}}>A = {a}</div>
+          <input type="range" min="0" max="255" value={a} onChange={e=>setA(+e.target.value)} style={{width:'100%',accentColor:'#f59e0b'}}/>
+        </div>
+        {op!=='NOT'&&<div style={{marginBottom:8}}>
+          <div style={{fontSize:10,color:'#94a3b8'}}>B = {b}</div>
+          <input type="range" min="0" max="255" value={b} onChange={e=>setB(+e.target.value)} style={{width:'100%',accentColor:'#f59e0b'}}/>
+        </div>}
+        <div style={{fontSize:9,color:'#64748b'}}>AND: filtra bits · OR: fuerza bits a 1 · XOR: invierte · NOT: complemento</div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Resultado en binario</div>
+        <div className="formula-box" style={{lineHeight:1.9,marginBottom:0}}>
+          <div>A   = {bin(a)}  ({a})</div>
+          {op!=='NOT'&&<div>B   = {bin(b)}  ({b})</div>}
+          <div style={{color:'#64748b'}}>      ────────</div>
+          <div style={{color:'#22c55e'}}>{op.padEnd(4)}= {bin(res&0xFF)}  ({res&0xFF})</div>
+        </div>
+        <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5,marginTop:10}}>
+          Ejemplo real: <span className="code gold">AND Estado, 16#0F → BajosNibble</span> aísla los 4 bits bajos
+          de una palabra de estado para leer un código.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Arrays y manejo de ficheros ─────────────────── */
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Trabajo con arrays: COP, FLL e indirección</div>
+    <div className="sec-sub">Mover bloques completos y direccionar con un índice variable</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Copiar un lote de recetas</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55,marginBottom:6}}>
+            <b className="gold">COP</b> mueve N elementos de un array a otro en una sola instrucción. Para cargar la
+            receta seleccionada a las variables de trabajo:
+          </div>
+          <div className="formula-box" style={{marginBottom:0}}>COP  Recetas[Sel]<br/>  → Receta_Activa<br/>  Length = 1</div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Inicializar con FLL</div>
+          <div className="formula-box" style={{marginBottom:0}}>FLL  0  → Historico[0]<br/>  Length = 100<br/>  // borra 100 elementos</div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Direccionamiento indirecto</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+          Puedes usar un <b className="gold">tag como índice</b> de un array. Al cambiar el índice, accedes a otro
+          elemento sin reescribir la lógica. Es la base de secuenciadores y máquinas de estados por pasos.
+        </div>
+        <div className="formula-box" style={{marginBottom:8}}>Paso := Paso + 1<br/>Salida := Secuencia[Paso]</div>
+        <div style={{fontSize:9.5,color:'#fca5a5',lineHeight:1.5}}>
+          ⚠ Vigila que el índice no se salga del array (0…N−1). Un índice fuera de rango genera un fallo mayor.
+          Valídalo con LIM antes de usarlo.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Secuenciador de pasos ───────────────────────── */
+function Scene4(){
+  const pasos=['Reposo','Llenado','Mezcla','Calentar','Vaciado'];
+  const salidas=[
+    [0,0,0,0],
+    [1,0,0,0],
+    [0,1,0,0],
+    [0,0,1,0],
+    [0,0,0,1],
+  ];
+  const [paso,setPaso]=useState(0);
+  const sal=salidas[paso];
+  const nombres=['Válvula_Llenado','Motor_Mezcla','Resistencia','Válvula_Vaciado'];
+  return(<div>
+    <div className="sec-title">Ejemplo práctico: secuenciador con array</div>
+    <div className="sec-sub">Un array define qué salidas se activan en cada paso · Avanza con MOV/indirección</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Pasos de la secuencia</div>
+        {pasos.map((p,i)=>(
+          <div key={p} onClick={()=>setPaso(i)} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 9px',borderRadius:6,cursor:'pointer',marginBottom:4,
+            background:paso===i?'#f59e0b18':'#060a14',border:'1px solid '+(paso===i?'#f59e0b':'#1e2d4a')}}>
+            <div style={{width:22,height:22,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,
+              background:paso===i?'#f59e0b':'#1e2d4a',color:paso===i?'#080c18':'#64748b'}}>{i}</div>
+            <span style={{fontSize:12,color:paso===i?'#f59e0b':'#94a3b8'}}>{p}</span>
+          </div>
+        ))}
+        <div style={{display:'flex',gap:8,marginTop:10}}>
+          <button className="btn-outline" onClick={()=>setPaso(p=>Math.max(0,p-1))}>← Paso</button>
+          <button className="btn-gold" onClick={()=>setPaso(p=>(p+1)%pasos.length)}>Paso →</button>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Salidas activas en "{pasos[paso]}"</div>
+        {nombres.map((n,i)=>(
+          <div key={n} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 11px',borderRadius:6,marginBottom:5,
+            background:sal[i]?'#14532d33':'#060a14',border:'1px solid '+(sal[i]?'#22c55e':'#1e2d4a')}}>
+            <span className="code" style={{fontSize:11,color:sal[i]?'#86efac':'#64748b'}}>{n}</span>
+            <span style={{fontSize:12,fontWeight:700,color:sal[i]?'#22c55e':'#475569'}}>{sal[i]?'ON':'OFF'}</span>
+          </div>
+        ))}
+        <div className="formula-box" style={{marginBottom:0,marginTop:6}}>Salidas := Tabla_Pasos[Paso]</div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'La instrucción MOV:',opts:['Solo copia bloques','Copia un valor de Source a Dest y convierte el tipo','Borra un array','Compara dos tags'],ans:1},
+  {q:'¿Qué instrucción pone un destino a cero?',opts:['CLR','COP','MVM','XOR'],ans:0},
+  {q:'COP (Copy File) se diferencia de MOV en que:',opts:['Convierte tipos','Copia un bloque de bytes sin conversión','Solo mueve bits','Es de entrada'],ans:1},
+  {q:'FLL (Fill File) sirve para:',opts:['Comparar arrays','Rellenar un array con un mismo valor','Sumar elementos','Mover un solo bit'],ans:1},
+  {q:'La operación AND a nivel de bit se usa típicamente para:',opts:['Forzar bits a 1','Filtrar/aislar bits con una máscara','Invertir todos los bits','Sumar enteros'],ans:1},
+  {q:'La operación OR a nivel de bit:',opts:['Pone a 1 los bits donde alguno de los operandos es 1','Pone todo a 0','Resta','Compara'],ans:0},
+  {q:'XOR de dos bits iguales da:',opts:['1','0','El valor mayor','Error'],ans:1},
+  {q:'El direccionamiento indirecto consiste en:',opts:['Usar direcciones físicas','Usar un tag como índice de un array','Copiar bloques','Comparar bits'],ans:1},
+  {q:'Si un índice de array se sale del rango 0…N−1:',opts:['No pasa nada','Se genera un fallo mayor','Se reinicia solo','Cambia de tarea'],ans:1},
+  {q:'Un secuenciador por pasos suele apoyarse en:',opts:['Un array de salidas indexado por el número de paso','Solo temporizadores','Un único bit','La instrucción PID'],ans:0},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);const [sel,setSel]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);if(i===q.ans)setScore(s=>s+1);setTimeout(()=>{if(qi+1>=quizData.length)setDone(true);else{setQi(qi+1);setSel(null);}},1200);};
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>{score>=8?'Excelente. Dominas movimiento de datos, lógica de bits y arrays.':score>=6?'Buen nivel. Repasa COP/FLL y el direccionamiento indirecto.':'Repasa MOV/COP/FLL, AND/OR/XOR y los secuenciadores con array.'}</div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Movimiento, Lógica y Datos</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>{quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}><div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div></div>
+    {q.opts.map((o,i)=>{let cls='quiz-opt';if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}return(<div key={i} className={cls} onClick={()=>choose(i)}><div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>{o}</div>);})}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. Movimiento de datos',comp:Scene1},
+  {id:2,label:'2. Lógica de bits',comp:Scene2},
+  {id:3,label:'3. Arrays e indirección',comp:Scene3},
+  {id:4,label:'4. Secuenciador',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);const S=SCENES.find(s=>s.id===scene);const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div><div className="topbar-title">Clase 1.6 — Movimiento, Lógica y Datos</div>
+      <div className="topbar-sub">MOV · MVM · CLR · COP · FLL · AND · OR · XOR · NOT · Arrays · Indirección</div></div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(<div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

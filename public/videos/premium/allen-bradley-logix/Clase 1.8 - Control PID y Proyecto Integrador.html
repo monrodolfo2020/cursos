@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.8 – Control PID y Proyecto Integrador</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:215px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:'Consolas',monospace;font-size:12px;color:#fcd34d;margin:7px 0;white-space:pre-wrap;line-height:1.7;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.code{font-family:'Consolas',monospace;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ── SCENE 1: La instrucción PID ──────────────────────────── */
+function Scene1(){
+  return(<div>
+    <div className="sec-title">La instrucción PID en Logix 5000</div>
+    <div className="sec-sub">Control en lazo cerrado: el controlador ajusta la salida para que PV alcance SP</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">El lazo cerrado</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            La instrucción <b className="gold">PID</b> compara la variable de proceso (<b className="gold">PV</b>,
+            p.ej. temperatura medida) con el punto de consigna (<b className="gold">SP</b>) y calcula una salida
+            (<b className="gold">CV</b>) que comanda el elemento final (válvula, variador) para reducir el error.
+          </div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Combina tres acciones: <b className="gold">Proporcional</b> (corrige según el error actual),
+            <b className="gold"> Integral</b> (elimina el error sostenido) y <b className="gold">Derivativa</b>
+            (anticipa según la velocidad de cambio).
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Ejecútalo en una tarea periódica</div>
+          <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.55}}>
+            El PID debe correr a intervalo constante para ser determinista. Colócalo en una
+            <b className="gold"> Periodic Task</b> y ajusta el parámetro de tiempo de lazo acorde al periodo.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Parámetros principales de la estructura PID</div>
+        <table>
+          <thead><tr><th>Campo</th><th>Significado</th></tr></thead>
+          <tbody>
+            <tr><td className="code gold">.SP</td><td>Setpoint (consigna)</td></tr>
+            <tr><td className="code gold">.PV</td><td>Process Variable (medida)</td></tr>
+            <tr><td className="code gold">.OUT</td><td>Salida calculada (CV)</td></tr>
+            <tr><td className="code gold">.KP</td><td>Ganancia proporcional</td></tr>
+            <tr><td className="code gold">.KI</td><td>Ganancia integral</td></tr>
+            <tr><td className="code gold">.KD</td><td>Ganancia derivativa</td></tr>
+            <tr><td className="code gold">.MODE</td><td>Auto / Manual</td></tr>
+          </tbody>
+        </table>
+        <div style={{fontSize:9.5,color:'#64748b',marginTop:8,lineHeight:1.5}}>
+          Las versiones modernas también ofrecen <b className="gold">PIDE</b> (PID Enhanced, función de bloque) con
+          autotuning y antiwindup avanzado.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Las tres acciones ───────────────────────────── */
+function Scene2(){
+  const [t,setT]=useState('p');
+  return(<div>
+    <div className="sec-title">Las tres acciones: P, I y D</div>
+    <div className="sec-sub">Qué aporta cada término y cómo afecta a la respuesta del lazo</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {[['p','Proporcional'],['i','Integral'],['d','Derivativa']].map(([k,l])=>(
+        <button key={k} className={'btn-outline'+(t===k?' active':'')} onClick={()=>setT(k)}>{l}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">{t==='p'?'Acción Proporcional (KP)':t==='i'?'Acción Integral (KI)':'Acción Derivativa (KD)'}</div>
+        <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+          {t==='p'&&<>Corrige en proporción al <b className="gold">error actual</b>. Más ganancia = respuesta más
+            rápida, pero demasiada provoca oscilación. Por sí sola deja un error permanente (offset).</>}
+          {t==='i'&&<>Acumula el error en el <b className="gold">tiempo</b> y lo elimina por completo (lleva el offset
+            a cero). Demasiada acción integral ralentiza y puede causar sobreoscilación y "windup".</>}
+          {t==='d'&&<>Reacciona a la <b className="gold">velocidad de cambio</b> del error, anticipando. Suaviza y
+            estabiliza, pero amplifica el ruido de la medición; a menudo se usa poca o nada.</>}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Efecto al subir esta ganancia</div>
+        <table>
+          <thead><tr><th>Aspecto</th><th>Efecto</th></tr></thead>
+          <tbody>
+            {t==='p'&&<><tr><td>Velocidad</td><td className="tag tag-green">Más rápida</td></tr><tr><td>Estabilidad</td><td className="tag tag-red">Empeora</td></tr><tr><td>Error final</td><td>Reduce (no elimina)</td></tr></>}
+            {t==='i'&&<><tr><td>Error final</td><td className="tag tag-green">Elimina offset</td></tr><tr><td>Estabilidad</td><td className="tag tag-red">Empeora</td></tr><tr><td>Sobretiro</td><td>Aumenta</td></tr></>}
+            {t==='d'&&<><tr><td>Estabilidad</td><td className="tag tag-green">Mejora</td></tr><tr><td>Sobretiro</td><td className="tag tag-green">Reduce</td></tr><tr><td>Ruido</td><td className="tag tag-red">Amplifica</td></tr></>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Simulador de lazo PID ───────────────────────── */
+function Scene3(){
+  const [kp,setKp]=useState(2.0);
+  const [ki,setKi]=useState(0.5);
+  const [running,setRunning]=useState(false);
+  const [data,setData]=useState([]);
+  const stateRef=useRef({pv:20,integral:0});
+  const SP=60;
+  const timer=useRef(null);
+  useEffect(()=>{
+    if(running){
+      timer.current=setInterval(()=>{
+        const st=stateRef.current;
+        const err=SP-st.pv;
+        st.integral+=err*0.1*ki;
+        st.integral=Math.max(-50,Math.min(50,st.integral));
+        let out=kp*err+st.integral;
+        out=Math.max(0,Math.min(100,out));
+        // proceso de primer orden
+        st.pv+=(out*0.5-(st.pv-20)*0.3)*0.1;
+        setData(d=>[...d.slice(-79),st.pv]);
+      },80);
+    }
+    return()=>clearInterval(timer.current);
+  },[running,kp,ki]);
+  const reset=()=>{setRunning(false);stateRef.current={pv:20,integral:0};setData([]);};
+  const pts=data.map((v,i)=>`${i/79*250},${100-(v/100*100)}`).join(' ');
+  return(<div>
+    <div className="sec-title">Simulador: sintoniza un lazo PID</div>
+    <div className="sec-sub">SP = 60 · Ajusta KP y KI, arranca y observa cómo PV alcanza la consigna</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Ganancias</div>
+        <div style={{marginBottom:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10.5,color:'#94a3b8'}}><span>KP (proporcional)</span><span className="code gold">{kp.toFixed(1)}</span></div>
+          <input type="range" min="0" max="6" step="0.1" value={kp} onChange={e=>setKp(+e.target.value)} style={{width:'100%',accentColor:'#f59e0b'}}/>
+        </div>
+        <div style={{marginBottom:12}}>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10.5,color:'#94a3b8'}}><span>KI (integral)</span><span className="code gold">{ki.toFixed(2)}</span></div>
+          <input type="range" min="0" max="2" step="0.05" value={ki} onChange={e=>setKi(+e.target.value)} style={{width:'100%',accentColor:'#f59e0b'}}/>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <button className={'btn-'+(running?'outline':'gold')} onClick={()=>setRunning(r=>!r)}>{running?'⏸ Pausar':'▶ Arrancar'}</button>
+          <button className="btn-outline" onClick={reset}>↺ Reset</button>
+        </div>
+        <div style={{fontSize:9.5,color:'#64748b',marginTop:10,lineHeight:1.5}}>
+          Prueba KP alto y KI=0: queda offset. Sube KI: el error se elimina pero puede oscilar.
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Respuesta del proceso (PV vs SP)</div>
+        <svg width="100%" viewBox="0 0 250 110" style={{background:'#060a14',borderRadius:6}}>
+          <line x1="0" y1={100-60} x2="250" y2={100-60} stroke="#f59e0b" strokeDasharray="4 3" strokeWidth="1"/>
+          <text x="3" y={100-62} fill="#f59e0b" fontSize="7">SP=60</text>
+          {data.length>1&&<polyline points={pts} fill="none" stroke="#22c55e" strokeWidth="1.5"/>}
+          <text x="200" y="12" fill="#86efac" fontSize="7">PV</text>
+        </svg>
+        <div style={{textAlign:'center',marginTop:10}}>
+          <span style={{fontSize:11,color:'#64748b'}}>PV actual: </span>
+          <span style={{fontSize:18,fontWeight:700,color:'#22c55e'}}>{data.length?data[data.length-1].toFixed(1):'20.0'}</span>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Proyecto integrador ─────────────────────────── */
+function Scene4(){
+  return(<div>
+    <div className="sec-title">Proyecto integrador: control de un tanque</div>
+    <div className="sec-sub">Reúne todo lo aprendido en una aplicación completa de Logix 5000</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Especificación</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.6}}>
+          Un tanque se llena con una bomba comandada por un <b className="gold">variador</b> y se controla su nivel
+          con un transmisor 4-20 mA. Requisitos:
+          <ul style={{margin:'6px 0 0 16px',lineHeight:1.7}}>
+            <li>Arranque/paro con sello y paro de emergencia (fail-safe).</li>
+            <li>Escalar el nivel de 4-20 mA a 0-100 %.</li>
+            <li>PID que regule el nivel al setpoint (60 %).</li>
+            <li>Alarmas de nivel alto (90%) y bajo (10%) enclavadas.</li>
+            <li>Contar los ciclos de llenado completados.</li>
+          </ul>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Esqueleto del programa</div>
+        <div className="formula-box" style={{marginBottom:0,fontSize:10.5}}>{`// MainRoutine (Ladder)
+XIC Marcha XIO Paro OTE Sistema_On
+
+// Rutina_Escalado (CPT)
+Nivel_PV := (Crudo-6400)/25600*100
+
+// Rutina_PID (Periodic 100 ms)
+PID  Lazo_Nivel
+  .SP=60  .PV=Nivel_PV  .OUT=Vel_Bomba
+
+// Rutina_Alarmas
+GEQ Nivel_PV 90 → OTL Alarma_Alto
+LES Nivel_PV 10 → OTL Alarma_Bajo
+
+// Conteo de ciclos
+CTU C_Ciclos  .PRE=999`}</div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'La instrucción PID compara la PV con:',opts:['La salida','El setpoint (SP)','La ganancia','El watchdog'],ans:1},
+  {q:'¿En qué tipo de tarea conviene ejecutar un PID?',opts:['Continuous','Periodic (intervalo constante)','Event de mensaje','Ninguna'],ans:1},
+  {q:'La acción Proporcional por sí sola deja:',opts:['Error nulo','Un error permanente (offset)','Oscilación infinita','La salida en 0'],ans:1},
+  {q:'¿Qué acción elimina por completo el error sostenido?',opts:['Proporcional','Integral','Derivativa','Ninguna'],ans:1},
+  {q:'La acción Derivativa tiene el inconveniente de:',opts:['Eliminar el setpoint','Amplificar el ruido de la medición','Apagar la bomba','Borrar tags'],ans:1},
+  {q:'El campo .OUT de la estructura PID representa:',opts:['La medida','La consigna','La salida calculada (CV) hacia el actuador','La ganancia integral'],ans:2},
+  {q:'Para escalar 4-20 mA (crudo) a 0-100% se usa típicamente:',opts:['Un XIC','Una instrucción CPT/CPT con fórmula','Un TON','Un JSR'],ans:1},
+  {q:'En el proyecto, las alarmas de nivel se mantienen activas usando:',opts:['OTE','OTL (enclave) hasta reconocer','Un TON','MOV'],ans:1},
+  {q:'¿Qué instrucción cuenta los ciclos de llenado completados?',opts:['TON','CTU','MOV','PID'],ans:1},
+  {q:'Subir demasiado la ganancia integral (KI) tiende a:',opts:['Mejorar siempre','Provocar sobreoscilación y windup','Eliminar el ruido','Acelerar sin efectos'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);const [sel,setSel]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);if(i===q.ans)setScore(s=>s+1);setTimeout(()=>{if(qi+1>=quizData.length)setDone(true);else{setQi(qi+1);setSel(null);}},1200);};
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>{score>=8?'¡Felicidades! Has completado el curso de programación Logix 5000.':score>=6?'Buen cierre. Repasa las acciones P-I-D y el proyecto integrador.':'Repasa la instrucción PID, las tres acciones y la integración del proyecto.'}</div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Control PID y Proyecto Integrador</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>{quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}><div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div></div>
+    {q.opts.map((o,i)=>{let cls='quiz-opt';if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}return(<div key={i} className={cls} onClick={()=>choose(i)}><div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>{o}</div>);})}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. La instrucción PID',comp:Scene1},
+  {id:2,label:'2. Acciones P, I y D',comp:Scene2},
+  {id:3,label:'3. Simulador de lazo',comp:Scene3},
+  {id:4,label:'4. Proyecto integrador',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);const S=SCENES.find(s=>s.id===scene);const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div><div className="topbar-title">Clase 1.8 — Control PID y Proyecto Integrador</div>
+      <div className="topbar-sub">Instrucción PID · Acciones P-I-D · Sintonía · Escalado analógico · Proyecto de tanque</div></div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(<div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

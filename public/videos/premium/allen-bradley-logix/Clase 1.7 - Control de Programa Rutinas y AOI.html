@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.7 – Control de Programa, Rutinas y AOI</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:215px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:'Consolas',monospace;font-size:12px;color:#fcd34d;margin:7px 0;white-space:pre-wrap;line-height:1.7;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.code{font-family:'Consolas',monospace;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: JSR / SBR / RET ─────────────────────────────── */
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Subrutinas: JSR · SBR · RET</div>
+    <div className="sec-sub">Modulariza el programa llamando a rutinas con paso de parámetros</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">El trío de la subrutina</div>
+          <table>
+            <thead><tr><th>Instr.</th><th>Función</th></tr></thead>
+            <tbody>
+              <tr><td className="code gold">JSR</td><td>Jump to Subroutine: salta a otra rutina y puede pasar parámetros (Input/Return)</td></tr>
+              <tr><td className="code gold">SBR</td><td>Subroutine: recibe los parámetros de entrada al inicio de la rutina llamada</td></tr>
+              <tr><td className="code gold">RET</td><td>Return: devuelve valores y regresa a la rutina que llamó</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Por qué modularizar</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Separar la lógica en rutinas por equipo o función (Motores, Alarmas, HMI) hace el programa legible,
+            depurable y reutilizable. La <b className="gold">MainRoutine</b> orquesta las llamadas con JSR.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Ejemplo de llamada con parámetros</div>
+        <div className="formula-box" style={{marginBottom:0}}>{`// En MainRoutine
+JSR  Rutina_Motor
+     Input Par:  Velocidad_SP
+     Return Par: Estado_Motor
+
+// En Rutina_Motor (primer rung)
+SBR  Velocidad_Local
+   ... lógica ...
+RET  Estado_Calculado`}</div>
+        <div style={{fontSize:10,color:'#64748b',lineHeight:1.5,marginTop:8}}>
+          Los parámetros de JSR/SBR/RET deben coincidir en número y orden. Así una misma rutina se reutiliza
+          con distintos datos.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: JMP/LBL, MCR, FOR/BRK ───────────────────────── */
+function Scene2(){
+  const [t,setT]=useState('jmp');
+  return(<div>
+    <div className="sec-title">Control de flujo dentro de una rutina</div>
+    <div className="sec-sub">Saltos condicionales, zonas maestras y bucles</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {[['jmp','JMP / LBL'],['mcr','MCR'],['for','FOR / BRK'],['afi','AFI / NOP']].map(([k,l])=>(
+        <button key={k} className={'btn-outline'+(t===k?' active':'')} onClick={()=>setT(k)}>{l}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">{t==='jmp'?'JMP / LBL — saltar rungs':t==='mcr'?'MCR — Master Control Reset':t==='for'?'FOR / BRK — bucles':'AFI / NOP'}</div>
+        <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+          {t==='jmp'&&<><b className="gold">JMP</b> salta hacia una etiqueta <b className="gold">LBL</b>, omitiendo los
+            rungs intermedios cuando una condición se cumple. Útil para saltar bloques que no aplican en cierto modo.</>}
+          {t==='mcr'&&<>La zona <b className="gold">MCR</b> (par de instrucciones) desactiva todas las salidas no
+            retentivas de los rungs encerrados cuando la primera MCR es falsa. Como un "interruptor general" de una sección.</>}
+          {t==='for'&&<><b className="gold">FOR</b> repite una rutina un número de veces (índice, inicial, final, paso).
+            <b className="gold"> BRK</b> sale antes del bucle. Ideal para recorrer arrays grandes.</>}
+          {t==='afi'&&<><b className="gold">AFI</b> (Always False) deshabilita un rung para pruebas; siempre da falso.
+            <b className="gold"> NOP</b> no hace nada: reserva espacio o documenta.</>}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Ejemplo</div>
+        <div className="formula-box" style={{marginBottom:0}}>
+          {t==='jmp'&&`XIC Modo_Manual  JMP 10
+   // rungs de automático...
+LBL 10
+   // continúa aquí`}
+          {t==='mcr'&&`MCR  (Habilitar_Seccion)
+   // rungs controlados
+MCR  (fin de zona)`}
+          {t==='for'&&`FOR  Rutina_Suma
+   Index = i
+   Initial = 0
+   Terminal = 9
+   Step = 1
+// recorre Datos[0..9]`}
+          {t==='afi'&&`AFI ─]/[─ (rung desactivado)
+NOP   // marcador`}
+        </div>
+        {t==='mcr'&&<div style={{fontSize:9.5,color:'#fca5a5',marginTop:8,lineHeight:1.5}}>⚠ MCR no sustituye a un paro de seguridad cableado; las salidas retentivas (OTL) no se ven afectadas.</div>}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Add-On Instructions (AOI) ───────────────────── */
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Add-On Instructions (AOI): tus propias instrucciones</div>
+    <div className="sec-sub">Encapsula lógica reutilizable en un bloque con nombre, parámetros y su propia ayuda</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es una AOI?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            Una <b className="gold">Add-On Instruction</b> es una instrucción creada por ti que agrupa lógica que
+            repites en muchos sitios (arranque de motor, gestión de válvula, filtro). Una vez definida, la usas como
+            cualquier instrucción nativa: aparece en la paleta y se instancia con un tag.
+          </div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Cada instancia tiene parámetros <b className="gold">Input</b>, <b className="gold">Output</b> e
+            <b className="gold"> InOut</b>, y tags <b>locales</b> propios. La lógica interna se escribe una sola vez.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Ventajas</div>
+          <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.6}}>
+            ✓ Estandarizas la lógica de planta · ✓ Corriges en un solo lugar · ✓ Proteges la propiedad intelectual ·
+            ✓ Documentas con descripción y ayuda integrada.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Ejemplo: AOI "Motor_Estandar"</div>
+        <div className="formula-box" style={{marginBottom:0}}>{`AOI  Motor_Estandar
+  Inputs:  Cmd_Run, Paro, Reset
+  Outputs: Running, Fault
+  Local:   T_Arranque (TIMER)
+
+// instanciación:
+Motor_Estandar  Bomba_101
+   Cmd_Run := HMI_Start
+   Paro    := PB_Stop
+   Running → Lampara_Verde`}</div>
+        <div style={{fontSize:9.5,color:'#64748b',marginTop:8,lineHeight:1.5}}>
+          La misma AOI sirve para Bomba_101, Bomba_102, Ventilador_201… cada una con su propio tag de instancia.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Lenguajes y Texto Estructurado ──────────────── */
+function Scene4(){
+  const [t,setT]=useState('if');
+  return(<div>
+    <div className="sec-title">Texto Estructurado (ST) para lógica compleja</div>
+    <div className="sec-sub">Cuando el ladder se queda corto: condicionales, bucles y cálculos en código de texto</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {[['if','IF...THEN'],['case','CASE...OF'],['for','FOR...DO'],['while','WHILE/REPEAT']].map(([k,l])=>(
+        <button key={k} className={'btn-outline'+(t===k?' active':'')} onClick={()=>setT(k)}>{l}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Construcción {t.toUpperCase()}</div>
+        <div className="formula-box" style={{marginBottom:0}}>
+          {t==='if'&&`IF Nivel > 90.0 THEN
+   Alarma := 1;
+   Valvula := 0;
+ELSIF Nivel < 10.0 THEN
+   Bomba := 1;
+ELSE
+   Alarma := 0;
+END_IF;`}
+          {t==='case'&&`CASE Paso OF
+   0: Salida := 0;
+   1: Valvula_Llenado := 1;
+   2: Motor_Mezcla := 1;
+   ELSE Salida := 0;
+END_CASE;`}
+          {t==='for'&&`FOR i := 0 TO 9 DO
+   Total := Total + Datos[i];
+END_FOR;`}
+          {t==='while'&&`WHILE Presion < SP DO
+   Bomba := 1;
+END_WHILE;
+
+REPEAT
+   i := i + 1;
+UNTIL i >= 10
+END_REPEAT;`}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Cuándo usar ST</div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+          El <b className="gold">Texto Estructurado</b> brilla en cálculos matemáticos, máquinas de estado con CASE,
+          recorridos de arrays y lógica con muchas condiciones anidadas. El ladder sigue siendo mejor para lógica
+          discreta y diagnóstico visual en planta.
+        </div>
+        <div style={{fontSize:10,color:'#fcd34d',background:'#060a14',border:'1px solid #f59e0b33',borderRadius:6,padding:'8px 10px'}}>
+          Logix admite 4 lenguajes IEC 61131-3: <b>Ladder (LD)</b>, <b>Texto Estructurado (ST)</b>,
+          <b> Bloques de Función (FBD)</b> y <b>SFC</b>. Puedes mezclarlos por rutina.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Qué instrucción salta a otra rutina y puede pasar parámetros?',opts:['JMP','JSR','MCR','RET'],ans:1},
+  {q:'La instrucción RET en una subrutina:',opts:['Crea un tag','Devuelve valores y regresa a la rutina que llamó','Borra un array','Salta a una etiqueta'],ans:1},
+  {q:'JMP salta hacia:',opts:['Otra tarea','Una etiqueta LBL en la misma rutina','Una AOI','El controlador'],ans:1},
+  {q:'Una zona MCR (Master Control Reset) sirve para:',opts:['Sumar valores','Desactivar las salidas no retentivas de un bloque de rungs','Crear un timer','Definir un UDT'],ans:1},
+  {q:'La instrucción FOR repite una rutina:',opts:['Indefinidamente','Un número definido de veces con índice','Solo una vez','Nunca'],ans:1},
+  {q:'Una Add-On Instruction (AOI) es:',opts:['Una instrucción nativa de fábrica','Una instrucción creada por el usuario que encapsula lógica reutilizable','Un tipo de dato','Una tarea'],ans:1},
+  {q:'Cada instancia de una AOI tiene:',opts:['Solo parámetros globales','Sus propios parámetros y tags locales','Una sola salida fija','Que reescribir su lógica'],ans:1},
+  {q:'¿Cuántos lenguajes IEC 61131-3 soporta Logix 5000?',opts:['1','2','4','8'],ans:2},
+  {q:'Para una máquina de estados por pasos en ST, la estructura ideal es:',opts:['IF anidados','CASE...OF','WHILE','FOR'],ans:1},
+  {q:'El Texto Estructurado es especialmente útil para:',opts:['Diagnóstico visual de relés','Cálculos matemáticos y lógica con muchas condiciones','Reemplazar el cableado','Sustituir al controlador'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);const [sel,setSel]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);if(i===q.ans)setScore(s=>s+1);setTimeout(()=>{if(qi+1>=quizData.length)setDone(true);else{setQi(qi+1);setSel(null);}},1200);};
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>{score>=8?'Excelente. Dominas subrutinas, control de flujo y AOI.':score>=6?'Buen nivel. Repasa MCR, FOR y las Add-On Instructions.':'Repasa JSR/SBR/RET, JMP/LBL, MCR, las AOI y el Texto Estructurado.'}</div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Control de Programa, Rutinas y AOI</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>{quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}><div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div></div>
+    {q.opts.map((o,i)=>{let cls='quiz-opt';if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}return(<div key={i} className={cls} onClick={()=>choose(i)}><div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>{o}</div>);})}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. Subrutinas JSR/SBR/RET',comp:Scene1},
+  {id:2,label:'2. Control de flujo',comp:Scene2},
+  {id:3,label:'3. Add-On Instructions',comp:Scene3},
+  {id:4,label:'4. Texto Estructurado',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);const S=SCENES.find(s=>s.id===scene);const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div><div className="topbar-title">Clase 1.7 — Control de Programa, Rutinas y AOI</div>
+      <div className="topbar-sub">JSR · SBR · RET · JMP/LBL · MCR · FOR/BRK · Add-On Instructions · Texto Estructurado</div></div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(<div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

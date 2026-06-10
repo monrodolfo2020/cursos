@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.3 – Instrucciones de Bit y Lógica Ladder</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:215px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:'Consolas',monospace;font-size:12px;color:#fcd34d;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.code{font-family:'Consolas',monospace;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+.rung{background:#060a14;border:1px solid #1e2d4a;border-radius:6px;padding:14px 10px;font-family:'Consolas',monospace;font-size:12px;display:flex;align-items:center;gap:6px;color:#cbd5e1;overflow-x:auto;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: La lógica de escalera ───────────────────────── */
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Lógica Ladder: el riel, el rung y el flujo de energía</div>
+    <div className="sec-sub">El lenguaje más usado en Logix · Se lee como un esquema de relés</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Cómo se lee un rung</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            Un <b className="gold">rung</b> (peldaño) va de un riel izquierdo a uno derecho. La "energía" fluye de
+            izquierda a derecha si las condiciones (entradas) lo permiten, activando las salidas a la derecha.
+          </div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            El controlador evalúa cada rung de arriba abajo, una y otra vez (escaneo). Las <b className="gold">instrucciones
+            de entrada</b> se ponen a la izquierda y las <b className="gold">de salida</b> a la derecha.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Estado lógico de un bit</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Cada instrucción evalúa un bit como <b className="gold">verdadero (1)</b> o <b className="gold">falso (0)</b>.
+            El resultado se propaga por el rung. Si todo el camino es verdadero, la salida se energiza.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Un rung de ejemplo</div>
+        <div className="rung" style={{marginBottom:10}}>
+          <span>|</span><span style={{color:'#86efac'}}>──] [──</span><span style={{color:'#86efac'}}>──]/[──</span><span style={{color:'#f59e0b'}}>──( )──</span><span>|</span>
+        </div>
+        <div style={{fontSize:10,color:'#64748b',lineHeight:1.7}}>
+          <div><span className="code" style={{color:'#86efac'}}>──] [──</span> XIC: contacto normalmente abierto</div>
+          <div><span className="code" style={{color:'#86efac'}}>──]/[──</span> XIO: contacto normalmente cerrado</div>
+          <div><span className="code" style={{color:'#f59e0b'}}>──( )──</span> OTE: bobina de salida</div>
+        </div>
+        <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5,marginTop:10}}>
+          "Si <b>Marcha</b> está activo Y <b>Paro</b> NO está activo, energiza <b>Motor</b>."
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Instrucciones de bit ────────────────────────── */
+function Scene2(){
+  const ins=[
+    ['XIC','Examine If Closed','Entrada','Verdadero cuando el bit = 1 (contacto NA)','#86efac'],
+    ['XIO','Examine If Open','Entrada','Verdadero cuando el bit = 0 (contacto NC)','#86efac'],
+    ['OTE','Output Energize','Salida','Pone el bit = 1 si el rung es verdadero; 0 si no','#f59e0b'],
+    ['OTL','Output Latch','Salida','Enclava el bit en 1; permanece aunque el rung caiga','#fcd34d'],
+    ['OTU','Output Unlatch','Salida','Desenclava: pone el bit en 0 y lo mantiene','#fcd34d'],
+    ['ONS','One Shot','Entrada','Deja pasar un solo escaneo en el flanco de subida','#93c5fd'],
+    ['OSR','One Shot Rising','Salida','Pulso de un escaneo al detectar flanco ascendente','#93c5fd'],
+    ['OSF','One Shot Falling','Salida','Pulso de un escaneo al detectar flanco descendente','#93c5fd'],
+  ];
+  return(<div>
+    <div className="sec-title">El conjunto de instrucciones de bit</div>
+    <div className="sec-sub">Entradas examinan bits · Salidas los modifican · Los one-shot detectan flancos</div>
+    <div className="card" style={{marginBottom:0}}>
+      <table>
+        <thead><tr><th>Mnem.</th><th>Nombre</th><th>Tipo</th><th>Qué hace</th></tr></thead>
+        <tbody>
+          {ins.map(([m,n,t,d,c])=>(
+            <tr key={m}><td className="code" style={{color:c,fontWeight:700}}>{m}</td><td>{n}</td><td><span style={{color:t==='Entrada'?'#86efac':'#f59e0b'}}>{t}</span></td><td>{d}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div className="card" style={{marginBottom:0,marginTop:9}}>
+      <div className="card-h">OTE vs. OTL/OTU — la diferencia clave</div>
+      <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+        <b className="gold">OTE</b> sigue al rung: si la condición cae, la salida cae. <b className="gold">OTL</b> enclava
+        y <b>se queda</b> en 1 aunque las condiciones desaparezcan; solo un <b className="gold">OTU</b> del mismo bit
+        lo apaga. Úsalos en pareja para memorias de estado (alarmas enclavadas, paro de emergencia).
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Circuito de sello (seal-in) ─────────────────── */
+function Scene3(){
+  const [marcha,setMarcha]=useState(false);
+  const [paro,setParo]=useState(false);
+  // motor latches on Marcha, held by seal-in, dropped by Paro
+  const [motor,setMotor]=useState(false);
+  const energizar=()=>setMotor((!paro)&&(marcha||motor));
+  return(<div>
+    <div className="sec-title">Ejemplo práctico: arranque-paro con sello (seal-in)</div>
+    <div className="sec-sub">El circuito más clásico del automatismo · Pulsador de marcha que se "auto-mantiene"</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">El rung de sello</div>
+        <div className="rung" style={{marginBottom:8,fontSize:11}}>
+          <span>|</span>
+          <span style={{color:marcha?'#86efac':'#475569'}}>─]Marcha[─</span>
+          <span style={{color:!paro?'#86efac':'#475569'}}>─]/Paro[─</span>
+          <span style={{color:motor?'#f59e0b':'#475569'}}>─(Motor)─</span>
+          <span>|</span>
+        </div>
+        <div className="rung" style={{fontSize:11}}>
+          <span>|</span>
+          <span style={{color:motor?'#86efac':'#475569'}}>─]Motor[──┘ (rama paralela de sello)</span>
+        </div>
+        <div style={{fontSize:10,color:'#64748b',lineHeight:1.5,marginTop:8}}>
+          El contacto <b className="gold">Motor</b> en paralelo con <b>Marcha</b> mantiene el rung verdadero
+          tras soltar el pulsador. El <b>XIO Paro</b> en serie corta la retención.
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Simulador interactivo</div>
+        <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}}>
+          <button className="btn-outline" onMouseDown={()=>{setMarcha(true);}} onMouseUp={()=>setMarcha(false)} onMouseLeave={()=>setMarcha(false)}
+            style={{padding:'8px 14px'}}>⏻ Pulsar MARCHA</button>
+          <button className="btn-outline" onMouseDown={()=>{setParo(true);setMotor(false);}} onMouseUp={()=>setParo(false)} onMouseLeave={()=>setParo(false)}
+            style={{padding:'8px 14px',borderColor:'#fca5a555',color:'#fca5a5'}}>⏼ Pulsar PARO</button>
+          <button className="btn-gold" onClick={energizar}>▶ Escanear rung</button>
+        </div>
+        <div style={{display:'flex',gap:10,marginBottom:8}}>
+          <div style={{flex:1,textAlign:'center',padding:'8px',borderRadius:6,background:marcha?'#14532d33':'#060a14',border:'1px solid #1e2d4a'}}>
+            <div style={{fontSize:9,color:'#64748b'}}>Marcha</div><div style={{fontSize:13,color:marcha?'#86efac':'#475569',fontWeight:700}}>{marcha?'1':'0'}</div></div>
+          <div style={{flex:1,textAlign:'center',padding:'8px',borderRadius:6,background:paro?'#7f1d1d33':'#060a14',border:'1px solid #1e2d4a'}}>
+            <div style={{fontSize:9,color:'#64748b'}}>Paro</div><div style={{fontSize:13,color:paro?'#fca5a5':'#475569',fontWeight:700}}>{paro?'1':'0'}</div></div>
+          <div style={{flex:1,textAlign:'center',padding:'8px',borderRadius:6,background:motor?'#78350f44':'#060a14',border:'1px solid '+(motor?'#f59e0b':'#1e2d4a')}}>
+            <div style={{fontSize:9,color:'#64748b'}}>MOTOR</div><div style={{fontSize:13,color:motor?'#f59e0b':'#475569',fontWeight:700}}>{motor?'ON':'OFF'}</div></div>
+        </div>
+        <div style={{fontSize:9.5,color:'#64748b',lineHeight:1.5}}>
+          Pulsa MARCHA y luego "Escanear": el motor arranca y se mantiene. Pulsa PARO para detenerlo.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Buenas prácticas ────────────────────────────── */
+function Scene4(){
+  return(<div>
+    <div className="sec-title">Buenas prácticas y trampas comunes</div>
+    <div className="sec-sub">Errores que cuestan horas de depuración en planta</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h" style={{color:'#fca5a5'}}>⚠ Doble bobina (duplicate destructive)</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Si usas la misma <b className="gold">OTE</b> en dos rungs, solo manda el último que se escanea: el primero
+            queda anulado. El editor lo marca como advertencia. Cada salida OTE debe escribirse en un solo lugar.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h" style={{color:'#fca5a5'}}>⚠ Paro: contacto NC físico + XIC</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Por seguridad, el pulsador de paro se cablea <b>normalmente cerrado</b> y en el programa se lee con
+            <b className="gold"> XIC</b>. Así, si se rompe el cable, el motor se detiene (fallo seguro).
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h" style={{color:'#86efac'}}>✓ Usa one-shot para acciones de una vez</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Para incrementar un contador o disparar una acción una sola vez por pulsación, intercala un
+            <b className="gold"> ONS/OSR</b>. Sin él, la acción se repite en cada escaneo mientras el bit esté en 1.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h" style={{color:'#86efac'}}>✓ Nombra los tags con sentido</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            <span className="code">Bomba1_Marcha</span> dice mucho más que <span className="code">B3_4</span>.
+            Aprovecha los tags y las descripciones para que otro técnico entienda la lógica sin manual.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'La instrucción XIC (Examine If Closed) es verdadera cuando:',opts:['El bit = 0','El bit = 1','Siempre','Nunca'],ans:1},
+  {q:'XIO (Examine If Open) representa un contacto:',opts:['Normalmente abierto','Normalmente cerrado','De salida','De temporización'],ans:1},
+  {q:'¿Qué hace OTE (Output Energize)?',opts:['Enclava el bit permanentemente','Pone el bit a 1 si el rung es verdadero y a 0 si es falso','Solo detecta flancos','Borra un array'],ans:1},
+  {q:'La diferencia de OTL respecto a OTE es que OTL:',opts:['Es una entrada','Enclava el bit y se mantiene aunque el rung caiga','No modifica bits','Cambia de tarea'],ans:1},
+  {q:'Para apagar un bit enclavado con OTL se usa:',opts:['Otro OTE','OTU del mismo bit','XIC','JSR'],ans:1},
+  {q:'En el circuito de sello, ¿qué mantiene el motor encendido tras soltar Marcha?',opts:['El XIO Paro','Un contacto del propio Motor en paralelo (seal-in)','El watchdog','Un temporizador'],ans:1},
+  {q:'Por seguridad, el pulsador de Paro se cablea y se lee como:',opts:['NA con XIO','NC con XIC','NA con OTL','NC con OTU'],ans:1},
+  {q:'El error de "doble bobina" ocurre cuando:',opts:['Hay dos tareas','Se usa la misma OTE en dos rungs distintos','Se usa un UDT','Falta un temporizador'],ans:1},
+  {q:'¿Para qué sirve una instrucción one-shot (ONS/OSR)?',opts:['Repetir una acción cada escaneo','Ejecutar una acción una sola vez en el flanco','Borrar tags','Energizar el riel'],ans:1},
+  {q:'El controlador evalúa los rungs:',opts:['En orden aleatorio','De arriba abajo, repetidamente (escaneo)','Solo una vez al arrancar','De derecha a izquierda'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);const [sel,setSel]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);if(i===q.ans)setScore(s=>s+1);setTimeout(()=>{if(qi+1>=quizData.length)setDone(true);else{setQi(qi+1);setSel(null);}},1200);};
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>{score>=8?'Excelente. Dominas las instrucciones de bit y el circuito de sello.':score>=6?'Buen nivel. Repasa OTL/OTU y los one-shot.':'Repasa XIC/XIO/OTE, el seal-in y las buenas prácticas de seguridad.'}</div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Instrucciones de Bit y Ladder</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>{quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}><div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div></div>
+    {q.opts.map((o,i)=>{let cls='quiz-opt';if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}return(<div key={i} className={cls} onClick={()=>choose(i)}><div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>{o}</div>);})}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. La lógica de escalera',comp:Scene1},
+  {id:2,label:'2. Instrucciones de bit',comp:Scene2},
+  {id:3,label:'3. Circuito de sello',comp:Scene3},
+  {id:4,label:'4. Buenas prácticas',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);const S=SCENES.find(s=>s.id===scene);const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div><div className="topbar-title">Clase 1.3 — Instrucciones de Bit y Lógica Ladder</div>
+      <div className="topbar-sub">XIC · XIO · OTE · OTL · OTU · ONS/OSR/OSF · Circuito de sello (seal-in)</div></div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(<div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.4 – Temporizadores y Contadores</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:215px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:'Consolas',monospace;font-size:12px;color:#fcd34d;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.code{font-family:'Consolas',monospace;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ── SCENE 1: La estructura TIMER ─────────────────────────── */
+function Scene1(){
+  return(<div>
+    <div className="sec-title">El temporizador: estructura TIMER y base de tiempo</div>
+    <div className="sec-sub">En Logix un timer es un tag de tipo TIMER con miembros · La base es 1 milisegundo</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Base de tiempo de 1 ms</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            Los temporizadores de Logix 5000 cuentan en <b className="gold">milisegundos</b>. Para 2 segundos,
+            el preset (.PRE) vale <b className="gold">2000</b>. No hay base configurable como en PLC antiguos:
+            siempre es 1 ms.
+          </div>
+          <div className="formula-box" style={{marginBottom:0}}>2 segundos  →  .PRE = 2000<br/>500 ms     →  .PRE = 500</div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Un timer es una estructura</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Al crear un tag tipo <b className="gold">TIMER</b> obtienes una estructura con varios miembros que el
+            programa lee y escribe. La instrucción TON/TOF/RTO opera sobre ese tag.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Miembros de la estructura TIMER</div>
+        <table>
+          <thead><tr><th>Miembro</th><th>Tipo</th><th>Significado</th></tr></thead>
+          <tbody>
+            <tr><td className="code gold">.PRE</td><td>DINT</td><td>Preset: meta en ms</td></tr>
+            <tr><td className="code gold">.ACC</td><td>DINT</td><td>Acumulado: ms transcurridos</td></tr>
+            <tr><td className="code" style={{color:'#86efac'}}>.EN</td><td>BOOL</td><td>Enable: instrucción habilitada</td></tr>
+            <tr><td className="code" style={{color:'#86efac'}}>.TT</td><td>BOOL</td><td>Timing: contando ahora</td></tr>
+            <tr><td className="code" style={{color:'#86efac'}}>.DN</td><td>BOOL</td><td>Done: .ACC ≥ .PRE</td></tr>
+          </tbody>
+        </table>
+        <div style={{fontSize:10,color:'#64748b',lineHeight:1.5,marginTop:8}}>
+          Accedes a cada uno con el nombre del timer y el miembro: <span className="code gold">T_Mezcla.DN</span>.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: TON, TOF, RTO ───────────────────────────────── */
+function Scene2(){
+  const [t,setT]=useState('TON');
+  const info={
+    TON:['Timer On-Delay','Empieza a contar cuando el rung se hace verdadero. Al llegar a .PRE activa .DN. Si el rung cae, .ACC se resetea a 0.','Retardo al energizar (ej. arrancar ventilador antes que el motor).'],
+    TOF:['Timer Off-Delay','Empieza a contar cuando el rung pasa de verdadero a FALSO. Mantiene .DN un tiempo tras apagarse la condición.','Retardo al apagar (ej. mantener una bomba 10 s tras la orden de paro).'],
+    RTO:['Retentive Timer On','Como TON pero RETIENE el .ACC aunque el rung caiga. Solo un RES lo pone a cero.','Acumular tiempo de funcionamiento total de un equipo (horómetro).'],
+  };
+  return(<div>
+    <div className="sec-title">Los tres temporizadores: TON · TOF · RTO</div>
+    <div className="sec-sub">On-delay, off-delay y retentivo · Cada uno se comporta distinto ante la caída del rung</div>
+    <div style={{display:'flex',gap:6,marginBottom:10}}>
+      {['TON','TOF','RTO'].map(k=>(<button key={k} className={'btn-outline'+(t===k?' active':'')} onClick={()=>setT(k)}>{k}</button>))}
+    </div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">{t} — {info[t][0]}</div>
+        <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>{info[t][1]}</div>
+        <div style={{fontSize:10,color:'#fcd34d',background:'#060a14',border:'1px solid #f59e0b33',borderRadius:6,padding:'8px 10px'}}>
+          <b>Uso típico:</b> {info[t][2]}
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Comportamiento del .ACC al caer el rung</div>
+        <table>
+          <thead><tr><th>Instrucción</th><th>Cuenta cuando…</th><th>Si el rung cae</th></tr></thead>
+          <tbody>
+            <tr><td className="code" style={{color:t==='TON'?'#f59e0b':'#cbd5e1'}}>TON</td><td>rung TRUE</td><td>.ACC → 0</td></tr>
+            <tr><td className="code" style={{color:t==='TOF'?'#f59e0b':'#cbd5e1'}}>TOF</td><td>rung FALSE</td><td>cuenta el off-delay</td></tr>
+            <tr><td className="code" style={{color:t==='RTO'?'#f59e0b':'#cbd5e1'}}>RTO</td><td>rung TRUE</td><td>.ACC se RETIENE</td></tr>
+          </tbody>
+        </table>
+        <div className="formula-box" style={{marginBottom:0,marginTop:8}}>RES T_Horometro  // pone .ACC y .DN a 0</div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Simulador TON ───────────────────────────────── */
+function Scene3(){
+  const [rung,setRung]=useState(false);
+  const [acc,setAcc]=useState(0);
+  const PRE=3000;
+  const ref=useRef(null);
+  useEffect(()=>{
+    if(rung){
+      ref.current=setInterval(()=>setAcc(a=>Math.min(a+100,PRE)),100);
+    }else{
+      setAcc(0);
+    }
+    return()=>clearInterval(ref.current);
+  },[rung]);
+  const dn=acc>=PRE;
+  const tt=rung&&!dn;
+  return(<div>
+    <div className="sec-title">Simulador: temporizador on-delay (TON)</div>
+    <div className="sec-sub">Preset 3000 ms · Mantén el rung activo y observa .ACC, .TT y .DN</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Control del rung</div>
+        <div style={{display:'flex',gap:8,marginBottom:14}}>
+          <button className={'btn-'+(rung?'gold':'outline')} onClick={()=>setRung(r=>!r)} style={{padding:'8px 16px'}}>
+            {rung?'■ Rung TRUE (contando)':'▶ Activar rung'}
+          </button>
+        </div>
+        <div className="formula-box" style={{marginBottom:0}}>
+          TON  T_Mezcla<br/>  .PRE = 3000<br/>  .ACC = {acc}<br/>  .DN  = {dn?'1':'0'}
+        </div>
+        <div style={{fontSize:10,color:'#64748b',lineHeight:1.5,marginTop:8}}>
+          Al activar el rung, .ACC sube hacia 3000. Al llegar, .DN se enciende. Suelta el rung: .ACC vuelve a 0.
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Estado en vivo</div>
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:10,color:'#64748b',marginBottom:4}}>.ACC / .PRE</div>
+          <div style={{height:22,background:'#060a14',borderRadius:11,overflow:'hidden',border:'1px solid #1e2d4a'}}>
+            <div style={{height:'100%',width:(acc/PRE*100)+'%',background:dn?'#22c55e':'#f59e0b',transition:'width .1s',display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:8,fontSize:10,color:'#080c18',fontWeight:700}}>{acc} ms</div>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          {[['.EN',rung,'#86efac'],['.TT',tt,'#fcd34d'],['.DN',dn,'#22c55e']].map(([l,v,c])=>(
+            <div key={l} style={{flex:1,textAlign:'center',padding:'10px',borderRadius:6,background:v?c+'22':'#060a14',border:'1px solid '+(v?c:'#1e2d4a')}}>
+              <div style={{fontSize:10,color:'#64748b'}}>{l}</div>
+              <div style={{fontSize:15,color:v?c:'#475569',fontWeight:700}}>{v?'1':'0'}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{fontSize:9.5,color:'#64748b',lineHeight:1.5,marginTop:10}}>
+          <b className="gold">.TT</b> está en 1 solo mientras cuenta. <b className="gold">.DN</b> se queda en 1 al terminar.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Contadores CTU / CTD ────────────────────────── */
+function Scene4(){
+  const [acc,setAcc]=useState(0);
+  const PRE=5;
+  return(<div>
+    <div className="sec-title">Contadores: CTU · CTD · estructura COUNTER</div>
+    <div className="sec-sub">Cuentan eventos (flancos) en lugar de tiempo · Mismos miembros .PRE/.ACC/.DN</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">CTU (Count Up) y CTD (Count Down)</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55,marginBottom:6}}>
+            <b className="gold">CTU</b> incrementa .ACC en cada flanco ascendente del rung. <b className="gold">CTD</b>
+            lo decrementa. Cuando .ACC ≥ .PRE, se activa <b className="gold">.DN</b>. Un <b>RES</b> pone .ACC a 0.
+          </div>
+          <div style={{fontSize:10,color:'#fcd34d',background:'#060a14',border:'1px solid #f59e0b33',borderRadius:6,padding:'8px 10px'}}>
+            Cuenta por <b>flanco</b>: cada vez que el rung pasa de falso a verdadero suma 1. No importa cuánto tiempo permanezca activo.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Ejemplo: contar piezas en una cinta</div>
+          <div className="formula-box" style={{marginBottom:0}}>CTU  C_Piezas<br/>  .PRE = 5    // caja de 5<br/>XIC C_Piezas.DN → activar empaque<br/>RES C_Piezas  // reiniciar lote</div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Simulador CTU (preset 5)</div>
+        <div style={{display:'flex',gap:8,marginBottom:14}}>
+          <button className="btn-gold" onClick={()=>setAcc(a=>a+1)}>⊕ Detectar pieza (flanco)</button>
+          <button className="btn-outline" onClick={()=>setAcc(0)}>RES</button>
+        </div>
+        <div style={{textAlign:'center',marginBottom:12}}>
+          <div style={{fontSize:42,fontWeight:700,color:acc>=PRE?'#22c55e':'#f59e0b'}}>{acc}</div>
+          <div style={{fontSize:11,color:'#64748b'}}>.ACC de {PRE} (.PRE)</div>
+        </div>
+        <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+          {[1,2,3,4,5].map(n=>(
+            <div key={n} style={{width:30,height:30,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,
+              background:acc>=n?'#f59e0b':'#060a14',color:acc>=n?'#080c18':'#475569',border:'1px solid #1e2d4a'}}>{n}</div>
+          ))}
+        </div>
+        <div style={{textAlign:'center',marginTop:12,fontSize:13,fontWeight:700,color:acc>=PRE?'#22c55e':'#475569'}}>
+          .DN = {acc>=PRE?'1 — ¡Caja completa!':'0'}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Cuál es la base de tiempo de los temporizadores de Logix 5000?',opts:['1 segundo','100 ms','1 milisegundo','Configurable (0,01/0,1/1 s)'],ans:2},
+  {q:'Para temporizar 2 segundos, el valor de .PRE debe ser:',opts:['2','20','200','2000'],ans:3},
+  {q:'El miembro .ACC de un TIMER representa:',opts:['El preset','El tiempo acumulado transcurrido (ms)','Un bit de habilitación','El tipo de dato'],ans:1},
+  {q:'En un TON, ¿qué pasa con .ACC si el rung cae antes de terminar?',opts:['Se retiene','Se resetea a 0','Sigue contando','Se va a .PRE'],ans:1},
+  {q:'El temporizador que RETIENE el .ACC aunque caiga el rung es:',opts:['TON','TOF','RTO','CTU'],ans:2},
+  {q:'El bit .DN de un temporizador se activa cuando:',opts:['El rung es falso','.ACC ≥ .PRE','Se ejecuta RES','Empieza a contar'],ans:1},
+  {q:'El TOF (off-delay) empieza a contar cuando el rung:',opts:['Se hace verdadero','Pasa de verdadero a falso','Llega a .PRE','Se resetea'],ans:1},
+  {q:'Un contador CTU incrementa su .ACC:',opts:['Cada milisegundo','En cada flanco ascendente del rung','Continuamente mientras el rung sea verdadero','Solo con RES'],ans:1},
+  {q:'¿Qué instrucción pone .ACC y .DN a cero?',opts:['CLR','RES','MOV','OTU'],ans:1},
+  {q:'El bit .TT (Timing) de un TON está en 1:',opts:['Siempre','Solo mientras el timer está contando','Solo al terminar','Nunca'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);const [sel,setSel]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);if(i===q.ans)setScore(s=>s+1);setTimeout(()=>{if(qi+1>=quizData.length)setDone(true);else{setQi(qi+1);setSel(null);}},1200);};
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>{score>=8?'Excelente. Dominas temporizadores y contadores en Logix 5000.':score>=6?'Buen nivel. Repasa TON vs RTO y el conteo por flanco.':'Repasa la base de 1 ms, los miembros .PRE/.ACC/.DN y TON/TOF/RTO/CTU/CTD.'}</div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Temporizadores y Contadores</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>{quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}><div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div></div>
+    {q.opts.map((o,i)=>{let cls='quiz-opt';if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}return(<div key={i} className={cls} onClick={()=>choose(i)}><div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>{o}</div>);})}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. Estructura TIMER',comp:Scene1},
+  {id:2,label:'2. TON · TOF · RTO',comp:Scene2},
+  {id:3,label:'3. Simulador TON',comp:Scene3},
+  {id:4,label:'4. Contadores CTU/CTD',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);const S=SCENES.find(s=>s.id===scene);const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div><div className="topbar-title">Clase 1.4 — Temporizadores y Contadores</div>
+      <div className="topbar-sub">TON · TOF · RTO · CTU · CTD · RES · Base 1 ms · .PRE / .ACC / .DN / .TT</div></div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(<div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

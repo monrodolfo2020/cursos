@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.1 – Plataforma Logix 5000 y Studio 5000</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#080c18;font-family:'Segoe UI',sans-serif;color:#e2e8f0;}
+.gold{color:#f59e0b;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#0f1729,#1a2540);border-bottom:2px solid #f59e0b;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#f59e0b;}
+.topbar-sub{font-size:11px;color:#94a3b8;}
+.scene-badge{background:#f59e0b22;border:1px solid #f59e0b55;color:#f59e0b;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:215px;background:#0d1425;border-right:1px solid #1e2d4a;padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:7px 12px;cursor:pointer;font-size:11px;color:#64748b;border-left:3px solid transparent;transition:all .2s;line-height:1.3;}
+.nav-item:hover{color:#cbd5e1;background:#ffffff08;}
+.nav-item.active{color:#f59e0b;border-left-color:#f59e0b;background:#f59e0b10;font-weight:600;}
+.main{flex:1;padding:16px 22px;overflow-y:auto;overflow-x:hidden;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-track{background:#0d1425;}
+.main::-webkit-scrollbar-thumb{background:#f59e0b44;border-radius:2px;}
+.sec-title{font-size:20px;font-weight:700;color:#f59e0b;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#64748b;margin-bottom:12px;}
+.card{background:#0d1425;border:1px solid #1e2d4a;border-radius:10px;padding:13px 15px;margin-bottom:9px;}
+.card-h{font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:6px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.formula-box{background:#060a14;border:1px solid #f59e0b33;border-radius:7px;padding:9px 13px;font-family:'Consolas',monospace;font-size:12px;color:#fcd34d;margin:7px 0;}
+.btn-gold{background:#f59e0b;color:#080c18;padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;}
+.btn-gold:hover{background:#d97706;}
+.btn-outline{background:transparent;border:1px solid #f59e0b55;color:#f59e0b;padding:5px 11px;border-radius:5px;cursor:pointer;font-size:11px;}
+.btn-outline:hover{background:#f59e0b22;}
+.btn-outline.active{background:#f59e0b33;border-color:#f59e0b;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#0f1729;color:#f59e0b;padding:6px 9px;text-align:left;border-bottom:1px solid #1e2d4a;font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:5px 9px;border-bottom:1px solid #0f1729;color:#cbd5e1;}
+tr:hover td{background:#ffffff05;}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin:2px;}
+.tag-green{background:#14532d44;color:#86efac;border:1px solid #14532d66;}
+.tag-amber{background:#78350f44;color:#fcd34d;border:1px solid #78350f66;}
+.tag-red{background:#7f1d1d44;color:#fca5a5;border:1px solid #7f1d1d66;}
+.tag-blue{background:#1e3a5f44;color:#93c5fd;border:1px solid #1e3a5f66;}
+.quiz-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;border:1px solid #1e2d4a;cursor:pointer;margin:4px 0;font-size:12px;transition:all .15s;}
+.quiz-opt:hover{border-color:#f59e0b55;background:#f59e0b08;}
+.quiz-opt.correct{border-color:#22c55e;background:#14532d33;color:#86efac;}
+.quiz-opt.wrong{border-color:#ef4444;background:#7f1d1d33;color:#fca5a5;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+
+/* ── SCENE 1: La familia Logix 5000 ───────────────────────── */
+function Scene1(){
+  const fam=[
+    ['ControlLogix 1756','Plataforma modular de gama alta. Chasis con CPU 5570/5580 + módulos E/S. Para grandes aplicaciones y alta disponibilidad (redundancia).','#f59e0b'],
+    ['CompactLogix 1769/5069','Controlador compacto integrado para máquinas y aplicaciones medianas. CPU 5370/5380/5480.','#93c5fd'],
+    ['GuardLogix','Variante de seguridad (SIL 3 / PLe). Integra lógica estándar y de seguridad en un mismo controlador.','#86efac'],
+    ['SoftLogix / Emulate','Controlador por software sobre PC. Emulate 5570 simula sin hardware físico.','#c4b5fd'],
+  ];
+  return(<div>
+    <div className="sec-title">La plataforma Logix 5000 de Allen-Bradley</div>
+    <div className="sec-sub">Rockwell Automation · ControlLogix · CompactLogix · GuardLogix · Un mismo motor de ejecución</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">¿Qué es Logix 5000?</div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6,marginBottom:8}}>
+            <b style={{color:'#f59e0b'}}>Logix 5000</b> es la arquitectura de control de Rockwell Automation
+            (Allen-Bradley). Todas sus familias comparten el <b>mismo motor de ejecución</b> y se programan
+            con el mismo software: <b className="gold">Studio 5000 Logix Designer</b> (antes RSLogix 5000).
+          </div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            La gran diferencia frente a otros PLC es su <b className="gold">direccionamiento basado en
+            etiquetas (tags)</b>: en vez de direcciones físicas como I:0/0, usas nombres con significado
+            (<i>Motor_Run</i>, <i>Tank_Level</i>) y tipos de datos IEC 61131-3.
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">El controlador y la red EtherNet/IP</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+            Los módulos de E/S se comunican con la CPU por el backplane o por red
+            <b className="gold"> EtherNet/IP</b> (protocolo CIP). Un mismo controlador puede manejar E/S
+            local, E/S remota distribuida, variadores, HMI y otros controladores mediante mensajes
+            productor/consumidor.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Familias de controladores</div>
+        {fam.map(([t,d,c])=>(
+          <div key={t} style={{display:'flex',gap:8,marginBottom:8,alignItems:'flex-start'}}>
+            <div style={{width:5,background:c,alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+            <div><div style={{fontSize:11,color:c,fontWeight:600}}>{t}</div><div style={{fontSize:10,color:'#64748b',lineHeight:1.45}}>{d}</div></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 2: Anatomía del chasis ControlLogix ────────────── */
+function Scene2(){
+  const slots=[
+    ['0','Fuente de alimentación','1756-PA72 / PB72','#fca5a5'],
+    ['1','Controlador (CPU)','1756-L8x ControlLogix 5580','#f59e0b'],
+    ['2','Comunicación EtherNet/IP','1756-EN2T / EN4TR','#93c5fd'],
+    ['3','Entradas digitales','1756-IB16 (24 VDC)','#86efac'],
+    ['4','Salidas digitales','1756-OB16E','#86efac'],
+    ['5','Entradas analógicas','1756-IF8 (4-20 mA)','#c4b5fd'],
+    ['6','Salidas analógicas','1756-OF8','#c4b5fd'],
+  ];
+  const [sel,setSel]=useState(1);
+  return(<div>
+    <div className="sec-title">Anatomía del chasis ControlLogix</div>
+    <div className="sec-sub">Chasis 1756 · Fuente · CPU · Módulos de comunicación y E/S · Selecciona un slot</div>
+    <div className="card" style={{marginBottom:9}}>
+      <div style={{display:'flex',gap:4}}>
+        {slots.map(([s,n,m,c],i)=>(
+          <div key={s} onClick={()=>setSel(i)}
+            style={{flex:1,textAlign:'center',padding:'10px 4px',borderRadius:6,cursor:'pointer',
+            background:sel===i?'#f59e0b18':'#060a14',border:sel===i?'1px solid '+c:'1px solid #1e2d4a'}}>
+            <div style={{fontSize:9,color:'#64748b'}}>Slot {s}</div>
+            <div style={{height:38,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <div style={{width:18,height:30,background:c,borderRadius:2,opacity:sel===i?1:0.5}}/>
+            </div>
+            <div style={{fontSize:8.5,color:sel===i?c:'#475569',lineHeight:1.1}}>{n.split(' ')[0]}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="card" style={{marginBottom:0}}>
+      <div className="card-h" style={{color:slots[sel][3]}}>Slot {slots[sel][0]} — {slots[sel][1]}</div>
+      <div style={{fontSize:11,color:'#94a3b8',marginBottom:6}}>Catálogo de ejemplo: <b className="gold">{slots[sel][2]}</b></div>
+      <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.55}}>
+        {sel===0&&'Provee energía al backplane del chasis. Modelos AC (PA) o DC (PB). No ocupa un slot lógico numerado.'}
+        {sel===1&&'El controlador ejecuta el programa, almacena los tags y gestiona las tareas. Lleva la lógica completa y el firmware. Es el cerebro del sistema.'}
+        {sel===2&&'Conecta el chasis a la red EtherNet/IP. Permite E/S distribuida, mensajería entre controladores y comunicación con HMI/SCADA.'}
+        {sel===3&&'Lee sensores discretos (finales de carrera, pulsadores, detectores) a 24 VDC. Cada punto se mapea a un tag de E/S.'}
+        {sel===4&&'Comanda actuadores on/off (válvulas solenoide, contactores, pilotos). Versión E incluye diagnóstico electrónico por punto.'}
+        {sel===5&&'Convierte señales 4-20 mA / 0-10 V de transmisores en valores numéricos para el programa (se escalan con instrucciones).'}
+        {sel===6&&'Genera señales analógicas para variadores y válvulas proporcionales a partir de valores del programa.'}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 3: Organización del proyecto ───────────────────── */
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Organización de un proyecto Logix 5000</div>
+    <div className="sec-sub">Controller → Tasks → Programs → Routines · El árbol del Controller Organizer</div>
+    <div className="grid2">
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Jerarquía de ejecución</div>
+        <div style={{fontFamily:'Consolas,monospace',fontSize:11,lineHeight:1.9,color:'#cbd5e1'}}>
+          <div><span className="gold">▸ Controller</span> MiProyecto</div>
+          <div style={{paddingLeft:14}}>├ Controller Tags <span style={{color:'#64748b'}}>(scope global)</span></div>
+          <div style={{paddingLeft:14}}><span className="gold">├ Tasks</span></div>
+          <div style={{paddingLeft:30}}>│ ├ <span style={{color:'#93c5fd'}}>MainTask</span> (Continuous)</div>
+          <div style={{paddingLeft:44}}>│ │ └ <span style={{color:'#86efac'}}>MainProgram</span></div>
+          <div style={{paddingLeft:60}}>│ │ ├ Program Tags</div>
+          <div style={{paddingLeft:60}}>│ │ ├ <span style={{color:'#fcd34d'}}>MainRoutine</span> (Ladder)</div>
+          <div style={{paddingLeft:60}}>│ │ └ <span style={{color:'#fcd34d'}}>Motores</span> (ST)</div>
+          <div style={{paddingLeft:30}}>│ └ <span style={{color:'#93c5fd'}}>FastTask</span> (Periodic 10 ms)</div>
+          <div style={{paddingLeft:14}}>├ Data Types <span style={{color:'#64748b'}}>(UDT, AOI)</span></div>
+          <div style={{paddingLeft:14}}>└ I/O Configuration</div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Los cuatro niveles</div>
+          {[['Task','Programa la ejecución: Continuous, Periodic (cada N ms) o Event. Define prioridad.','#93c5fd'],
+            ['Program','Agrupa rutinas y sus tags locales. Tiene una rutina principal (Main).','#86efac'],
+            ['Routine','Contiene el código real en un lenguaje (Ladder, ST, FBD, SFC).','#fcd34d'],
+            ['Tag','El dato con nombre y tipo. Scope Controller (global) o Program (local).','#f59e0b'],
+          ].map(([t,d,c])=>(
+            <div key={t} style={{display:'flex',gap:8,marginBottom:7,alignItems:'flex-start'}}>
+              <div style={{width:5,background:c,alignSelf:'stretch',borderRadius:2,flexShrink:0}}/>
+              <div><div style={{fontSize:10.5,color:c,fontWeight:600}}>{t}</div><div style={{fontSize:9.5,color:'#64748b',lineHeight:1.4}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">La rutina principal llama a las demás</div>
+          <div style={{fontSize:10,color:'#94a3b8',lineHeight:1.5}}>
+            La <b className="gold">MainRoutine</b> se ejecuta automáticamente; desde ella se invocan las otras
+            rutinas con la instrucción <b style={{fontFamily:'monospace'}}>JSR</b> (Jump to Subroutine). Así se
+            estructura el programa de forma modular.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 4: Tipos de tareas ─────────────────────────────── */
+function Scene4(){
+  const [type,setType]=useState('cont');
+  return(<div>
+    <div className="sec-title">Tipos de tareas (Tasks) y el escaneo</div>
+    <div className="sec-sub">Continuous · Periodic · Event · Prioridad y watchdog · Cómo se reparte el tiempo de CPU</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Elige el tipo de tarea</div>
+          <div style={{display:'flex',gap:6,marginBottom:10}}>
+            {[['cont','Continuous'],['per','Periodic'],['evt','Event']].map(([k,l])=>(
+              <button key={k} className={'btn-outline'+(type===k?' active':'')} onClick={()=>setType(k)}>{l}</button>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.6}}>
+            {type==='cont'&&<><b className="gold">Continuous:</b> se ejecuta una y otra vez sin parar. Solo puede haber UNA por proyecto. Tiene la prioridad más baja; las demás tareas la interrumpen. Para lógica general no crítica en tiempo.</>}
+            {type==='per'&&<><b className="gold">Periodic:</b> se ejecuta a intervalos fijos (p.ej. cada 10 ms). Ideal para control PID y lógica determinista. Si excede su periodo, dispara un fallo de overlap.</>}
+            {type==='evt'&&<><b className="gold">Event:</b> se dispara por un evento: un cambio de E/S, un mensaje, un consumed tag o una instrucción EVENT. Para respuesta inmediata a un suceso.</>}
+          </div>
+        </div>
+        <div className="card" style={{marginBottom:0}}>
+          <div className="card-h">Watchdog y prioridad</div>
+          <div style={{fontSize:10.5,color:'#94a3b8',lineHeight:1.5}}>
+            Cada tarea tiene un <b className="gold">watchdog</b>: si su ejecución supera el tiempo límite, el
+            controlador genera un fallo mayor. Las tareas periódicas y de evento tienen prioridad sobre la
+            continua. Diseñar bien la prioridad evita que una tarea lenta bloquee al control crítico.
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{marginBottom:0}}>
+        <div className="card-h">Reparto de CPU en el tiempo</div>
+        <svg width="100%" viewBox="0 0 250 160">
+          <rect width="250" height="160" fill="#060a14" rx="6"/>
+          <text x="10" y="20" fill="#93c5fd" fontSize="9">Periodic (10 ms, alta prioridad)</text>
+          {[0,1,2,3,4].map(i=>(<rect key={i} x={15+i*46} y="28" width="14" height="14" fill="#93c5fd"/>))}
+          <text x="10" y="64" fill="#86efac" fontSize="9">Continuous (baja prioridad)</text>
+          <rect x="15" y="72" width="210" height="14" fill="#86efac" opacity="0.5"/>
+          {/* interrupciones */}
+          {[0,1,2,3,4].map(i=>(<rect key={i} x={15+i*46} y="72" width="14" height="14" fill="#0d1425"/>))}
+          <text x="10" y="112" fill="#f59e0b" fontSize="9">Resultado: la periódica interrumpe a la continua</text>
+          <text x="10" y="130" fill="#64748b" fontSize="8.5">El control determinista (PID) va en la periódica;</text>
+          <text x="10" y="144" fill="#64748b" fontSize="8.5">la lógica general queda en la continua.</text>
+        </svg>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── SCENE 5: Quiz ─────────────────────────────────────────── */
+const quizData=[
+  {q:'¿Qué software se usa para programar los controladores Logix 5000 modernos?',opts:['TIA Portal','Studio 5000 Logix Designer','GX Works','CODESYS'],ans:1},
+  {q:'La característica distintiva del direccionamiento en Logix 5000 es:',opts:['Direcciones físicas tipo I:0/0','Basado en etiquetas (tags) con nombre y tipo de dato','Solo direcciones hexadecimales','Numeración octal de bits'],ans:1},
+  {q:'¿Cuál familia es la modular de gama alta con chasis 1756?',opts:['CompactLogix','ControlLogix','SoftLogix','MicroLogix'],ans:1},
+  {q:'GuardLogix se diferencia porque:',opts:['No ejecuta Ladder','Integra lógica estándar y de seguridad (SIL 3) en un mismo controlador','Solo funciona por software','No usa tags'],ans:1},
+  {q:'En el árbol del proyecto, ¿qué contiene el código real en un lenguaje?',opts:['La Task','El Program','La Routine','El Controller Tag'],ans:2},
+  {q:'¿Cuántas tareas Continuous puede tener un proyecto?',opts:['Ninguna','Solo una','Hasta 4','Ilimitadas'],ans:1},
+  {q:'Para un lazo PID determinista, el tipo de tarea recomendado es:',opts:['Continuous','Periodic','Event de mensaje','Ninguna tarea'],ans:1},
+  {q:'¿Con qué instrucción la rutina principal llama a otra rutina?',opts:['MSG','JSR (Jump to Subroutine)','MOV','CPT'],ans:1},
+  {q:'Un tag con scope "Controller" es:',opts:['Local a una sola rutina','Global, accesible desde todos los programas','Solo para E/S','Temporal'],ans:1},
+  {q:'¿Qué hace el watchdog de una tarea?',opts:['Acelera la CPU','Genera un fallo mayor si la tarea excede su tiempo límite','Borra los tags','Cambia el lenguaje de la rutina'],ans:1},
+];
+function SceneQuiz(){
+  const [qi,setQi]=useState(0);const [sel,setSel]=useState(null);const [score,setScore]=useState(0);const [done,setDone]=useState(false);
+  const q=quizData[qi];
+  const choose=(i)=>{if(sel!==null)return;setSel(i);if(i===q.ans)setScore(s=>s+1);setTimeout(()=>{if(qi+1>=quizData.length)setDone(true);else{setQi(qi+1);setSel(null);}},1200);};
+  if(done)return(<div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+    <div style={{fontSize:56}}>{score>=8?'🏆':score>=6?'🎯':'📚'}</div>
+    <div style={{fontSize:28,fontWeight:700,color:'#f59e0b'}}>{score}/{quizData.length} correctas</div>
+    <div style={{fontSize:14,color:'#94a3b8',textAlign:'center',maxWidth:400}}>{score>=8?'Excelente. Dominas la plataforma y la organización de proyectos Logix 5000.':score>=6?'Buen nivel. Repasa tareas y jerarquía del proyecto.':'Repasa la familia Logix, el chasis y la estructura Controller/Task/Program/Routine.'}</div>
+    <button className="btn-gold" onClick={()=>{setQi(0);setSel(null);setScore(0);setDone(false);}}>Reintentar</button>
+  </div>);
+  return(<div>
+    <div className="sec-title">Quiz — Plataforma Logix 5000</div>
+    <div className="sec-sub">Pregunta {qi+1} de {quizData.length}</div>
+    <div style={{display:'flex',gap:4,marginBottom:14}}>{quizData.map((_,i)=><div key={i} style={{height:4,flex:1,borderRadius:2,background:i<qi?'#22c55e':i===qi?'#f59e0b':'#1e2d4a'}}/>)}</div>
+    <div className="card" style={{padding:'16px 18px',marginBottom:12}}><div style={{fontSize:14,color:'#f1f5f9',fontWeight:500,lineHeight:1.5}}>{q.q}</div></div>
+    {q.opts.map((o,i)=>{let cls='quiz-opt';if(sel!==null){if(i===q.ans)cls+=' correct';else if(i===sel&&i!==q.ans)cls+=' wrong';}return(<div key={i} className={cls} onClick={()=>choose(i)}><div style={{width:22,height:22,borderRadius:'50%',border:'1px solid #1e2d4a',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,flexShrink:0}}>{String.fromCharCode(65+i)}</div>{o}</div>);})}
+    <div style={{marginTop:12,fontSize:11,color:'#475569'}}>Puntuación actual: {score}/{qi}</div>
+  </div>);
+}
+
+const SCENES=[
+  {id:1,label:'1. La plataforma Logix 5000',comp:Scene1},
+  {id:2,label:'2. Anatomía del chasis 1756',comp:Scene2},
+  {id:3,label:'3. Organización del proyecto',comp:Scene3},
+  {id:4,label:'4. Tipos de tareas',comp:Scene4},
+  {id:5,label:'5. Quiz',comp:SceneQuiz},
+];
+function App(){
+  const [scene,setScene]=useState(1);const S=SCENES.find(s=>s.id===scene);const Comp=S.comp;
+  return(<div className="slide">
+    <div className="topbar">
+      <div><div className="topbar-title">Clase 1.1 — Plataforma Logix 5000 y Studio 5000</div>
+      <div className="topbar-sub">ControlLogix · CompactLogix · GuardLogix · Chasis 1756 · Controller/Task/Program/Routine</div></div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        {scene>1&&<button className="btn-outline" onClick={()=>setScene(s=>s-1)}>← Anterior</button>}
+        {scene<SCENES.length&&<button className="btn-gold" onClick={()=>setScene(s=>s+1)}>Siguiente →</button>}
+        <span className="scene-badge">{scene}/{SCENES.length}</span>
+      </div>
+    </div>
+    <div className="content">
+      <div className="sidebar">
+        <div style={{fontSize:9,color:'#334155',fontWeight:700,padding:'0 12px 6px',textTransform:'uppercase',letterSpacing:1}}>Contenido</div>
+        {SCENES.map(s=>(<div key={s.id} className={`nav-item${scene===s.id?' active':''}`} onClick={()=>setScene(s.id)}>{s.label}</div>))}
+      </div>
+      <div className="main"><Comp/></div>
+    </div>
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
