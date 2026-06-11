@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 4.6 — Conmutación Capa 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Bridges y Switches: Fundamentos</div>
+    <div className="sec-sub">Cómo los bridges y switches conectan LAN sin conflicto</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Diferencia entre Bridge y Switch</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Un bridge conecta dos segmentos LAN. Un switch es esencialmente un bridge multipuerto con hardware dedicado (ASICs). Ambos operan en capa 2, aprenden direcciones MAC y reenvían tramas selectivamente.</div>
+          {[
+            {t:'Bridge',c:'#f97316',ports:'2–4',impl:'Software (CPU)',lat:'~1 ms',uso:'Conectar 2 segmentos coaxiales'},
+            {t:'Switch',c:'#10b981',ports:'8–96+',impl:'ASIC hardware',lat:'< 5 μs',uso:'LAN empresarial, data center'},
+          ].map((r,i)=>(
+            <div key={i} style={{background:'#060a14',borderRadius:6,padding:'8px',borderLeft:`3px solid ${r.c}`,marginBottom:8}}>
+              <div style={{fontSize:12,fontWeight:700,color:r.c,marginBottom:4}}>{r.t}</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                {[['Puertos',r.ports],['Implementación',r.impl],['Latencia',r.lat],['Uso típico',r.uso]].map(([k,v])=>(
+                  <div key={k}>
+                    <div style={{fontSize:9,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace'}}>{k}</div>
+                    <div style={{fontSize:11,color:'#e8f0fe'}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Modos de forwarding</div>
+          {[
+            {m:'Store-and-Forward',d:'Recibe toda la trama, verifica CRC, luego reenvía. Latencia = tamaño trama / velocidad. Sin errores en destino.'},
+            {m:'Cut-Through',d:'Reenvía al leer solo la MAC destino (primeros 14 bytes). Latencia mínima ~5 μs pero propaga tramas corruptas.'},
+            {m:'Fragment-Free',d:'Espera 64 bytes (mínimo Ethernet, donde ocurren las colisiones). Compromiso entre los anteriores.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6',marginBottom:2}}>{r.m}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Tablas de reenvío MAC — Algoritmo</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`Al recibir trama:\n1. Aprender: tabla[SRC_MAC] = puerto_entrada\n2. Buscar DST_MAC en tabla\n   Si encontrado → reenviar a ese puerto\n   Si no encontrado → FLOOD (todos menos origen)\n   Si DST = FF:FF:FF:FF:FF:FF → FLOOD (broadcast)\n3. Entradas expiran en TTL = 300s (aging)\n\nCAM table (Content Addressable Memory):\nBúsqueda O(1) por hardware, no O(n)`}
+          </div>
+        </div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+          <div className="card-h" style={{color:'#10b981'}}>Dominio de colisión vs. dominio de broadcast</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8,marginBottom:8}}>
+            {`HUB:    [A][B][C][D] → 1 dominio colisión\n                           1 dominio broadcast\n\nSWITCH: [A][B][C][D] → 4 dominios colisión\n                           1 dominio broadcast\n\nSWITCH+ROUTER:\n           Puerto 1 → VLAN1 → dominio broadcast 1\n           Puerto 2 → VLAN2 → dominio broadcast 2`}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8'}}>Los routers (L3) separan dominios de broadcast. Los switches (L2) solo separan dominios de colisión (a menos que usen VLANs).</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Spanning Tree Protocol — STP 802.1D</div>
+    <div className="sec-sub">Evitar bucles en redes con switches redundantes</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(239,68,68,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#ef4444'}}>El problema de los bucles de switching</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Si hay un bucle (trayectos redundantes entre switches), una trama broadcast se circula infinitamente, saturando el ancho de banda — "tormenta de broadcast".</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#ef4444',lineHeight:1.8}}>
+            {`[SW1]───────────[SW2]\n  │                 │\n  └────[SW3]─────┘\n\nBroadcast de A entra a SW1:\nSW1 → envía a SW2 y SW3\nSW2 → reenvía a SW3 y SW1\nSW3 → reenvía a SW1 y SW2\n= bucle infinito → CPU al 100% → crash`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">STP — Algoritmo (IEEE 802.1D)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>STP bloquea lógicamente algunos puertos para eliminar bucles, dejando solo un árbol sin bucles (spanning tree). Si un enlace falla, STP recalcula el árbol.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`1. Elegir Root Bridge (menor Bridge ID)\n2. Cada switch calcula camino más corto al root\n3. Puertos hacia el root: Root Port (forwarding)\n4. Mejor puerto en cada LAN: Designated Port\n5. El resto: Blocking (descarta datos, escucha BPDUs)\n\nBPDU = Bridge Protocol Data Unit\nTiempos: Hello=2s, MaxAge=20s, FwdDelay=15s`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>RSTP — Rapid STP (802.1w)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>STP original tiene convergencia lenta (30–50 s). RSTP converge en &lt; 1 segundo gracias a negociación directa entre switches adyacentes sin esperar timers.</div>
+          {[
+            {e:'Edge port','d':'Puerto conectado a dispositivo final → instantáneo (como portfast)'},
+            {e:'Point-to-point','d':'Enlace full-duplex entre switches → negociación rápida'},
+            {e:'Shared','d':'Enlace half-duplex (hub) → comportamiento STP clásico'},
+            {e:'Convergencia','d':'< 1 segundo vs 30–50 s de STP clásico'},
+          ].map((r,i)=>(
+            <div key={i} style={{display:'flex',gap:8,padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,color:'#10b981',minWidth:130,fontWeight:600}}>{r.e}</span>
+              <span style={{fontSize:11,color:'#3a4a72'}}>{r.d}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">MSTP — Multiple STP (802.1s)</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>STP y RSTP crean un único árbol para todas las VLANs. MSTP agrupa VLANs en instancias que pueden tener árboles diferentes, permitiendo balanceo de carga entre enlaces redundantes. Ej: VLAN 1–100 por trunk A, VLAN 101–200 por trunk B. Usado en redes empresariales grandes.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">VLANs — Virtual LANs: IEEE 802.1Q</div>
+    <div className="sec-sub">Segmentación lógica de la red sobre infraestructura física compartida</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>¿Qué es una VLAN?</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Una VLAN crea una red lógicamente separada sobre la misma infraestructura física. Los dispositivos en diferentes VLANs no pueden comunicarse directamente (necesitan un router/L3 switch). Cada VLAN es su propio dominio de broadcast.</div>
+          {[
+            {u:'Seguridad',d:'Separar PCs de empleados, servidores, impresoras, IoT en dominios aislados'},
+            {u:'Organización',d:'VLAN por departamento: Contabilidad, IT, Producción, Visitantes'},
+            {u:'QoS',d:'VLAN de voz con prioridad CoS (802.1p) para VoIP sin jitter'},
+            {u:'Eficiencia',d:'Reducir tráfico broadcast innecesario entre departamentos'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <span style={{fontSize:11,fontWeight:700,color:'#f97316'}}>{r.u}: </span>
+              <span style={{fontSize:11,color:'#3a4a72'}}>{r.d}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Etiquetado 802.1Q (VLAN tag)</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`Trama Ethernet normal: 1518 bytes máx\nTrama con 802.1Q tag: 1522 bytes\n\n[DST][SRC][0x8100][TCI][EtherType][Data][FCS]\n              ↑       ↑\n            TPID    Tag Control Info\n                   [PCP(3b)|DEI(1b)|VID(12b)]\n\nPCP = Priority Code Point (802.1p): 0–7\nVID = VLAN ID: 1–4094 (4096 posibles)`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Puertos access y trunk</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8,marginBottom:8}}>
+            {`ACCESS port (hacia dispositivo final):\n  → Solo una VLAN\n  → Sin etiqueta 802.1Q (untagged)\n  → PC no sabe que está en VLAN\n\nTRUNK port (entre switches/routers):\n  → Múltiples VLANs\n  → Con etiqueta 802.1Q (tagged)\n  → Native VLAN: tráfico sin etiqueta`}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8'}}>Un puerto trunk lleva todas las VLANs sobre un solo cable físico entre switches. Fundamental para la escalabilidad de redes con VLANs distribuidas en múltiples switches.</div>
+        </div>
+        <div className="card">
+          <div className="card-h">Routing entre VLANs</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Para que dispositivos en diferentes VLANs se comuniquen necesitan un router (capa 3). Opciones:</div>
+          {[
+            {t:'Router-on-a-stick',d:'Router con subinterfaces 802.1Q por VLAN. Simple pero el router puede ser cuello de botella.'},
+            {t:'L3 Switch (SVIs)',d:'Switch con capacidad de routing. Interfaces virtuales por VLAN (SVI). Más rápido y escalable. Estándar empresarial.'},
+            {t:'SDN / VXLAN',d:'Virtualización de redes overlay sobre IP. Usado en centros de datos. Escala a millones de VLANs (24 bits VNI).'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Bridges y switches',C:Scene1},{id:2,label:'Spanning Tree Protocol',C:Scene2},{id:3,label:'VLANs — 802.1Q',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 4.6 — Conmutación en Capa 2: Bridges, STP y VLANs</div><div className="topbar-sub">Módulo 4 — La Subcapa MAC</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender la conmutación en capa 2, el Spanning Tree Protocol para evitar bucles y las VLANs para segmentación lógica.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

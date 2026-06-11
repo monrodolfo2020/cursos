@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 7.1 – DNS: Jerarquía y Resolución de Nombres</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Jerarquía DNS"},{id:2,label:"Resolución de nombres"},{id:3,label:"Registros de recursos"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("root");
+  const levels={
+    root:{label:"Root DNS",color:"#3b82f6",desc:"13 grupos de servidores raíz (A–M) distribuidos globalmente. Conocen todos los TLD.",examples:["a.root-servers.net (Verisign)","b.root-servers.net (USC-ISI)","Operados por ICANN, operadores de RIR y empresas"]},
+    tld:{label:"TLD (Top Level Domain)",color:"#f97316",desc:"Servidores que gestionan dominios de primer nivel: .com, .org, .edu, .es, .mx, etc.",examples:[".com → gestionado por Verisign",".org → Public Interest Registry",".mx → NIC México"]},
+    auth:{label:"Autoritativo",color:"#10b981",desc:"Servidores que poseen los registros reales del dominio. Son la fuente de verdad.",examples:["ns1.google.com → dominio google.com","ns1.cloudflare.com → dominios en Cloudflare","Pueden ser delegados a proveedores (Route53, Cloudflare)"]},
+    local:{label:"Resolver Local / ISP",color:"#8b5cf6",desc:"Servidor DNS del proveedor o empresa. Responde consultas locales y tiene caché.",examples:["8.8.8.8 Google DNS","1.1.1.1 Cloudflare DNS","192.168.1.1 router doméstico (forwarding)"]}
+  };
+  const s=levels[sel];
+  return(
+    <div>
+      <h1>Jerarquía del Sistema DNS</h1>
+      <p className="subtitle">DNS es una base de datos distribuida jerárquica que traduce nombres en direcciones IP</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Niveles de la jerarquía</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+              {Object.entries(levels).map(([k,v])=>(
+                <button key={k} onClick={()=>setSel(k)}
+                  style={{background:sel===k?v.color+"22":"#0a1020",border:`2px solid ${sel===k?v.color:"#1e3a5f"}`,color:sel===k?v.color:"#7c8db8",borderRadius:8,padding:"10px 14px",cursor:"pointer",textAlign:"left",fontWeight:600,fontSize:13,transition:"all .2s"}}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3>Espacio de nombres DNS</h3>
+            <div className="mono">
+              <div style={{color:"#3b82f6",textAlign:"center"}}>. (Root)</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>│</div>
+              <div style={{color:"#f97316",textAlign:"center"}}>.com   .org   .edu   .mx   .es</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>│</div>
+              <div style={{color:"#10b981",textAlign:"center"}}>google.com   amazon.com   unam.mx</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>│</div>
+              <div style={{color:"#e8f0fe",textAlign:"center"}}>www   mail   ftp   api</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3 style={{color:s.color}}>{s.label}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>{s.desc}</p>
+            <div style={{background:"#0a1020",border:`1px solid ${s.color}`,borderRadius:8,padding:12}}>
+              {s.examples.map(e=>(
+                <div key={e} style={{display:"flex",gap:8,marginBottom:6,fontSize:12}}>
+                  <span style={{color:s.color}}>▸</span>
+                  <span style={{color:"#e8f0fe"}}>{e}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Zona DNS vs Dominio</h3>
+            <div style={{fontSize:13,lineHeight:1.8}}>
+              <p style={{color:"#e8f0fe",marginBottom:8}}>Un <strong style={{color:"#3b82f6"}}>dominio</strong> es un subárbol del espacio de nombres. Una <strong style={{color:"#f97316"}}>zona</strong> es la porción administrada por un servidor específico.</p>
+              <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10,fontSize:12}}>
+                <div style={{color:"#10b981"}}>Zona example.com incluye:</div>
+                <div style={{color:"#7c8db8"}}>→ example.com (SOA, NS, MX, A)</div>
+                <div style={{color:"#7c8db8"}}>→ www.example.com</div>
+                <div style={{color:"#7c8db8"}}>→ mail.example.com</div>
+                <div style={{color:"#f97316",marginTop:6}}>Si sub.example.com tiene propios NS → zona separada (delegación)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [mode,setMode]=useState("recur");
+  return(
+    <div>
+      <h1>Resolución de Nombres DNS</h1>
+      <p className="subtitle">Proceso por el cual un nombre como www.google.com se traduce a una dirección IP</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        <button onClick={()=>setMode("recur")} style={{background:mode==="recur"?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:mode==="recur"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>Recursiva</button>
+        <button onClick={()=>setMode("iter")} style={{background:mode==="iter"?"#f97316":"#0a1020",border:"1px solid #1e3a5f",color:mode==="iter"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>Iterativa</button>
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Resolución {mode==="recur"?"Recursiva":"Iterativa"}</h3>
+            {mode==="recur"?(
+              <div>
+                <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>El cliente delega completamente la resolución al servidor DNS local. El resolver hace todo el trabajo consultando sucesivamente hasta obtener la respuesta final.</p>
+                <div className="mono" style={{fontSize:11}}>
+                  <div><span style={{color:"#8b5cf6"}}>Cliente</span> → <span style={{color:"#3b82f6"}}>Resolver</span>: "¿www.google.com?"</div>
+                  <div><span style={{color:"#3b82f6"}}>Resolver</span> → <span style={{color:"#f97316"}}>Root</span>: "¿.com NS?"</div>
+                  <div><span style={{color:"#f97316"}}>Root</span> → <span style={{color:"#3b82f6"}}>Resolver</span>: "a.gtld-servers.net"</div>
+                  <div><span style={{color:"#3b82f6"}}>Resolver</span> → <span style={{color:"#f97316"}}>TLD .com</span>: "¿google.com NS?"</div>
+                  <div><span style={{color:"#f97316"}}>TLD</span> → <span style={{color:"#3b82f6"}}>Resolver</span>: "ns1.google.com"</div>
+                  <div><span style={{color:"#3b82f6"}}>Resolver</span> → <span style={{color:"#10b981"}}>Auth</span>: "¿www.google.com?"</div>
+                  <div><span style={{color:"#10b981"}}>Auth</span> → <span style={{color:"#3b82f6"}}>Resolver</span>: "142.250.72.4"</div>
+                  <div><span style={{color:"#3b82f6"}}>Resolver</span> → <span style={{color:"#8b5cf6"}}>Cliente</span>: "142.250.72.4" ✓</div>
+                </div>
+              </div>
+            ):(
+              <div>
+                <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>El cliente hace las consultas por sí mismo. Cada servidor responde con una referencia al siguiente servidor a preguntar (no con la respuesta final).</p>
+                <div className="mono" style={{fontSize:11}}>
+                  <div><span style={{color:"#8b5cf6"}}>Cliente</span> → <span style={{color:"#f97316"}}>Root</span>: "¿www.google.com?"</div>
+                  <div><span style={{color:"#f97316"}}>Root</span> → <span style={{color:"#8b5cf6"}}>Cliente</span>: "pregunta a TLD .com"</div>
+                  <div><span style={{color:"#8b5cf6"}}>Cliente</span> → <span style={{color:"#f97316"}}>TLD .com</span>: "¿www.google.com?"</div>
+                  <div><span style={{color:"#f97316"}}>TLD</span> → <span style={{color:"#8b5cf6"}}>Cliente</span>: "pregunta a ns1.google.com"</div>
+                  <div><span style={{color:"#8b5cf6"}}>Cliente</span> → <span style={{color:"#10b981"}}>ns1.google.com</span>: "¿www?"</div>
+                  <div><span style={{color:"#10b981"}}>Auth</span> → <span style={{color:"#8b5cf6"}}>Cliente</span>: "142.250.72.4" ✓</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Caché DNS y TTL</h3>
+            <div style={{fontSize:13,lineHeight:1.8,marginBottom:12}}>
+              <p style={{color:"#e8f0fe",marginBottom:8}}>Cada respuesta DNS incluye un <strong style={{color:"#3b82f6"}}>TTL (Time To Live)</strong> en segundos. Los resolvers almacenan la respuesta en caché hasta que expira el TTL, reduciendo la carga en los servidores autoritativos.</p>
+              <table><tbody>
+                <tr><th>Tipo registro</th><th>TTL típico</th><th>Motivo</th></tr>
+                <tr><td style={{color:"#3b82f6"}}>A / AAAA</td><td>300–3600 s</td><td>IP puede cambiar</td></tr>
+                <tr><td style={{color:"#f97316"}}>MX</td><td>3600–86400 s</td><td>Mail más estable</td></tr>
+                <tr><td style={{color:"#10b981"}}>NS</td><td>86400 s</td><td>Nameservers muy estables</td></tr>
+                <tr><td style={{color:"#8b5cf6"}}>SOA</td><td>86400 s</td><td>Info de zona</td></tr>
+                <tr><td style={{color:"#e8f0fe"}}>CNAME</td><td>300–3600 s</td><td>Alias de dominio</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+          <div className="card">
+            <h3>DNSSEC — Seguridad DNS</h3>
+            <div style={{fontSize:13,lineHeight:1.7}}>
+              <p style={{color:"#e8f0fe",marginBottom:8}}>DNS fue diseñado sin seguridad. <strong style={{color:"#3b82f6"}}>DNSSEC</strong> añade firmas digitales para autenticar las respuestas DNS.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {[
+                  {t:"DNS Spoofing / Cache Poisoning",c:"#ef4444",d:"Atacante inyecta registros falsos en el caché del resolver"},
+                  {t:"DNSSEC (RFC 4033-4035)",c:"#10b981",d:"Firma criptográfica de registros; cadena de confianza desde la raíz"},
+                  {t:"DNS over HTTPS (DoH)",c:"#3b82f6",d:"Consultas DNS cifradas en HTTPS (port 443)"},
+                  {t:"DNS over TLS (DoT)",c:"#8b5cf6",d:"Consultas DNS sobre TLS (port 853)"},
+                ].map(i=>(
+                  <div key={i.t} style={{background:"#0a1020",border:`1px solid ${i.c}22`,borderRadius:6,padding:8}}>
+                    <div style={{color:i.c,fontWeight:600,fontSize:12}}>{i.t}</div>
+                    <div style={{color:"#7c8db8",fontSize:11,marginTop:2}}>{i.d}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [sel,setSel]=useState("A");
+  const records={
+    A:{desc:"Mapea nombre de host a dirección IPv4",ex:"www.example.com. 3600 IN A 93.184.216.34"},
+    AAAA:{desc:"Mapea nombre de host a dirección IPv6",ex:"www.example.com. 3600 IN AAAA 2606:2800:220:1:248:1893:25c8:1946"},
+    CNAME:{desc:"Alias: redirige un nombre a otro nombre canónico",ex:"mail.example.com. 3600 IN CNAME ghs.google.com."},
+    MX:{desc:"Mail Exchanger: servidor de correo para el dominio",ex:"example.com. 3600 IN MX 10 mail.example.com."},
+    NS:{desc:"Name Server: servidor DNS autoritativo para la zona",ex:"example.com. 86400 IN NS ns1.example.com."},
+    TXT:{desc:"Texto arbitrario: SPF, DKIM, verificaciones, etc.",ex:'example.com. 3600 IN TXT "v=spf1 include:_spf.google.com ~all"'},
+    SOA:{desc:"Start of Authority: información sobre la zona DNS",ex:"example.com. 86400 IN SOA ns1.example.com. admin.example.com. 2024010101 3600 900 604800 300"},
+    PTR:{desc:"Reverse DNS: mapea IP a nombre (zona in-addr.arpa)",ex:"34.216.184.93.in-addr.arpa. 3600 IN PTR www.example.com."},
+  };
+  const r=records[sel];
+  return(
+    <div>
+      <h1>Registros de Recursos DNS (RR)</h1>
+      <p className="subtitle">Los registros almacenados en servidores DNS definen toda la información del dominio</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Tipos de registros</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {Object.keys(records).map(k=>(
+                <button key={k} onClick={()=>setSel(k)}
+                  style={{background:sel===k?"#1e3a5f":"#0a1020",border:`2px solid ${sel===k?"#3b82f6":"#1e3a5f"}`,color:sel===k?"#3b82f6":"#7c8db8",borderRadius:6,padding:"8px 10px",cursor:"pointer",fontWeight:700,fontSize:14,transition:"all .2s"}}>
+                  {k}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3 style={{color:"#3b82f6"}}>{sel} — {r.desc}</h3>
+            <div className="mono">{r.ex}</div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Formato de un Registro de Recurso</h3>
+            <div className="mono" style={{marginBottom:12}}>
+              <div><span style={{color:"#3b82f6"}}>nombre</span> <span style={{color:"#f97316"}}>TTL</span> <span style={{color:"#10b981"}}>clase</span> <span style={{color:"#8b5cf6"}}>tipo</span> <span style={{color:"#e8f0fe"}}>datos</span></div>
+              <div style={{marginTop:6,color:"#7c8db8"}}>www.example.com. 3600 IN A 93.184.216.34</div>
+              <div style={{color:"#3b82f6",fontSize:11,marginTop:4}}>nombre</div>
+              <div style={{color:"#f97316",fontSize:11}}>TTL = 3600 segundos (1 hora)</div>
+              <div style={{color:"#10b981",fontSize:11}}>IN = Internet (clase universal)</div>
+              <div style={{color:"#8b5cf6",fontSize:11}}>A = tipo (IPv4)</div>
+              <div style={{color:"#e8f0fe",fontSize:11}}>93.184.216.34 = datos</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Configuración SPF (anti-spam)</h3>
+            <div style={{fontSize:13,lineHeight:1.7}}>
+              <p style={{color:"#e8f0fe",marginBottom:8}}>El registro <strong style={{color:"#3b82f6"}}>SPF</strong> (Sender Policy Framework) en TXT indica qué servidores pueden enviar correo por el dominio:</p>
+              <div className="mono" style={{fontSize:11}}>
+                <div style={{color:"#10b981"}}>"v=spf1 include:_spf.google.com</div>
+                <div style={{color:"#10b981"}}>         ip4:203.0.113.1 ~all"</div>
+                <div style={{marginTop:8,color:"#7c8db8"}}>v=spf1 → versión SPF</div>
+                <div style={{color:"#3b82f6"}}>include: → incluir SPF externo</div>
+                <div style={{color:"#f97316"}}>ip4: → IP autorizada directa</div>
+                <div style={{color:"#8b5cf6"}}>~all → softfail resto</div>
+                <div style={{color:"#ef4444"}}>-all → reject resto (strict)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>7.1 DNS</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.2 — Detección y Corrección de Errores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Distancia de Hamming y Códigos de Paridad</div>
+    <div className="sec-sub">La teoría matemática detrás de la detección de errores</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Distancia de Hamming</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:10}}>La distancia de Hamming entre dos palabras binarias es el número de posiciones en que difieren. Se calcula con XOR y contando los unos resultantes.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',marginBottom:8,color:'#10b981',lineHeight:1.8}}>
+            {`10001001\nXOR\n10110001\n= 00111000 → d = 3`}
+          </div>
+          <div style={{fontSize:12,color:'#e8f0fe',fontWeight:600,marginBottom:6}}>Propiedades clave:</div>
+          {[
+            {r:'d = 1',d:'No puede detectar ningún error'},
+            {r:'d = 2',d:'Detecta errores simples (1 bit)'},
+            {r:'d = 3',d:'Detecta 2 errores O corrige 1'},
+            {r:'d = 4',d:'Detecta 3 errores O corrige 1 + detecta 2'},
+            {r:'d = 2t+1',d:'Corrige t errores simultáneos'},
+          ].map(r=>(
+            <div key={r.r} style={{display:'flex',gap:10,padding:'4px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',alignItems:'center'}}>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,color:'#f97316',minWidth:60}}>{r.r}</span>
+              <span style={{fontSize:11,color:'#7c8db8'}}>{r.d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(59,130,246,0.25)',marginBottom:10}}>
+          <div className="card-h">Paridad simple (d=2)</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6,marginBottom:8}}>Se agrega un bit de paridad para que el número total de 1s sea par (par-even) o impar (par-odd). Detecta cualquier número impar de errores, pero no los pares.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`Datos: 1011001 (cuatro 1s = par)\nParidad: 0 → codeword: 10110010\n\nSi se recibe 10110110:\nXOR paridad → 1 (error detectado!)\n\nSi se recibe 10111110:\nDos errores → paridad = 0 (¡no detectado!)`}
+          </div>
+        </div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+          <div className="card-h" style={{color:'#10b981'}}>Paridad bidimensional (d=4)</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6,marginBottom:6}}>Organizar datos en una tabla y calcular paridad por fila Y por columna. Detecta todos los errores de 1, 2 y 3 bits. Corrige errores simples aislados.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'8px',color:'#10b981',lineHeight:1.8}}>
+            {`  1 0 1 1 | P=1\n  0 1 1 1 | P=1\n  1 1 0 1 | P=1\n  --------+\n  0 0 0 1   (paridad columna)\n\nUn error → fila y columna apuntan exactamente al bit erróneo`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Código de Hamming — Corrección de Errores</div>
+    <div className="sec-sub">El primer código que corrige errores automáticamente</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Construcción del código de Hamming</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Los bits de paridad se colocan en las posiciones que son potencias de 2 (1, 2, 4, 8…). Cada bit de paridad cubre un conjunto específico de posiciones de datos.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.9}}>
+            {`Posición: 1  2  3  4  5  6  7\nTipo:      P1 P2 D1 P4 D2 D3 D4\n\nP1 cubre posiciones: 1,3,5,7 (bit 0 del pos)\nP2 cubre posiciones: 2,3,6,7 (bit 1 del pos)\nP4 cubre posiciones: 4,5,6,7 (bit 2 del pos)`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Ejemplo: datos 1011</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.9}}>
+            {`Datos D1D2D3D4 = 1 0 1 1\nPosición 3=D1, 5=D2, 6=D3, 7=D4\n\nP1: pos 1,3,5,7 → X,1,0,1 → P1=0\nP2: pos 2,3,6,7 → X,1,1,1 → P2=1\nP4: pos 4,5,6,7 → X,0,1,1 → P4=0\n\nCódigo: 0 1 1 0 0 1 1\n       P1 P2 D1 P4 D2 D3 D4`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Detección y corrección de error</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Al recibir, se recalculan todos los bits de paridad. Si todos son 0: sin error. Si alguno es 1: el número binario formado por los bits de paridad indica la posición del error.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.9}}>
+            {`Recibido: 0 1 1 0 1 1 1 (error en pos 5)\n\nP1 chequeo: pos 1,3,5,7 → 0,1,1,1 → 1 (error!)\nP2 chequeo: pos 2,3,6,7 → 1,1,1,1 → 0 (ok)\nP4 chequeo: pos 4,5,6,7 → 0,1,1,1 → 1 (error!)\n\nSíndrome = P4P2P1 = 101 = 5 → bit 5 erróneo\nFlip bit 5: corregido automáticamente`}
+          </div>
+        </div>
+        <div className="card" style={{borderColor:'rgba(139,92,246,0.25)'}}>
+          <div className="card-h" style={{color:'#8b5cf6'}}>Hamming extendido (SECDED)</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Single Error Correction, Double Error Detection. Agrega un bit de paridad global sobre toda la palabra. Si el síndrome indica error pero la paridad global es correcta → doble error (no corregible). Usado en RAM ECC (Error Correcting Code) para servidores.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'8px',marginTop:6,color:'#8b5cf6',lineHeight:1.5}}>
+            {`RAM ECC: para datos de 64 bits\n→ 8 bits de paridad Hamming extendido\n→ corrige cualquier error de 1 bit\n→ detecta errores de 2 bits`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">CRC — Cyclic Redundancy Check</div>
+    <div className="sec-sub">El estándar de facto para detección de errores en redes</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">¿Cómo funciona el CRC?</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Se trata el mensaje como un polinomio binario. Se divide (XOR, sin acarreos) por un polinomio generador conocido por ambos lados. El residuo es el CRC que se adjunta al mensaje.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`Mensaje M: 1101011011\nGenerador G: 10011 (grado 4)\n\nM × x⁴ = 11010110110000\n÷ G por XOR:\n\n11010110110000\n÷ 10011\n----------\n= residuo: 1110\n\nTrama enviada: 1101011011 1110\n               (mensaje)  (CRC)`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Verificación en recepción</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`Recibido: 11010110111110\nDividir por G = 10011:\n\nSi residuo = 0000 → sin errores\nSi residuo ≠ 0000 → error detectado\n\n(No importa qué bits se corrompieron,\nel CRC lo detecta)`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Polinomios CRC estándar</div>
+          {[
+            {n:'CRC-8',p:'x⁸+x²+x+1',uso:'USB, ATM'},
+            {n:'CRC-16',p:'x¹⁶+x¹⁵+x²+1',uso:'HDLC, Modbus'},
+            {n:'CRC-CCITT',p:'x¹⁶+x¹²+x⁵+1',uso:'X.25, HDLC, PPP'},
+            {n:'CRC-32',p:'x³²+x²⁶+x²³+...',uso:'Ethernet, ZIP, PNG'},
+            {n:'CRC-32C',p:'Castagnoli',uso:'iSCSI, SCTP, btrfs'},
+          ].map(r=>(
+            <div key={r.n} style={{display:'grid',gridTemplateColumns:'70px 1fr 100px',gap:8,padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',alignItems:'center'}}>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,fontWeight:700,color:'#f97316'}}>{r.n}</span>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,color:'#7c8db8'}}>{r.p}</span>
+              <span style={{fontSize:10,color:'#3a4a72'}}>{r.uso}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+          <div className="card-h" style={{color:'#10b981'}}>Capacidad de detección de CRC-32</div>
+          {[
+            {q:'Errores de 1 bit','r':'100% detección'},
+            {q:'Errores de 2 bits','r':'100% detección'},
+            {q:'Número impar de errores','r':'100% detección'},
+            {q:'Ráfagas de ≤ 32 bits','r':'100% detección'},
+            {q:'Ráfagas de 33 bits','r':'99.9999998% detección'},
+          ].map(r=>(
+            <div key={r.q} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',fontSize:11}}>
+              <span style={{color:'#7c8db8'}}>{r.q}</span>
+              <span style={{color:'#10b981',fontWeight:600,fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.r}</span>
+            </div>
+          ))}
+          <div style={{fontSize:11,color:'#3a4a72',marginTop:8}}>CRC es detección, no corrección. Para corregir se usa ARQ (retransmisión).</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Hamming y paridad',C:Scene1},{id:2,label:'Código de Hamming',C:Scene2},{id:3,label:'CRC — cyclic redundancy',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 3.2 — Detección y Corrección de Errores</div><div className="topbar-sub">Módulo 3 — Capa de Enlace</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender la distancia de Hamming, construir códigos de Hamming para corrección de errores y comprender el funcionamiento del CRC.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

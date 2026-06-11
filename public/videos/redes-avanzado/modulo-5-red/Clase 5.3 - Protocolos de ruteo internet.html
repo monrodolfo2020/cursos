@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 5.3 — Protocolos de Ruteo en Internet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const protos=[
+    {n:'RIP v2',tipo:'IGP / DV',alg:'Bellman-Ford',met:'Hops (máx 16)',conv:'Minutos',adm:120,use:'Redes pequeñas, routers domésticos',notas:'RFC 2453. Actualizaciones cada 30s. Split horizon y poison reverse. UDP puerto 520. Máx 15 saltos (16=inalcanzable). Básico pero simple.'},
+    {n:'OSPF v2/v3',tipo:'IGP / LS',alg:'Dijkstra',met:'Coste (ref/BW)',conv:'Segundos',adm:110,use:'Empresas, ISP interior',notas:'RFC 2328 (v2 IPv4), 5340 (v3 IPv6). LSA flooding con números de secuencia. Áreas para escalar. Autenticación. DR/BDR en redes multi-acceso. Estándar de facto para IGP.'},
+    {n:'IS-IS',tipo:'IGP / LS',alg:'Dijkstra',met:'Coste (defecto 10)',conv:'Segundos',adm:115,use:'ISP backbone, grandes redes',notas:'ISO 10589 adaptado para IP. Corre directamente sobre L2, no sobre IP (más robusto ante problemas IP). Soporta IPv4 e IPv6 nativamente en el mismo proceso. Preferido por ISPs grandes.'},
+    {n:'EIGRP',tipo:'IGP / hibrido',alg:'DUAL',met:'BW+delay+load+rel',conv:'Muy rápida',adm:90,use:'Redes Cisco exclusivo',notas:'RFC 7868 (abierto 2016). Antes propietario Cisco. DUAL (Diffusing Update Algorithm): convergencia instantánea sin loops. Mantiene rutas de backup (feasible successor). Métrica compuesta.'},
+    {n:'BGP-4',tipo:'EGP / DV',alg:'Path Vector',met:'Políticas y atributos',conv:'Minutos',adm:20,use:'Internet entre AS',notas:'RFC 4271. El protocolo de Internet. ~75,000 AS conectados. Atributos: AS-PATH, NEXT-HOP, LOCAL-PREF, MED, COMMUNITY. Decisión basada en políticas, no solo coste. TCP puerto 179.'},
+  ];
+  return(<div>
+    <div className="sec-title">Protocolos de Ruteo en Internet: RIP, OSPF, BGP</div>
+    <div className="sec-sub">Los protocolos que mantienen Internet funcionando</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginBottom:8}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Protocolo','Tipo/Alg.','Métrica','Convergencia','AD','Uso','Notas'].map((h,i)=>(
+            <th key={i} style={{padding:'7px 8px',color:'#3b82f6',textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {protos.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'6px 8px',color:'#f97316',fontFamily:'IBM Plex Mono,monospace',fontWeight:700}}>{r.n}</td>
+            <td style={{padding:'6px 8px',color:'#7c8db8',fontSize:10}}>{r.tipo}</td>
+            <td style={{padding:'6px 8px',color:'#8b5cf6',fontSize:10}}>{r.met}</td>
+            <td style={{padding:'6px 8px',color:r.conv==='Minutos'?'#ef4444':r.conv==='Muy rápida'?'#10b981':'#3b82f6',fontSize:10}}>{r.conv}</td>
+            <td style={{padding:'6px 8px',color:'#10b981',fontFamily:'IBM Plex Mono,monospace',fontSize:11,fontWeight:700}}>{r.adm}</td>
+            <td style={{padding:'6px 8px',color:'#7c8db8',fontSize:10}}>{r.use}</td>
+            <td style={{padding:'6px 8px',color:'#3a4a72',fontSize:9,fontStyle:'italic'}}>{r.notas}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div className="card" style={{borderColor:'rgba(59,130,246,0.25)'}}>
+      <div className="card-h">Distancia Administrativa (AD)</div>
+      <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>La AD indica la confiabilidad de una fuente de rutas. Cuando múltiples protocolos aprenden la misma ruta, se instala la de menor AD. Directamente conectado=0, Estático=1, EIGRP summ=5, EIGRP int=90, OSPF=110, IS-IS=115, RIP=120, externo=170+, desconocida=255 (nunca usar).</div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">OSPF en Profundidad</div>
+    <div className="sec-sub">El protocolo IGP más usado en redes empresariales e ISP</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Tipos de paquete OSPF</div>
+          {[
+            {t:'Hello','c':'#10b981','d':'Descubre vecinos y mantiene adyacencias. Intervalo: 10s (punto-punto) o 30s (NBMA). Dead interval: 4×Hello.'},
+            {t:'DBD (Database Description)','c':'#3b82f6','d':'Resumen de la LSDB. Intercambiado durante sincronización inicial. Maestro/esclavo para ordenar el intercambio.'},
+            {t:'LSR (Link State Request)','c':'#f97316','d':'Solicita LSAs específicos que el vecino tiene y el local no.'},
+            {t:'LSU (Link State Update)','c':'#8b5cf6','d':'Contiene uno o más LSAs. Respuesta a LSR o flooding proactivo.'},
+            {t:'LSAck (LS Acknowledgment)','c':'#ef4444','d':'Confirma recepción de LSAs. OSPF requiere confirmación confiable.'},
+          ].map(r=>(
+            <div key={r.t} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:r.c}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>OSPF en redes multi-acceso (broadcast)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>En una red Ethernet con N routers OSPF, sin optimización habría N(N-1)/2 adyacencias. OSPF elige un DR (Designated Router) y BDR: solo hay adyacencias con el DR/BDR.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`Sin DR: 5 routers → 10 adyacencias\nCon DR: 5 routers → 4+4=8 → DR+BDR+DROthers\n\nElección DR:\n  Mayor prioridad OSPF (defecto=1)\n  Desempate: mayor Router-ID\n  BDR = segundo mayor\n\nDROthers envían LSU a 224.0.0.6 (DR/BDR)\nDR flooding a 224.0.0.5 (todos los OSPF)`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Tipos de LSA en OSPF</div>
+          {[
+            {t:'Type 1 — Router LSA',d:'Generado por cada router. Describe sus interfaces y vecinos dentro del área.'},
+            {t:'Type 2 — Network LSA',d:'Generado por el DR. Describe la red multi-acceso y los routers en ella.'},
+            {t:'Type 3 — Summary LSA',d:'Generado por ABR. Resume rutas entre áreas. Contiene prefijo y coste.'},
+            {t:'Type 5 — External LSA',d:'Generado por ASBR. Rutas externas al dominio OSPF (ej. rutas BGP redistribuidas).'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6',marginBottom:2}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">BGP-4 — El Protocolo de Internet</div>
+    <div className="sec-sub">Cómo los Sistemas Autónomos intercambian rutas globalmente</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Tipos de sesiones BGP</div>
+          {[
+            {t:'eBGP (external BGP)',d:'Entre routers en diferentes AS. Establece peering (sesión TCP 179) en enlaces físicos entre AS. El AS-PATH se actualiza en cada salto.'},
+            {t:'iBGP (internal BGP)',d:'Dentro del mismo AS para propagar rutas BGP. No modifica el AS-PATH. Requiere full mesh (O(N²)) o Route Reflectors. TTL=255 normalmente.'},
+            {t:'Route Reflector',d:'Elimina la necesidad de full mesh en iBGP. Un RR recibe rutas de clientes y las refleja a otros clientes. Agrupa en clusters.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'7px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#f97316',marginBottom:3}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Atributos BGP más importantes</div>
+          {[
+            {a:'AS-PATH',t:'Well-known mandatory',d:'Lista de AS traversados. Previene loops (descarta si propio AS está en path). Longitud usada como métrica por defecto.'},
+            {a:'NEXT-HOP',t:'Well-known mandatory',d:'IP del próximo router al que enviar el paquete. En eBGP: IP del peer. En iBGP: no cambia (el ASBR).'},
+            {a:'LOCAL-PREF',t:'Well-known discretionary',d:'Preferencia dentro de un AS. Mayor = preferido. Solo en iBGP. Para elegir salida del AS.'},
+            {a:'MED',t:'Optional non-transitive',d:'Multi-Exit Discriminator. Sugiere al AS vecino qué enlace preferir para entrar. Menor = preferido.'},
+          ].map(r=>(
+            <div key={r.a} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{display:'flex',justifyContent:'space-between'}}>
+                <span style={{fontSize:11,fontWeight:700,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace'}}>{r.a}</span>
+                <span style={{fontSize:9,color:'#3a4a72',fontStyle:'italic'}}>{r.t}</span>
+              </div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Proceso de selección de ruta BGP</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`Orden de preferencia BGP (mayor = gana):\n 1. Mayor WEIGHT (Cisco, local)\n 2. Mayor LOCAL-PREF\n 3. Ruta local (next-hop=self)\n 4. Menor AS-PATH length\n 5. Menor ORIGIN (IGP < EGP < ?)\n 6. Menor MED (mismo AS vecino)\n 7. eBGP > iBGP\n 8. Menor IGP metric al NEXT-HOP\n 9. Menor BGP Router-ID (desempate)\n10. Menor peer IP address`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">BGP y seguridad: RPKI</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>BGP original no tiene autenticación: cualquier AS puede anunciar cualquier prefijo (BGP hijacking). RPKI (Resource Public Key Infrastructure) vincula criptográficamente prefijos IP a los AS autorizados a anunciarlos (ROA — Route Origin Authorization). En 2023, ~40% de Internet usa RPKI validation. Ataques famosos: Pakistan Telecom sequestró YouTube (2008), Rostelecom hijacks (2020).</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'RIP, OSPF, BGP overview',C:Scene1},{id:2,label:'OSPF en profundidad',C:Scene2},{id:3,label:'BGP-4 — Internet routing',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 5.3 — Protocolos de Ruteo en Internet</div><div className="topbar-sub">Módulo 5 — La Capa de Red</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comparar RIP, OSPF, IS-IS y BGP. Entender OSPF en detalle y los atributos de BGP que gobiernan el ruteo de Internet.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

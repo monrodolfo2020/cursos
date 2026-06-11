@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 6.5 – Control de Congestión TCP</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Fases de congestión"},{id:2,label:"Detección de pérdidas"},{id:3,label:"Variantes modernas"}];
+
+function Scene1(){
+  const [phase,setPhase]=useState("ss");
+  const phases={
+    ss:{label:"Slow Start",color:"#10b981",desc:"cwnd comienza en 1 MSS. Cada ACK recibido: cwnd += 1 MSS. Resultado: crecimiento EXPONENCIAL (se dobla cada RTT). Termina cuando cwnd >= ssthresh o se detecta pérdida.",formula:"cwnd(t+1) = cwnd(t) + MSS (por ACK)"},
+    ca:{label:"Congestion Avoidance",color:"#3b82f6",desc:"Cuando cwnd >= ssthresh. Cada ACK: cwnd += MSS²/cwnd. Resultado: crecimiento LINEAL (+1 MSS por RTT). El algoritmo AIMD: Additive Increase.",formula:"cwnd(t+1) = cwnd(t) + MSS²/cwnd (por ACK)"},
+    fr:{label:"Fast Retransmit",color:"#f97316",desc:"Al recibir 3 ACKs duplicados, el emisor retransmite inmediatamente el segmento perdido SIN esperar el timeout del RTO. Más rápido que esperar.",formula:"Si DupACK = 3 → retransmitir Seg[SND.UNA]"},
+    fre:{label:"Fast Recovery",color:"#8b5cf6",desc:"Después de Fast Retransmit (Reno): ssthresh = cwnd/2, cwnd = ssthresh+3. Inflación de cwnd por DupACKs adicionales. Al recibir ACK nuevo: cwnd = ssthresh (baja a CA).",formula:"ssthresh = cwnd/2; cwnd = ssthresh + 3"},
+  };
+  const p=phases[phase];
+  const cwnds=[
+    {rtt:1,val:1},{rtt:2,val:2},{rtt:3,val:4},{rtt:4,val:8},{rtt:5,val:16},
+    {rtt:6,val:17},{rtt:7,val:18},{rtt:8,val:19},{rtt:9,val:20},
+    {rtt:10,val:10,ev:"loss"},{rtt:11,val:1},{rtt:12,val:2},{rtt:13,val:4},{rtt:14,val:5},
+  ];
+  const maxVal=20;
+  return(
+    <div>
+      <h1>Fases del Control de Congestión TCP</h1>
+      <p className="subtitle">TCP adapta cwnd (congestion window) según señales de la red</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Fases del algoritmo — clic para detalle</h3>
+            <div style={{display:"flex",gap:8,marginBottom:14}}>
+              {Object.entries(phases).map(([k,v])=>(
+                <button key={k} onClick={()=>setPhase(k)}
+                  style={{flex:1,background:phase===k?v.color:"#0a1020",border:`1px solid ${v.color}`,color:phase===k?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 4px",cursor:"pointer",fontWeight:700,fontSize:11}}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${p.color}`,borderRadius:8,padding:14}}>
+              <div style={{color:p.color,fontWeight:700,fontSize:14,marginBottom:8}}>{p.label}</div>
+              <div style={{color:"#e8f0fe",fontSize:13,marginBottom:10}}>{p.desc}</div>
+              <div style={{background:"#0f1628",border:`1px solid ${p.color}`,borderRadius:4,padding:"6px 10px",fontFamily:"monospace",fontSize:12,color:p.color}}>{p.formula}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Gráfico cwnd vs RTT (simplificado)</h3>
+            <div style={{display:"flex",alignItems:"flex-end",gap:3,height:100,padding:"0 0 4px"}}>
+              {cwnds.map((r,i)=>(
+                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
+                  <div style={{width:"100%",background:r.ev?"#ef4444":r.rtt<=5?"#10b981":"#3b82f6",height:Math.max(4,(r.val/maxVal)*90),borderRadius:"3px 3px 0 0",transition:"height 0.3s"}}/>
+                  {r.ev&&<div style={{fontSize:9,color:"#ef4444",position:"absolute",marginTop:-14}}>✕</div>}
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#3a4a72",marginTop:4}}>
+              <span>RTT 1</span><span style={{color:"#10b981"}}>Slow Start</span><span style={{color:"#3b82f6"}}>CA</span><span style={{color:"#ef4444"}}>Pérdida</span><span>RTT 14</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>ssthresh — Slow Start Threshold</h3>
+            <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+              <div style={{marginBottom:8}}><strong style={{color:"#f97316"}}>ssthresh</strong> es la frontera entre Slow Start y Congestion Avoidance.</div>
+              <div style={{marginBottom:4}}>Valor inicial: típicamente ∞ o 65535</div>
+              <div style={{marginBottom:4}}>Ante pérdida por timeout: <span style={{color:"#ef4444"}}>ssthresh = cwnd/2, cwnd = 1 MSS</span></div>
+              <div>Ante 3 DupACK (Reno): <span style={{color:"#f97316"}}>ssthresh = cwnd/2, cwnd = ssthresh+3</span></div>
+            </div>
+            <div style={{marginTop:10,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10,fontFamily:"monospace",fontSize:12}}>
+              <div style={{color:"#7c8db8"}}>while cwnd &lt; ssthresh: Slow Start</div>
+              <div style={{color:"#7c8db8"}}>while cwnd &gt;= ssthresh: Cong. Avoid.</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>AIMD — Additive Increase, Multiplicative Decrease</h3>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #10b981",borderRadius:6,padding:10}}>
+                <div style={{color:"#10b981",fontWeight:600,fontSize:13,marginBottom:4}}>AI — Additive Increase</div>
+                <div style={{color:"#e8f0fe",fontSize:12}}>Sin pérdidas: +1 MSS por RTT (lineal)</div>
+                <div style={{fontFamily:"monospace",fontSize:11,color:"#10b981",marginTop:4}}>cwnd += 1 MSS/RTT</div>
+              </div>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #ef4444",borderRadius:6,padding:10}}>
+                <div style={{color:"#ef4444",fontWeight:600,fontSize:13,marginBottom:4}}>MD — Multiplicative Decrease</div>
+                <div style={{color:"#e8f0fe",fontSize:12}}>Al detectar pérdida: ÷2 la ventana</div>
+                <div style={{fontFamily:"monospace",fontSize:11,color:"#ef4444",marginTop:4}}>cwnd *= 0.5</div>
+              </div>
+            </div>
+            <div style={{marginTop:10,background:"#0a1020",borderLeft:"3px solid #3b82f6",borderRadius:"0 6px 6px 0",padding:10,fontSize:12}}>
+              <div style={{color:"#3b82f6",fontWeight:600}}>¿Por qué AIMD es justo?</div>
+              <div style={{color:"#e8f0fe",marginTop:4}}>Múltiples flujos compitiendo convergen hacia una distribución equitativa del ancho de banda disponible (Chiu-Jain fairness proof).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [mode,setMode]=useState("timeout");
+  return(
+    <div>
+      <h1>Detección de Pérdidas en TCP</h1>
+      <p className="subtitle">TCP interpreta las pérdidas como señal de congestión y ajusta cwnd</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["timeout","dupacks","ecn"].map(m=>(
+          <button key={m} onClick={()=>setMode(m)}
+            style={{background:mode===m?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:mode===m?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+            {m==="timeout"?"RTO Timeout":m==="dupacks"?"3 DupACKs":"ECN"}
+          </button>
+        ))}
+      </div>
+      {mode==="timeout"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>Retransmission Timeout (RTO)</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div style={{marginBottom:10,padding:10,background:"#0a1020",border:"1px solid #ef4444",borderRadius:6}}>
+                  <strong style={{color:"#ef4444"}}>Señal más severa de congestión.</strong> El segmento tardó más que RTO en ser confirmado.
+                </div>
+                <div>Reacción TCP (Tahoe y Reno):</div>
+                <div style={{paddingLeft:12,fontFamily:"monospace",fontSize:12,marginTop:4}}>
+                  <div style={{color:"#ef4444"}}>ssthresh = max(cwnd/2, 2×MSS)</div>
+                  <div style={{color:"#ef4444"}}>cwnd = 1 MSS</div>
+                  <div>→ Volver a Slow Start desde 1</div>
+                </div>
+              </div>
+            </div>
+            <div className="card">
+              <h3>Cálculo del RTO (RFC 6298)</h3>
+              <div className="mono">
+                <div style={{color:"#7c8db8"}}># Estimación de RTT con EWMA</div>
+                <div>SRTT = (1-α)×SRTT + α×RTT_sample</div>
+                <div style={{color:"#7c8db8"}}># α = 1/8 (recomendado)</div>
+                <div style={{marginTop:6}}>RTTVAR = (1-β)×RTTVAR + β×|SRTT-RTT|</div>
+                <div style={{color:"#7c8db8"}}># β = 1/4 (recomendado)</div>
+                <div style={{marginTop:6}}>RTO = SRTT + 4×RTTVAR</div>
+                <div style={{color:"#7c8db8"}}># mínimo 1s</div>
+                <div style={{marginTop:6,color:"#f97316"}}>Karn's algorithm: no usar RTT</div>
+                <div style={{color:"#f97316"}}>de retransmisiones para SRTT</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>Exponential Backoff en RTO</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div style={{marginBottom:8}}>Cada retransmisión sin ACK dobla el RTO:</div>
+                {[1,2,4,8,16,32,64].map((v,i)=>(
+                  <div key={i} style={{display:"flex",gap:8,alignItems:"center",marginBottom:4}}>
+                    <div style={{color:"#7c8db8",fontSize:12,width:80}}>Intento {i+1}:</div>
+                    <div style={{background:"#1e3a5f",height:10,borderRadius:4,width:v*4,minWidth:4,maxWidth:200}}/>
+                    <div style={{color:"#3b82f6",fontFamily:"monospace",fontSize:12}}>{v}s</div>
+                  </div>
+                ))}
+                <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>Máximo ~15 intentos (~9 minutos) antes de abortar la conexión.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {mode==="dupacks"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>3 ACKs duplicados — Fast Retransmit</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div style={{marginBottom:10,padding:10,background:"#0a1020",border:"1px solid #f97316",borderRadius:6}}>
+                  <strong style={{color:"#f97316"}}>Señal menos severa.</strong> Segmentos posteriores llegan (la red funciona) pero falta uno intermedio.
+                </div>
+                <div className="mono" style={{marginBottom:10}}>
+                  <div>Enviado: 1,2,3,4,5,6</div>
+                  <div>Perdido: 3</div>
+                  <div>Recibidos por B: 1,2,4,5,6</div>
+                  <div>ACKs de B → A:</div>
+                  <div>  ACK(3) ← recibió 2</div>
+                  <div>  ACK(3) ← recibió 4 (dup)</div>
+                  <div>  ACK(3) ← recibió 5 (dup)</div>
+                  <div style={{color:"#f97316"}}>  ACK(3) ← recibió 6 (3 dups!)</div>
+                  <div style={{color:"#10b981"}}>→ A retransmite 3 inmediatamente</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>Comparativa Tahoe vs Reno vs NewReno</h3>
+              <table><tbody>
+                <tr><th>Algoritmo</th><th>Timeout</th><th>3 DupACK</th></tr>
+                <tr><td style={{color:"#3b82f6"}}>Tahoe</td><td style={{color:"#e8f0fe",fontSize:12}}>ssthresh=cwnd/2, cwnd=1</td><td style={{color:"#e8f0fe",fontSize:12}}>ssthresh=cwnd/2, cwnd=1</td></tr>
+                <tr><td style={{color:"#f97316"}}>Reno</td><td style={{color:"#e8f0fe",fontSize:12}}>ssthresh=cwnd/2, cwnd=1</td><td style={{color:"#e8f0fe",fontSize:12}}>Fast Recovery: cwnd=ssthresh+3</td></tr>
+                <tr><td style={{color:"#10b981"}}>NewReno</td><td style={{color:"#e8f0fe",fontSize:12}}>ssthresh=cwnd/2, cwnd=1</td><td style={{color:"#e8f0fe",fontSize:12}}>Mejora en pérdidas múltiples</td></tr>
+                <tr><td style={{color:"#8b5cf6"}}>CUBIC</td><td style={{color:"#e8f0fe",fontSize:12}}>ssthresh=cwnd×β, cwnd=1</td><td style={{color:"#e8f0fe",fontSize:12}}>Función cúbica de crecimiento</td></tr>
+              </tbody></table>
+            </div>
+            <div className="card">
+              <h3>SACK + Fast Recovery</h3>
+              <div style={{fontSize:12,color:"#e8f0fe",lineHeight:1.7}}>
+                Con SACK, el emisor puede retransmitir exactamente los segmentos perdidos, sin reenviar los ya recibidos. Combinado con Fast Recovery evita el colapso completo de cwnd.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {mode==="ecn"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>ECN — Explicit Congestion Notification</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div style={{marginBottom:10,padding:10,background:"#0a1020",border:"1px solid #10b981",borderRadius:6}}>
+                  <strong style={{color:"#10b981"}}>Sin pérdida de paquetes.</strong> El router marca los paquetes antes de que se llene el buffer.
+                </div>
+                <div style={{fontFamily:"monospace",fontSize:12,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10,lineHeight:2}}>
+                  <div>1. SYN/SYN-ACK negocian ECN (ECE+CWR)</div>
+                  <div>2. Router congestionado: <span style={{color:"#f97316"}}>IP CE bit = 11</span></div>
+                  <div>3. Receptor: <span style={{color:"#3b82f6"}}>TCP ECE=1</span> en ACK</div>
+                  <div>4. Emisor: reduce cwnd, <span style={{color:"#8b5cf6"}}>TCP CWR=1</span></div>
+                  <div>5. Sin pérdida → sin retransmisión</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>Bits ECN en cabecera IP</h3>
+              <table><tbody>
+                <tr><th>Valor ECT</th><th>Significado</th></tr>
+                <tr><td style={{color:"#7c8db8",fontFamily:"monospace"}}>00</td><td>Not-ECT: no soporta ECN</td></tr>
+                <tr><td style={{color:"#3b82f6",fontFamily:"monospace"}}>01</td><td>ECT(1): ECN capable</td></tr>
+                <tr><td style={{color:"#3b82f6",fontFamily:"monospace"}}>10</td><td>ECT(0): ECN capable</td></tr>
+                <tr><td style={{color:"#ef4444",fontFamily:"monospace"}}>11</td><td>CE: Congestion Experienced ← router marca</td></tr>
+              </tbody></table>
+            </div>
+            <div className="card">
+              <h3>Ventaja de ECN</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div>• Reduce latencia: no espera timeout ni pérdida</div>
+                <div>• Menor retransmisión de datos</div>
+                <div>• Mejor rendimiento en data centers (DCTCP)</div>
+                <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>ECN requiere soporte en ambos endpoints TCP Y en los routers intermedios (AQM: RED, CoDel).</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Scene3(){
+  const [sel,setSel]=useState("cubic");
+  const variants={
+    cubic:{name:"TCP CUBIC",color:"#3b82f6",rfc:"RFC 8312",desc:"Algoritmo por defecto en Linux desde 2.6.19. La función de crecimiento de cwnd sigue una curva cúbica en función del tiempo transcurrido desde la última pérdida.",pts:["Crecimiento rápido lejos del punto de pérdida","Cuidadoso cerca del punto anterior de pérdida","Friendliness con Reno en RTTs bajos","β = 0.7 (reduce menos que Reno 0.5)","Dominante en internet moderno"]},
+    bbr:{name:"TCP BBR",color:"#10b981",rfc:"Google 2016",desc:"Bottleneck Bandwidth and Round-trip propagation. No usa pérdidas como señal primaria. Estima BDP mediante mediciones de throughput y RTT.",pts:["Mide ancho de banda disponible y RTT mínimo","cwnd ≈ BDP (no buffer bloating)","Muy eficiente en redes de alta velocidad","Usado en Google, YouTube, QUIC","Comportamiento agresivo con otros flujos (BBRv2 mejora)"]},
+    dccp:{name:"DCCP",color:"#8b5cf6",rfc:"RFC 4340",desc:"Datagram Congestion Control Protocol. Agrega control de congestión a UDP para aplicaciones multimedia.",pts:["Sin garantía de entrega (como UDP)","Con control de congestión (como TCP)","Múltiples perfiles CCID (2=AIMD, 3=TFRC)","Para streaming adaptativo de alta calidad"]},
+    sctp:{name:"SCTP",color:"#f97316",rfc:"RFC 4960",desc:"Stream Control Transmission Protocol. Multi-homing, multi-streaming, message-oriented sobre IP.",pts:["Multi-homing: múltiples IPs en una asociación","Multi-streaming: N streams independientes","Sin head-of-line blocking entre streams","4-way handshake con cookie anti-DDoS","Usado en telefonía (SS7 sobre IP)"]},
+  };
+  const v=variants[sel];
+  return(
+    <div>
+      <h1>Variantes Modernas de Control de Congestión</h1>
+      <p className="subtitle">Algoritmos más allá de Reno para redes de alta velocidad y multimedia</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Seleccionar algoritmo</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+              {Object.entries(variants).map(([k,v])=>(
+                <button key={k} onClick={()=>setSel(k)}
+                  style={{background:sel===k?"#1e3a5f":"#0a1020",border:`2px solid ${sel===k?v.color:"#1e3a5f"}`,color:sel===k?v.color:"#7c8db8",borderRadius:6,padding:"8px 14px",cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between"}}>
+                  <span style={{fontWeight:600,fontSize:13}}>{v.name}</span>
+                  <span style={{fontSize:11}}>{v.rfc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Algoritmos en el kernel Linux</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}># Ver algoritmo actual</div>
+              <div>sysctl net.ipv4.tcp_congestion_control</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}># Cambiar a BBR</div>
+              <div>sysctl -w net.ipv4.tcp_congestion_control=bbr</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}># Ver disponibles</div>
+              <div>sysctl net.ipv4.tcp_available_congestion_control</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{border:`1px solid ${v.color}`}}>
+            <h3 style={{color:v.color}}>{v.name} — {v.rfc}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,marginBottom:12,lineHeight:1.6}}>{v.desc}</p>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {v.pts.map(p=>(
+                <div key={p} style={{background:"#0a1020",borderLeft:`3px solid ${v.color}`,borderRadius:"0 6px 6px 0",padding:"6px 12px",fontSize:13,color:"#e8f0fe"}}>
+                  {p}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>6.5 Congestión TCP</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

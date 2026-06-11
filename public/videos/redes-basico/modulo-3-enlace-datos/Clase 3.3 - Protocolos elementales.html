@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.3 — Protocolos Elementales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Protocolo Simplex y Stop-and-Wait</div>
+    <div className="sec-sub">Desde lo más simple al primer protocolo práctico</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(59,130,246,0.25)',marginBottom:10}}>
+          <div className="card-h">Protocolo 1 — Simplex utópico</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Canal perfecto, receptor siempre listo, transmisión unidireccional. El emisor envía datos sin parar, el receptor los acepta sin procesar. Existe solo como base teórica.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.9}}>
+            {`EMISOR                RECEPTOR\n  │                      │\n  ├──── TRAMA 0 ────────►│\n  ├──── TRAMA 1 ────────►│\n  ├──── TRAMA 2 ────────►│\n  │   (sin parar...)     │\nNo hay ACK, no hay error`}
+          </div>
+        </div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)'}}>
+          <div className="card-h" style={{color:'#f97316'}}>Protocolo 2 — Simplex con control de flujo</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Canal sin errores pero receptor puede saturarse. El emisor envía una trama y ESPERA el ACK antes de enviar la siguiente.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.9}}>
+            {`EMISOR                RECEPTOR\n  │                      │\n  ├──── TRAMA 0 ────────►│ (procesa)\n  │◄─────── ACK ─────────│\n  ├──── TRAMA 1 ────────►│ (procesa)\n  │◄─────── ACK ─────────│\nEmisor BLOQUEADO hasta ACK`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Protocolo 3 — Stop-and-Wait (con errores)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Canal con errores. Tramas pueden perderse o corromperse. Se agrega detección de errores (CRC), numeración de tramas (0 o 1) y temporizador.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.7}}>
+            {`EMISOR              RECEPTOR\n  ├──TRAMA[0]────────►│ CRC ok → ACK[0]\n  │◄────ACK[0]─────────│\n  ├──TRAMA[1]──X (perdida)\n  │  (timeout!)        │\n  ├──TRAMA[1]────────►│ CRC ok → ACK[1]\n  │◄────ACK[1]─────────│\n1 bit de numeración: 0 ó 1`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Problema del duplicado</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7}}>Si la trama llega bien pero el ACK se pierde, el emisor retransmite. El receptor recibe una trama duplicada. La numeración alternante (0/1) permite al receptor detectar duplicados y descartarlos.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'8px',marginTop:8,color:'#8b5cf6',lineHeight:1.7}}>
+            {`EMISOR              RECEPTOR\n  ├──TRAMA[0]────────►│ ok → ACK[0]\n  │   ACK[0] se pierde ╳\n  │  (timeout!)        │\n  ├──TRAMA[0]────────►│ ← DUPLICADO!\n  │                    │ ya tiene seq=0\n  │                    │ → descarta, reenvía ACK[0]`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Eficiencia de Stop-and-Wait</div>
+    <div className="sec-sub">El problema de la utilización del canal</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Análisis de eficiencia</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:10}}>Con Stop-and-Wait, el emisor está bloqueado mientras la trama viaja al receptor y el ACK regresa. El canal está vacío durante ese tiempo.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`Tiempo transmisión trama: T_t\nTiempo propagación (ida): T_p\nTiempo total ciclo: T_t + 2×T_p\n\nEficiencia = T_t / (T_t + 2×T_p)\n           = 1 / (1 + 2a)\ndonde a = T_p / T_t`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Ejemplos numéricos</div>
+          {[
+            {esc:'LAN (Ethernet 1 Gbps)',tp:'0.01 ms',tt:'0.12 ms',a:'0.08',eff:'86%',color:'#10b981'},
+            {esc:'Satélite GEO (1 Gbps)',tp:'270 ms',tt:'0.12 ms',a:'2250',eff:'0.02%',color:'#ef4444'},
+            {esc:'Enlace WAN 100 km',tp:'0.5 ms',tt:'0.12 ms',a:'4.2',eff:'11%',color:'#f97316'},
+            {esc:'Backbone 1000 km',tp:'5 ms',tt:'0.12 ms',a:'41.7',eff:'1.2%',color:'#ef4444'},
+          ].map(r=>(
+            <div key={r.esc} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr 60px',gap:4,padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',alignItems:'center'}}>
+              <span style={{fontSize:11,color:'#e8f0fe'}}>{r.esc}</span>
+              <span style={{fontSize:10,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace'}}>{r.tp}</span>
+              <span style={{fontSize:10,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace'}}>{r.tt}</span>
+              <span style={{fontSize:10,color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace'}}>a={r.a}</span>
+              <span style={{fontSize:12,fontWeight:700,color:r.color,fontFamily:'IBM Plex Mono,monospace'}}>{r.eff}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>El problema del pipe vacío</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Con un enlace de 1 Gbps a 270 ms de latencia (satélite), el "tubo" puede contener 270 MB de datos en vuelo. Pero con Stop-and-Wait solo se transmiten 125 KB antes de bloquearse. Desperdicio enorme.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`Bandwidth-Delay Product:\nBDP = ancho de banda × RTT\n    = 1×10⁹ bps × 0.54 s\n    = 540 Mb = 67.5 MB\n\nStop-and-Wait usa: 1 trama\nDesaprovechado:    67.5 MB - 1 trama\nEficiencia:        ≈ 0.02%`}
+          </div>
+        </div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+          <div className="card-h" style={{color:'#10b981'}}>Solución: Pipelining</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7}}>Enviar múltiples tramas sin esperar ACK de cada una. El emisor mantiene una "ventana" de tramas en vuelo. Para saturar el canal con 270 ms de RTT necesitamos:</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'8px',marginTop:6,color:'#10b981',lineHeight:1.8}}>
+            {`W_min = 1 + 2a = 1 + 2×2250\n      = 4501 tramas en vuelo\n\nEso es la ventana deslizante →\n→ próxima clase!`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Piggybacking y Tramas de Control</div>
+    <div className="sec-sub">Técnicas de optimización en protocolos bidireccionales</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(59,130,246,0.25)',marginBottom:10}}>
+          <div className="card-h">Piggybacking — ACK en el flujo inverso</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>En comunicación bidireccional, en lugar de enviar un ACK separado, se incluye el ACK dentro de la próxima trama de datos en dirección contraria. Reduce el overhead de la comunicación.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.7}}>
+            {`A                          B\n├──[seq=0, data=..., ack=5]─►│\n│◄─[seq=6, data=..., ack=1]──│\n│   ↑                         │\n│ ACK del dato 0 va           │\n│ "montado" en el dato 6      │`}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8',marginTop:8}}>Si no hay datos que enviar pronto, se usa un timer: si el ACK no sale en T_ack milisegundos, se envía una trama de control ACK pura. T_ack típico: 500 ms en TCP.</div>
+        </div>
+        <div className="card">
+          <div className="card-h">Tipos de trama</div>
+          {[
+            {t:'DATA',c:'#10b981',d:'Lleva datos del usuario. Incluye seq#, ack# (piggybacking), datos y CRC'},
+            {t:'ACK',c:'#3b82f6',d:'Solo confirmación. Cuando no hay datos en sentido inverso pronto'},
+            {t:'NAK',c:'#ef4444',d:'Acuse negativo: trama recibida con error. Solicita retransmisión'},
+            {t:'REJ (Reject)',c:'#f97316',d:'Rechaza una trama específica en ventanas deslizantes Go-Back-N'},
+            {t:'SREJ (Selective)',c:'#8b5cf6',d:'Rechaza selectivamente una trama en Selective Repeat'},
+          ].map(r=>(
+            <div key={r.t} style={{display:'flex',gap:8,padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,fontWeight:700,color:r.c,minWidth:80}}>{r.t}</span>
+              <span style={{fontSize:11,color:'#7c8db8',lineHeight:1.5}}>{r.d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Máquina de estados del protocolo Stop-and-Wait</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`EMISOR:\n[LISTO] ──send trama 0──► [ESPERA_ACK0]\n          ◄──ACK0──────────[ESPERA_ACK0]\n[LISTO] ──send trama 1──► [ESPERA_ACK1]\n          ◄──ACK1──────────[ESPERA_ACK1]\n          timeout → retransmitir\n\nRECEPTOR:\n[ESPERA_0] ──trama 0 ok──► envía ACK0 → [ESPERA_1]\n[ESPERA_1] ──trama 1 ok──► envía ACK1 → [ESPERA_0]\n           ──trama duplicada──► reenvía ACK, ignora`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Resumen: Stop-and-Wait en perspectiva</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {[
+              {t:'Ventajas',c:'#10b981',items:['Simple de implementar','Sin buffers complejos','Correcto por diseño','Suficiente en LAN']},
+              {t:'Limitaciones',c:'#ef4444',items:['Ineficiente en WAN/satélite','Utilización puede ser < 1%','No soporta alta velocidad','Requiere pipelining para escalar']},
+            ].map((col,i)=>(
+              <div key={i} style={{background:'#060a14',borderRadius:6,padding:'8px',borderLeft:`3px solid ${col.c}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:col.c,marginBottom:6}}>{col.t}</div>
+                {col.items.map((it,j)=><div key={j} style={{fontSize:11,color:'#7c8db8',padding:'2px 0'}}>• {it}</div>)}
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:'#3a4a72',marginTop:8,fontStyle:'italic'}}>Stop-and-Wait es el fundamento conceptual de todos los protocolos ARQ más complejos.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Protocolos 1, 2 y 3',C:Scene1},{id:2,label:'Eficiencia Stop-and-Wait',C:Scene2},{id:3,label:'Piggybacking y tramas',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 3.3 — Protocolos Elementales de Enlace</div><div className="topbar-sub">Módulo 3 — Capa de Enlace</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Estudiar los protocolos simplex, stop-and-wait, su eficiencia y los conceptos de piggybacking y tipos de trama.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

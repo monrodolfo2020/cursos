@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.1 — Diseño Capa de Enlace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const servicios=[
+    {s:'Sin conexión, sin ACK',e:'Ethernet LAN',d:'El emisor envía tramas sin establecer conexión previa y sin recibir confirmación. Los errores rarísimos en LAN no justifican el overhead. Si una trama se pierde, la capa superior (TCP) se encarga.'},
+    {s:'Sin conexión, con ACK',e:'WiFi 802.11',d:'Sin conexión pero cada trama se confirma. Si no llega ACK, se retransmite. Útil cuando el canal es poco confiable (inalámbrico) pero la latencia de establecer conexión no es aceptable.'},
+    {s:'Con conexión, con ACK',e:'HDLC, PPP dial-up',d:'Se establece una conexión lógica, se numera cada trama y se confirman en orden. Tres fases: establecer conexión → transferir datos → liberar conexión. Canal más confiable, más overhead.'},
+  ];
+  return(<div>
+    <div className="sec-title">Diseño de la Capa de Enlace de Datos</div>
+    <div className="sec-sub">Servicios, tramas y propósito de la capa de enlace</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">¿Qué hace la capa de enlace?</div>
+          {[
+            {f:'Encuadre (Framing)','d':'Agrupar bits del flujo físico en unidades: tramas'},
+            {f:'Control de errores','d':'Detectar (y corregir) errores de transmisión'},
+            {f:'Control de flujo','d':'Evitar que el emisor sature al receptor'},
+            {f:'Control de acceso','d':'Arbitrar quién transmite en medios compartidos (subcapa MAC)'},
+          ].map((r,i)=>(
+            <div key={i} style={{display:'flex',gap:10,padding:'7px 0',borderBottom:'1px solid rgba(59,130,246,0.08)',alignItems:'flex-start'}}>
+              <span style={{flexShrink:0,fontSize:11,fontWeight:700,color:'#f97316',fontFamily:'IBM Plex Mono,monospace',minWidth:160}}>{r.f}</span>
+              <span style={{fontSize:11,color:'#7c8db8',lineHeight:1.5}}>{r.d}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Estructura de una trama genérica</div>
+          <div style={{fontSize:11,fontFamily:'IBM Plex Mono,monospace',background:'#060a14',borderRadius:6,padding:'10px',lineHeight:2}}>
+            <div style={{display:'flex',gap:4,fontSize:11}}>
+              {[{l:'FLAG/SFD',c:'#f97316',w:70},{l:'DIRECCIÓN',c:'#3b82f6',w:80},{l:'CONTROL',c:'#8b5cf6',w:65},{l:'DATOS (payload)',c:'#10b981',w:160},{l:'CRC/FCS',c:'#ef4444',w:65},{l:'FLAG',c:'#f97316',w:45}].map((b,i)=>(
+                <div key={i} style={{background:b.c+'22',border:`1px solid ${b.c}55`,borderRadius:4,padding:'4px 6px',textAlign:'center',color:b.c,fontSize:9,fontWeight:700,minWidth:b.w}}>{b.l}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card-h" style={{color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',fontSize:11,letterSpacing:'.14em',marginBottom:8}}>TIPOS DE SERVICIO</div>
+        {servicios.map((s,i)=>(
+          <div key={i} className="card" style={{marginBottom:8,borderColor:i===0?'rgba(59,130,246,0.25)':i===1?'rgba(249,115,22,0.2)':'rgba(16,185,129,0.2)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+              <div style={{fontSize:12,fontWeight:700,color:'#e8f0fe'}}>{s.s}</div>
+              <span style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',background:'rgba(59,130,246,0.1)',padding:'2px 6px',borderRadius:4}}>{s.e}</span>
+            </div>
+            <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>{s.d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const metodos=[
+    {nombre:'Conteo de caracteres',color:'#f97316',
+     desc:'El primer byte de cada trama indica cuántos bytes siguen. Simple pero frágil: si el contador se corrompe, se pierde sincronización y es difícil recuperarse.',
+     ej:'[5][H][O][L][A] → trama de 5 bytes (incluyendo el contador)',
+     uso:'Raro en protocolos modernos'},
+    {nombre:'Flags con relleno de bytes',color:'#3b82f6',
+     desc:'Delimitadores especiales (FLAG = 0x7E) marcan inicio/fin. Si aparece 0x7E en datos: se "rellena" (escapa) con 0x7D seguido del byte XOR 0x20. Escapar el escapador también.',
+     ej:'FLAG [datos] FLAG — si datos contiene 0x7E → 0x7D 0x5E',
+     uso:'PPP, HDLC'},
+    {nombre:'Flags con relleno de bits',color:'#8b5cf6',
+     desc:'En lugar de bytes, se insertan bits. Tras 5 unos consecutivos se inserta un 0 (bit stuffing). El receptor elimina el 0 automáticamente. Funciona a nivel de bit, no de byte.',
+     ej:'01111111 → se convierte en 011111011 (stuffed)',
+     uso:'HDLC, Frame Relay, ATM'},
+    {nombre:'Capa física con codificación',color:'#10b981',
+     desc:'Aprovechar símbolos de codificación de línea que son inválidos en datos (no pueden aparecer). En Manchester o 4B/5B hay patrones no usados que sirven como delimitadores.',
+     ej:'Ethernet usa preámbulo + SFD (10101011) como delimitador',
+     uso:'Ethernet, FDDI, USB'},
+  ];
+  return(<div>
+    <div className="sec-title">Técnicas de Encuadre (Framing)</div>
+    <div className="sec-sub">Cuatro métodos para delimitar tramas en un flujo de bits</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {metodos.map((m,i)=>(
+        <div key={i} className="card" style={{borderColor:m.color+'33'}}>
+          <div style={{fontSize:13,fontWeight:700,color:m.color,marginBottom:6}}>{m.nombre}</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6,marginBottom:6}}>{m.desc}</div>
+          <div style={{fontSize:10,fontFamily:'IBM Plex Mono,monospace',color:'#10b981',background:'#060a14',borderRadius:4,padding:'5px 8px',marginBottom:4}}>{m.ej}</div>
+          <div style={{fontSize:10,color:'#3a4a72'}}><span style={{color:m.color}}>Uso real: </span>{m.uso}</div>
+        </div>
+      ))}
+    </div>
+    <div className="card" style={{marginTop:8,borderColor:'rgba(59,130,246,0.25)'}}>
+      <div className="card-h">Problema del reloj — sincronización</div>
+      <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>La capa física entrega bits, pero el receptor necesita saber dónde empieza y termina cada trama. En redes síncronas (como SONET) hay un reloj global. En asíncronas, los flags y rellenos proveen la sincronización. La pérdida de sincronización obliga a descartar tramas hasta el próximo flag válido.</div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Control de Flujo y Control de Errores</div>
+    <div className="sec-sub">Los dos problemas fundamentales de la capa de enlace</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Control de Flujo</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Problema: el emisor puede enviar más rápido de lo que el receptor puede procesar. El buffer del receptor se desborda → tramas descartadas.</div>
+          <div style={{fontSize:12,fontWeight:600,color:'#e8f0fe',marginBottom:6}}>Solución 1: Retroalimentación (feedback-based)</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6,marginBottom:8}}>El receptor envía mensajes de control al emisor: "puedes enviar N tramas más" o "para". Protocolos de ventana deslizante. Usado en: TCP, HDLC, protocolos de enlace satelital.</div>
+          <div style={{fontSize:12,fontWeight:600,color:'#e8f0fe',marginBottom:6}}>Solución 2: Basada en tasa (rate-based)</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>El emisor tiene un límite de velocidad incorporado sin retroalimentación explícita. Más simple pero menos adaptable. Usado en: streaming broadcast.</div>
+        </div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+          <div className="card-h" style={{color:'#10b981'}}>Temporizadores y retransmisión</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Cuando se envía una trama, se inicia un temporizador. Si no llega ACK antes del timeout → retransmisión. El tiempo de espera debe ser mayor que el RTT del enlace. Demasiado corto: retransmisiones innecesarias. Demasiado largo: desperdicio de tiempo.</div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(59,130,246,0.25)',marginBottom:10}}>
+          <div className="card-h">Control de Errores</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Los bits se corrompen durante la transmisión por ruido, atenuación, interferencia. La capa de enlace debe detectar (y en algunos casos corregir) estos errores.</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {[
+              {t:'Detección de errores',c:'#3b82f6',items:['Checksum simple (8/16/32 bit)','CRC (Cyclic Redundancy Check)','Paridad (simple, bidimensional)','Overhead bajo: 16–32 bits extra']},
+              {t:'Corrección de errores',c:'#8b5cf6',items:['Códigos de Hamming','Reed-Solomon (CD, QR codes)','Turbo codes, LDPC (5G)','Overhead alto: 50%+ en canales ruidosos']},
+            ].map((col,i)=>(
+              <div key={i} style={{background:'#060a14',borderRadius:6,padding:'8px',borderLeft:`3px solid ${col.c}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:col.c,marginBottom:6}}>{col.t}</div>
+                {col.items.map((it,j)=><div key={j} style={{fontSize:11,color:'#7c8db8',padding:'2px 0'}}>• {it}</div>)}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card" style={{borderColor:'rgba(139,92,246,0.2)'}}>
+          <div className="card-h" style={{color:'#8b5cf6'}}>ARQ — Automatic Repeat reQuest</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Combina detección de errores + ACK/NACK + retransmisión. El receptor detecta el error con CRC, envía NACK o simplemente no envía ACK (timeout). El emisor retransmite. Tres variantes: Stop-and-Wait, Go-Back-N, Selective Repeat — se estudian en las siguientes clases.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Servicios y tramas',C:Scene1},{id:2,label:'Técnicas de encuadre',C:Scene2},{id:3,label:'Control de flujo y errores',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 3.1 — Diseño de la Capa de Enlace de Datos</div><div className="topbar-sub">Módulo 3 — Capa de Enlace</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender los servicios de la capa de enlace, las técnicas de encuadre y los mecanismos de control de flujo y errores.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.4 — Modelo OSI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+const CAPAS_OSI=[
+  {n:7,nombre:'Aplicación',color:'#f97316',pdu:'Datos/Mensaje',prot:'HTTP, FTP, SMTP, DNS, Telnet, SNMP',desc:'Proporciona servicios de red a las aplicaciones del usuario. Punto de entrada de las aplicaciones a la red. Gestiona identificación de socios, calidad de servicio, autenticación y privacidad.'},
+  {n:6,nombre:'Presentación',color:'#ec4899',pdu:'Datos',prot:'TLS/SSL, JPEG, MPEG, ASN.1, XDR',desc:'Gestiona la representación y sintaxis de los datos: cifrado/descifrado, compresión, conversión de formatos (EBCDIC↔ASCII), serialización. Asegura que los datos sean inteligibles entre sistemas heterogéneos.'},
+  {n:5,nombre:'Sesión',color:'#a855f7',pdu:'Datos',prot:'RPC, NetBIOS, SQL, NFS',desc:'Gestiona el diálogo entre aplicaciones: establece, mantiene y sincroniza sesiones. Permite puntos de recuperación (checkpoints) para reanudar transferencias interrumpidas. Gestiona el turno de comunicación (half-duplex vs full-duplex).'},
+  {n:4,nombre:'Transporte',color:'#8b5cf6',pdu:'Segmento/Datagrama',prot:'TCP, UDP, SCTP, SPX',desc:'Transferencia de datos confiable de extremo a extremo entre procesos. Segmentación y reensamblado, control de flujo, control de congestión, multiplexación de conexiones por puertos.'},
+  {n:3,nombre:'Red',color:'#3b82f6',pdu:'Paquete',prot:'IP, IPX, ICMP, ARP, OSPF, BGP',desc:'Enrutamiento de paquetes desde origen hasta destino a través de múltiples redes. Direccionamiento lógico (IP), determinación de rutas, fragmentación y reensamblado de paquetes, control de congestión.'},
+  {n:2,nombre:'Enlace de Datos',color:'#10b981',pdu:'Trama (Frame)',prot:'Ethernet, WiFi, PPP, HDLC, ATM',desc:'Transmisión confiable de tramas entre nodos adyacentes. Detección y corrección de errores (CRC), control de flujo, acceso al medio (subcapa MAC). Direccionamiento físico (MAC).'},
+  {n:1,nombre:'Física',color:'#6b7280',pdu:'Bits',prot:'Cable UTP/coaxial, fibra, 802.11 PHY',desc:'Transmisión de bits crudos sobre el medio físico. Define niveles de tensión, frecuencias, tasas de bits, distancias máximas, conectores y procedimientos mecánicos y eléctricos.'},
+];
+
+function Scene1(){
+  const [sel,setSel]=useState(null);
+  const c=sel!=null?CAPAS_OSI.find(x=>x.n===sel):null;
+  return(<div>
+    <div className="sec-title">Modelo OSI — Las 7 Capas</div>
+    <div className="sec-sub">ISO/IEC 7498 · Haz clic en una capa para ver detalles</div>
+    <div className="grid2">
+      <div>
+        <div style={{display:'flex',flexDirection:'column',gap:5}}>
+          {CAPAS_OSI.map(c=>(
+            <div key={c.n} onClick={()=>setSel(c.n===sel?null:c.n)}
+              style={{display:'flex',gap:10,alignItems:'center',padding:'9px 14px',borderRadius:8,border:`1px solid ${c.color}33`,background:sel===c.n?`${c.color}15`:'#0f1628',cursor:'pointer',transition:'all .2s'}}>
+              <div style={{width:28,height:28,borderRadius:'50%',background:c.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#060a14',flexShrink:0}}>{c.n}</div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:13,fontWeight:700,color:c.color}}>{c.nombre}</div>
+                <div style={{fontSize:10,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace',marginTop:1}}>PDU: {c.pdu}</div>
+              </div>
+              <div style={{fontSize:10,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace',textAlign:'right',maxWidth:180}}>{c.prot.split(',')[0]}…</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        {c ? (
+          <div className="card" style={{borderColor:c.color+'44',height:'100%'}}>
+            <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:12}}>
+              <div style={{width:36,height:36,borderRadius:'50%',background:c.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:700,color:'#060a14'}}>{c.n}</div>
+              <div><div style={{fontSize:18,fontWeight:700,color:c.color}}>Capa {c.n}: {c.nombre}</div><div style={{fontSize:11,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace'}}>PDU: {c.pdu}</div></div>
+            </div>
+            <p style={{fontSize:13,lineHeight:1.65,color:'#7c8db8',marginBottom:12}}>{c.desc}</p>
+            <div className="card-h">Protocolos</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+              {c.prot.split(',').map((p,i)=>(
+                <span key={i} style={{padding:'3px 10px',borderRadius:4,background:`${c.color}15`,border:`1px solid ${c.color}33`,fontSize:11,fontFamily:'IBM Plex Mono,monospace',color:c.color}}>{p.trim()}</span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="card" style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',opacity:.5}}>
+            <div style={{textAlign:'center',fontSize:13,color:'#3a4a72'}}>← Selecciona una capa<br/>para ver sus detalles</div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Flujo de Datos a Través del Modelo OSI</div>
+    <div className="sec-sub">Encapsulación y desencapsulación — cómo viajan los datos de A a B</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Encapsulación (emisor, de arriba hacia abajo)</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#7c8db8',marginBottom:10}}>
+            Cuando la aplicación envía datos, éstos descienden por las capas. Cada capa <strong style={{color:'#e8f0fe'}}>agrega su propia cabecera (header)</strong> — y en la capa de enlace también un pie (trailer) — creando una nueva PDU.
+          </p>
+          {[
+            {c:'7 Aplicación',a:'→ Datos del usuario (ej: petición HTTP GET /index.html)'},
+            {c:'6 Presentación',a:'→ Cifra y/o comprime los datos si es necesario'},
+            {c:'5 Sesión',a:'→ Agrega identificadores de sesión y puntos de control'},
+            {c:'4 Transporte',a:'→ Agrega cabecera TCP con puerto origen/destino, número de secuencia'},
+            {c:'3 Red',a:'→ Agrega cabecera IP con IP origen/destino → PAQUETE'},
+            {c:'2 Enlace',a:'→ Agrega cabecera MAC y CRC → TRAMA (FRAME)'},
+            {c:'1 Física',a:'→ Convierte la trama en bits eléctricos/ópticos/radio'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,color:'#3b82f6',flexShrink:0,width:110}}>{r.c}</span>
+              <span style={{fontSize:11,color:'#7c8db8'}}>{r.a}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Desencapsulación (receptor, de abajo hacia arriba)</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#7c8db8',marginBottom:10}}>
+            El receptor hace el proceso inverso: cada capa <strong style={{color:'#e8f0fe'}}>lee y elimina su propia cabecera</strong>, procesando la información relevante y pasando el resto a la capa superior.
+          </p>
+          {[
+            {c:'1 Física',a:'→ Recibe bits del medio, los agrupa en bytes'},
+            {c:'2 Enlace',a:'→ Lee cabecera MAC, verifica CRC, extrae paquete IP'},
+            {c:'3 Red',a:'→ Lee cabecera IP, verifica destino, extrae segmento TCP'},
+            {c:'4 Transporte',a:'→ Lee cabecera TCP, reensambla segmentos, extrae datos'},
+            {c:'5 Sesión',a:'→ Verifica identificadores de sesión'},
+            {c:'6 Presentación',a:'→ Descifra/descomprime los datos si es necesario'},
+            {c:'7 Aplicación',a:'→ Entrega los datos a la aplicación (ej: navegador web)'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,color:'#10b981',flexShrink:0,width:110}}>{r.c}</span>
+              <span style={{fontSize:11,color:'#7c8db8'}}>{r.a}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{background:'rgba(59,130,246,0.07)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+          <strong style={{color:'#3b82f6'}}>Principio de transparencia:</strong> En cada salto de router, sólo se procesan las capas 1–3. Las capas 4–7 solo las ve el host origen y el host destino. Por eso se dice que TCP/IP ofrece comunicación <em>end-to-end</em>.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Críticas al Modelo OSI y su Contexto Histórico</div>
+    <div className="sec-sub">Por qué OSI no "ganó" a TCP/IP a pesar de ser el estándar ISO</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Problemas del modelo OSI</div>
+          {[
+            {p:'Malos momentos',d:'OSI llegó tarde. TCP/IP ya tenía millones de usuarios. El éxito de un protocolo depende del timing, no sólo de la calidad técnica.'},
+            {p:'Mala tecnología',d:'Las capas de sesión y presentación son casi vacías en la práctica. TCP/IP combinó sus funciones de forma más pragmática.'},
+            {p:'Mala implementación',d:'Las primeras implementaciones de OSI eran lentas, con errores y muy complejas. TCP/IP tenía implementaciones maduras y gratuitas (BSD UNIX).'},
+            {p:'Mala política',d:'OSI fue diseñado por comités de gobierno y telecomunicaciones. TCP/IP fue diseñado por ingenieros de universidades con retroalimentación real.'},
+            {p:'Capas 5 y 6 vacías',d:'En la práctica, HTTP gestiona sesiones por sí solo; TLS gestiona la presentación. Las capas 5 y 6 de OSI no tienen equivalente real en la mayoría de los sistemas.'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#f97316',flexShrink:0,marginTop:1}}>✗</span>
+              <div><span style={{fontSize:12,fontWeight:600,color:'#e8f0fe'}}>{r.p}: </span><span style={{fontSize:12,color:'#7c8db8'}}>{r.d}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Valor del modelo OSI hoy</div>
+          {[
+            {p:'Marco de referencia universal',d:'OSI provee vocabulario preciso para describir funciones de red. "Esto opera en capa 3" es entendido por cualquier ingeniero de red en el mundo.'},
+            {p:'Herramienta pedagógica',d:'Las 7 capas son la forma estándar de enseñar redes. Todos los libros de texto y certificaciones (CCNA, CompTIA Network+) usan OSI como base.'},
+            {p:'Diagnóstico de problemas',d:'El troubleshooting de redes se hace capa por capa: "¿Hay señal física? ¿Las MACs están bien? ¿El IP enruta correctamente?" — metodología OSI.'},
+            {p:'Especificación de protocolos',d:'Muchos RFCs y estándares IEEE usan la terminología OSI para definir en qué capas operan sus protocolos.'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#10b981',flexShrink:0,marginTop:1}}>✓</span>
+              <div><span style={{fontSize:12,fontWeight:600,color:'#e8f0fe'}}>{r.p}: </span><span style={{fontSize:12,color:'#7c8db8'}}>{r.d}</span></div>
+            </div>
+          ))}
+        </div>
+        <div style={{background:'rgba(16,185,129,0.07)',border:'1px solid rgba(16,185,129,0.2)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#7c8db8',lineHeight:1.6,marginTop:0}}>
+          <strong style={{color:'#10b981'}}>Conclusión:</strong> el modelo OSI tiene limitaciones prácticas, pero el concepto de capas es muy valioso. Usamos el modelo TCP/IP de 4-5 capas en la práctica, pero la teoría y el análisis de redes se describen mejor con la terminología de las 7 capas OSI.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Las 7 capas (interactivo)',C:Scene1},{id:2,label:'Encapsulación y desencapsulación',C:Scene2},{id:3,label:'OSI vs. TCP/IP',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 1.4 — Modelo OSI: las 7 capas explicadas</div><div className="topbar-sub">ISO/IEC 7498 · Módulo 1 — Introducción</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Dominar las 7 capas OSI, entender la encapsulación y comprender por qué TCP/IP superó a OSI en la práctica.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

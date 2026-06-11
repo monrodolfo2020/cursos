@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 7.7 – Video Bajo Demanda y Videoconferencia: RTP y RTSP</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"RTP — Transporte en tiempo real"},{id:2,label:"RTSP y control de streaming"},{id:3,label:"Video digital y videoconferencia"}];
+
+function Scene1(){
+  const [field,setField]=useState("version");
+  const headerFields={
+    version:{bits:"2 bits",desc:"Versión RTP. Siempre 2.",range:"Valor: 2",color:"#3b82f6"},
+    padding:{bits:"1 bit",desc:"Si hay bytes de relleno al final del paquete para alineación.",range:"0=sin relleno, 1=con relleno",color:"#f97316"},
+    extension:{bits:"1 bit",desc:"Si hay una cabecera de extensión definida por la aplicación.",range:"0=sin extensión, 1=con extensión",color:"#10b981"},
+    cc:{bits:"4 bits",desc:"CSRC Count: número de identificadores de fuente contribuyente (máx. 15).",range:"0–15",color:"#8b5cf6"},
+    marker:{bits:"1 bit",desc:"Marca eventos importantes: fin de frame, inicio de habla. Uso según perfil.",range:"Depende del payload type",color:"#06b6d4"},
+    pt:{bits:"7 bits",desc:"Payload Type: identifica el codec (0=G.711 µ-law, 8=G.711 A-law, 96-127=dinámico).",range:"0–127",color:"#f59e0b"},
+    seq:{bits:"16 bits",desc:"Número de secuencia: incrementa en 1 por paquete. Detecta pérdidas y reordena.",range:"0–65535, wraps around",color:"#ef4444"},
+    timestamp:{bits:"32 bits",desc:"Timestamp de muestreo del primer byte del payload. Para sincronización y jitter buffer.",range:"Inicial aleatorio, incrementa por muestras",color:"#3b82f6"},
+    ssrc:{bits:"32 bits",desc:"Synchronization Source: identifica de forma única la fuente RTP en la sesión.",range:"Aleatorio, debe ser único en la sesión",color:"#f97316"},
+  };
+  const f=headerFields[field];
+  const payloadTypes=[
+    {pt:0,enc:"PCMU (G.711 µ-law)",rate:"8000 Hz",channels:1},
+    {pt:8,enc:"PCMA (G.711 A-law)",rate:"8000 Hz",channels:1},
+    {pt:9,enc:"G.722",rate:"8000 Hz",channels:1},
+    {pt:18,enc:"G.729",rate:"8000 Hz",channels:1},
+    {pt:31,enc:"H.261",rate:"90000 Hz",channels:1},
+    {pt:34,enc:"H.263",rate:"90000 Hz",channels:1},
+    {pt:96,enc:"Dinámico (SDP)",rate:"Variable",channels:"Variable"},
+  ];
+  return(
+    <div>
+      <h1>RTP — Real-time Transport Protocol</h1>
+      <p className="subtitle">RTP (RFC 3550) transporta audio y vídeo en tiempo real sobre UDP. Proporciona timestamps, secuencia y detección de pérdidas</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Cabecera RTP (12 bytes fijos)</h3>
+            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
+              {Object.entries(headerFields).map(([k,v])=>(
+                <button key={k} onClick={()=>setField(k)}
+                  style={{background:field===k?v.color+"33":"#0a1020",border:`2px solid ${field===k?v.color:"#1e3a5f"}`,color:field===k?v.color:"#7c8db8",borderRadius:5,padding:"4px 10px",cursor:"pointer",fontWeight:600,fontSize:11,transition:"all .2s"}}>
+                  {k.toUpperCase()}<span style={{fontWeight:400,fontSize:10}}> ({v.bits})</span>
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${f.color}`,borderRadius:8,padding:14}}>
+              <div style={{display:"flex",gap:10,marginBottom:8}}>
+                <span style={{color:f.color,fontFamily:"monospace",fontWeight:700,fontSize:13}}>{field.toUpperCase()}</span>
+                <span style={{color:"#7c8db8",fontSize:12}}>{f.bits}</span>
+                <span style={{color:"#e8f0fe",fontSize:12}}>Rango: {f.range}</span>
+              </div>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7}}>{f.desc}</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Payload Types comunes</h3>
+            <table style={{marginBottom:12}}><tbody>
+              <tr><th>PT</th><th>Codec</th><th>Clock Rate</th><th>Ch.</th></tr>
+              {payloadTypes.map(p=>(
+                <tr key={p.pt}>
+                  <td style={{color:"#3b82f6",fontFamily:"monospace",fontWeight:700}}>{p.pt}</td>
+                  <td>{p.enc}</td>
+                  <td style={{fontFamily:"monospace",fontSize:11,color:"#7c8db8"}}>{p.rate}</td>
+                  <td style={{textAlign:"center"}}>{p.channels}</td>
+                </tr>
+              ))}
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>RTCP — Control de RTP</h3>
+            <div style={{fontSize:12,lineHeight:1.8}}>
+              {[
+                {n:"SR (Sender Report)",c:"#3b82f6",d:"Estadísticas del emisor: paquetes enviados, timestamp NTP."},
+                {n:"RR (Receiver Report)",c:"#f97316",d:"Estadísticas del receptor: fracción perdida, jitter estimado, último SR."},
+                {n:"SDES (Source Description)",c:"#10b981",d:"Información del origen: CNAME, nombre, herramienta."},
+                {n:"BYE",c:"#ef4444",d:"El participante abandona la sesión."},
+              ].map(p=>(
+                <div key={p.n} style={{display:"flex",gap:8,marginBottom:5}}>
+                  <span style={{color:p.c,fontWeight:600,width:170,flexShrink:0}}>{p.n}</span>
+                  <span style={{color:"#7c8db8"}}>{p.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [step,setStep]=useState(0);
+  const rtspFlow=[
+    {method:"OPTIONS",code:"200 OK",desc:"El cliente pregunta qué métodos soporta el servidor RTSP. El servidor responde con la lista de métodos disponibles."},
+    {method:"DESCRIBE",code:"200 OK + SDP",desc:"El cliente obtiene la descripción del media (SDP). Incluye codecs, puertos, tracks de audio/vídeo disponibles."},
+    {method:"SETUP",code:"200 OK",desc:"Negocia los parámetros de transporte: puertos RTP/RTCP del cliente y servidor. Se crea una sesión RTSP con Session ID."},
+    {method:"PLAY",code:"200 OK",desc:"Inicia el envío del stream RTP. El servidor comienza a enviar los paquetes RTP al cliente."},
+    {method:"PAUSE",code:"200 OK",desc:"Pausa el stream. El servidor detiene el envío de RTP. Un PLAY posterior reanuda desde la posición de pausa."},
+    {method:"SET_PARAMETER",code:"200 OK",desc:"Modifica parámetros durante la sesión (velocidad de reproducción, seeking a posición específica)."},
+    {method:"TEARDOWN",code:"200 OK",desc:"Termina la sesión RTSP. El servidor libera recursos y para de enviar RTP."},
+  ];
+  const cur=rtspFlow[step];
+  return(
+    <div>
+      <h1>RTSP — Real Time Streaming Protocol</h1>
+      <p className="subtitle">RTSP (RFC 2326) es un protocolo de control de sesión para streaming. Similar a HTTP pero para media. El media fluye por RTP separado.</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Sesión RTSP — Flujo de control</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:12}}>
+              {rtspFlow.map((s,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{background:step===i?"#1e3a5f":"#0a1020",border:`1px solid ${step===i?"#3b82f6":"#1e3a5f"}`,color:step===i?"#3b82f6":"#7c8db8",borderRadius:5,padding:"6px 12px",cursor:"pointer",textAlign:"left",fontSize:12,transition:"all .2s",display:"flex",justifyContent:"space-between"}}>
+                  <span><span style={{color:"#7c8db8",marginRight:8}}>{i+1}.</span><strong>{s.method}</strong></span>
+                  <span style={{color:"#10b981",fontSize:11,fontFamily:"monospace"}}>{s.code}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{background:"#0a1020",border:"2px solid #3b82f6",marginBottom:12}}>
+            <h3>{cur.method}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7}}>{cur.desc}</p>
+          </div>
+          <div className="card">
+            <h3>RTSP vs HTTP para streaming</h3>
+            <table><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>RTSP</th><th style={{color:"#f97316"}}>HTTP Streaming</th></tr>
+              <tr><td>Protocolo</td><td>TCP port 554</td><td>TCP port 80/443</td></tr>
+              <tr><td>Media transport</td><td>RTP/UDP separado</td><td>HTTP mismo canal</td></tr>
+              <tr><td>Control</td><td>PLAY/PAUSE/SEEK</td><td>Range header</td></tr>
+              <tr><td>Adaptive bitrate</td><td>No nativo</td><td>HLS/DASH</td></tr>
+              <tr><td>Firewalls/NAT</td><td>Problemas (UDP)</td><td>Sin problemas</td></tr>
+              <tr><td>Uso actual</td><td>IP cameras, IPTV</td><td>Web streaming</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [res,setRes]=useState("1080p");
+  const resolutions={
+    "480p":{w:854,h:480,pixels:854*480,fps:30,rawMbps:854*480*30*24/1e6,h264Mbps:1.5,label:"SD (DVD)"},
+    "720p":{w:1280,h:720,pixels:1280*720,fps:30,rawMbps:1280*720*30*24/1e6,h264Mbps:4,label:"HD Ready"},
+    "1080p":{w:1920,h:1080,pixels:1920*1080,fps:30,rawMbps:1920*1080*30*24/1e6,h264Mbps:8,label:"Full HD"},
+    "4K":{w:3840,h:2160,pixels:3840*2160,fps:30,rawMbps:3840*2160*30*24/1e6,h264Mbps:25,label:"Ultra HD"},
+  };
+  const r=resolutions[res];
+  const videoCodecs=[
+    {n:"H.264 (AVC)",c:"#3b82f6",year:2003,ratio:"1000:1",use:"Universal: YouTube, Netflix, iOS, Android"},
+    {n:"H.265 (HEVC)",c:"#f97316",year:2013,ratio:"2000:1",use:"4K Netflix, UHD Blu-ray. 50% más eficiente que H.264"},
+    {n:"VP9",c:"#10b981",year:2013,ratio:"1500:1",use:"YouTube (abierto). Comparable a HEVC."},
+    {n:"AV1",c:"#8b5cf6",year:2018,ratio:"2500:1",use:"YouTube, Netflix 4K. 30-50% mejor que HEVC. Libre de regalías."},
+    {n:"H.266 (VVC)",c:"#06b6d4",year:2020,ratio:"4000:1",use:"Próxima generación: 8K, VR/360°. 50% más eficiente que HEVC."},
+  ];
+  return(
+    <div>
+      <h1>Video Digital y Videoconferencia</h1>
+      <p className="subtitle">El vídeo digital es una secuencia de imágenes (frames). La compresión es esencial: un minuto de 1080p sin comprimir ocupa ~13 GB</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Resoluciones y bitrates</h3>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {Object.keys(resolutions).map(k=>(
+                <button key={k} onClick={()=>setRes(k)}
+                  style={{background:res===k?"#3b82f6":"#0a1020",border:`2px solid ${res===k?"#3b82f6":"#1e3a5f"}`,color:res===k?"#0a1020":"#7c8db8",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:700,fontSize:13}}>
+                  {k}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:8,padding:14,fontSize:13}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#7c8db8"}}>Resolución:</span>
+                <span style={{color:"#e8f0fe",fontWeight:700}}>{r.w}×{r.h} ({r.label})</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#7c8db8"}}>Píxeles por frame:</span>
+                <span style={{color:"#3b82f6",fontWeight:700}}>{(r.pixels/1e6).toFixed(2)} Mpx</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#7c8db8"}}>Sin comprimir (24bpp·30fps):</span>
+                <span style={{color:"#ef4444",fontWeight:700}}>{r.rawMbps.toFixed(0)} Mbps</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#7c8db8"}}>Con H.264 (típico streaming):</span>
+                <span style={{color:"#10b981",fontWeight:700}}>{r.h264Mbps} Mbps</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between"}}>
+                <span style={{color:"#7c8db8"}}>Ratio de compresión:</span>
+                <span style={{color:"#f97316",fontWeight:700}}>{Math.round(r.rawMbps/r.h264Mbps)}:1</span>
+              </div>
+            </div>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3>Tipos de frames en compresión vídeo</h3>
+            <div style={{display:"flex",gap:8}}>
+              {[
+                {t:"I-frame",c:"#10b981",d:"Intra-coded. Frame completo, independiente. ~100 KB"},
+                {t:"P-frame",c:"#3b82f6",d:"Predictivo: diferencias vs frame anterior. ~10 KB"},
+                {t:"B-frame",c:"#8b5cf6",d:"Bi-directional: usa frames anterior y siguiente. ~5 KB"},
+              ].map(f=>(
+                <div key={f.t} style={{flex:1,background:"#0a1020",border:`1px solid ${f.c}44`,borderRadius:6,padding:8,textAlign:"center"}}>
+                  <div style={{color:f.c,fontWeight:700,fontSize:14}}>{f.t}</div>
+                  <div style={{color:"#7c8db8",fontSize:10,marginTop:4}}>{f.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Codecs de vídeo</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {videoCodecs.map(c=>(
+                <div key={c.n} style={{background:"#0a1020",border:`1px solid ${c.c}44`,borderRadius:6,padding:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                    <span style={{color:c.c,fontWeight:700,fontSize:12}}>{c.n}</span>
+                    <span style={{display:"flex",gap:8}}>
+                      <span style={{color:"#7c8db8",fontSize:11}}>{c.year}</span>
+                      <span style={{color:"#f59e0b",fontSize:11,fontFamily:"monospace"}}>{c.ratio}</span>
+                    </span>
+                  </div>
+                  <div style={{color:"#7c8db8",fontSize:11}}>{c.use}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Plataformas VoD y arquitectura</h3>
+            <div style={{fontSize:12,lineHeight:1.8}}>
+              <div className="mono" style={{fontSize:11,marginBottom:8}}>
+                <div style={{color:"#7c8db8"}}>Netflix / YouTube / Prime Video:</div>
+                <div>1. Ingest → transcodificación 20+ resoluciones</div>
+                <div>2. DRM: Widevine + PlayReady + FairPlay</div>
+                <div>3. CDN global (Akamai, CloudFront, OCAs)</div>
+                <div>4. Adaptive streaming: DASH o HLS</div>
+                <div>5. ABR algorithm en cliente → cambia calidad</div>
+              </div>
+              <table><tbody>
+                <tr><th>Plataforma</th><th>Protocolo</th><th>DRM</th></tr>
+                <tr><td style={{color:"#e50914"}}>Netflix</td><td>DASH</td><td>Widevine+PlayReady</td></tr>
+                <tr><td style={{color:"#ff0000"}}>YouTube</td><td>DASH</td><td>Widevine</td></tr>
+                <tr><td style={{color:"#00a8e0"}}>Disney+</td><td>DASH/HLS</td><td>Multi-DRM</td></tr>
+                <tr><td style={{color:"#ff9900"}}>Prime</td><td>DASH</td><td>Widevine+PlayReady</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>7.7 Video VoD</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

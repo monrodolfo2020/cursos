@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 8.5 – Protocolos de Seguridad: IPsec, SSL/TLS y HTTPS</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#ef4444;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#ef4444;background:#0a1020;border-left-color:#ef4444;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"IPsec — capa de red"},{id:2,label:"TLS 1.3 — handshake"},{id:3,label:"HTTPS y seguridad web"}];
+
+function Scene1(){
+  const [mode,setMode]=useState("AH");
+  return(
+    <div>
+      <h1>IPsec — IP Security</h1>
+      <p className="subtitle">IPsec opera en la capa de red (L3), protegiendo todos los paquetes IP. Usado en VPNs site-to-site y acceso remoto</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["AH","ESP","IKE"].map(m=>(
+          <button key={m} onClick={()=>setMode(m)}
+            style={{background:mode===m?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:mode===m?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:700,fontSize:14}}>
+            {m}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {mode==="AH"&&(
+            <div className="card">
+              <h3>AH — Authentication Header (RFC 4302)</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>Proporciona <strong style={{color:"#10b981"}}>integridad y autenticación</strong> del paquete IP completo (incluyendo cabecera). <strong style={{color:"#ef4444"}}>No cifra</strong> los datos. Poco usado porque no funciona bien con NAT.</p>
+              <div className="mono" style={{fontSize:11}}>
+                <div style={{color:"#7c8db8"}}>Paquete AH en modo transporte:</div>
+                <div>┌──────────┬────┬─────────────────────┐</div>
+                <div>│ IP Header│ AH │   Payload (claro)   │</div>
+                <div>└──────────┴────┴─────────────────────┘</div>
+                <div style={{color:"#10b981",marginTop:4}}>← Autenticado (no cifrado) ────────────►</div>
+                <div style={{marginTop:8,color:"#7c8db8"}}>Campos AH:</div>
+                <div>Next Header | Payload Len | SPI | SeqNum</div>
+                <div style={{color:"#3b82f6"}}>Integrity Check Value (HMAC-SHA256)</div>
+              </div>
+            </div>
+          )}
+          {mode==="ESP"&&(
+            <div className="card">
+              <h3>ESP — Encapsulating Security Payload (RFC 4303)</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>Proporciona <strong style={{color:"#3b82f6"}}>confidencialidad, integridad y autenticación</strong>. Cifra el payload. Compatible con NAT. El más usado en VPNs.</p>
+              <div className="mono" style={{fontSize:11}}>
+                <div style={{color:"#7c8db8"}}>ESP en modo túnel (VPN site-to-site):</div>
+                <div>┌────────┬─────┬──────────────────┬─────┬──────┐</div>
+                <div>│New IP  │ ESP │ IP orig+Payload  │Trlr │ Auth │</div>
+                <div>│Header  │ Hdr │  (CIFRADO AES)   │     │ HMAC │</div>
+                <div>└────────┴─────┴──────────────────┴─────┴──────┘</div>
+                <div style={{color:"#3b82f6",marginTop:4}}>← cifrado ──────────────────────────►</div>
+                <div style={{color:"#10b981"}}>← autenticado ──────────────────────►</div>
+              </div>
+            </div>
+          )}
+          {mode==="IKE"&&(
+            <div className="card">
+              <h3>IKE — Internet Key Exchange</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>IKEv2 (RFC 7296) establece y gestiona las Security Associations (SA). Negocia algoritmos y claves para AH/ESP mediante Diffie-Hellman.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+                {[
+                  {n:"IKE_SA_INIT",c:"#3b82f6",d:"Negocia algoritmos cripto, intercambia valores DH y nonces. Establece canal seguro."},
+                  {n:"IKE_AUTH",c:"#f97316",d:"Autentica los endpoints (PSK o certificados). Establece la Child SA (ESP/AH)."},
+                  {n:"CREATE_CHILD_SA",c:"#10b981",d:"Crea nuevas SAs o renegocia las existentes. Perfect Forward Secrecy con nuevo DH."},
+                  {n:"INFORMATIONAL",c:"#8b5cf6",d:"Mantenimiento: DELETE (borrar SA), NOTIFY (error), keepalive."},
+                ].map(m=>(
+                  <div key={m.n} style={{background:"#0a1020",border:`1px solid ${m.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                    <div style={{color:m.c,fontWeight:600}}>{m.n}</div>
+                    <div style={{color:"#7c8db8",marginTop:2}}>{m.d}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>Modos IPsec: Transporte vs Túnel</h3>
+            <table style={{marginBottom:12}}><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>Transporte</th><th style={{color:"#f97316"}}>Túnel</th></tr>
+              <tr><td>Cabecera IP</td><td>Original (sin cambios)</td><td>Nueva cabecera añadida</td></tr>
+              <tr><td>Payload cifrado</td><td>Solo datos + TCP/UDP</td><td>Paquete IP completo</td></tr>
+              <tr><td>Uso</td><td>Host-to-host</td><td>Site-to-site / Remote access</td></tr>
+              <tr><td>NAT traversal</td><td>Problemático</td><td>Mejor (NAT-T)</td></tr>
+              <tr><td>Overhead</td><td>Menor</td><td>Mayor (cabecera extra)</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>IPsec en la pila TCP/IP</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:12}}>
+              {[
+                {n:"Aplicación (HTTP, SSH, FTP…)",c:"#8b5cf6"},
+                {n:"Transporte (TCP/UDP)",c:"#3b82f6"},
+                {n:"Red (IP) ← IPsec actúa aquí",c:"#ef4444",hi:true},
+                {n:"Enlace (Ethernet, WiFi…)",c:"#10b981"},
+              ].map(l=>(
+                <div key={l.n} style={{background:l.hi?"#1a0a0a":"#0a1020",border:`1px solid ${l.c}${l.hi?"":"44"}`,borderRadius:5,padding:"6px 12px",textAlign:"center",color:l.c,fontWeight:l.hi?700:400,fontSize:12}}>
+                  {l.n}
+                </div>
+              ))}
+            </div>
+            <p style={{color:"#7c8db8",fontSize:11,marginTop:8}}>IPsec es transparente para la capa de aplicación. Protege todo el tráfico IP sin modificar las aplicaciones.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [step,setStep]=useState(0);
+  const tlsSteps=[
+    {label:"ClientHello",from:"C",color:"#3b82f6",desc:"El cliente envía: versión TLS soportada (1.3), lista de cipher suites, extensiones (SNI, supported groups), y random de 32 bytes."},
+    {label:"ServerHello",from:"S",color:"#f97316",desc:"El servidor selecciona cipher suite (ej: TLS_AES_256_GCM_SHA384), su random de 32 bytes, y la extensión key_share con su valor ECDHE."},
+    {label:"Encrypted Extensions",from:"S",color:"#f97316",desc:"Extensiones adicionales del servidor, ya cifradas con la clave derivada del ECDHE. TLS 1.3 cifra antes que 1.2."},
+    {label:"Certificate",from:"S",color:"#f97316",desc:"El servidor envía su certificado X.509. El cliente verifica la cadena de confianza contra su almacén de Root CAs."},
+    {label:"CertificateVerify",from:"S",color:"#f97316",desc:"El servidor firma el handshake completo con su clave privada. El cliente verifica con la clave pública del certificado."},
+    {label:"Finished (Server)",from:"S",color:"#10b981",desc:"HMAC sobre todos los mensajes del handshake. Verifica integridad completa del proceso. El cliente verifica."},
+    {label:"Finished (Client)",from:"C",color:"#10b981",desc:"El cliente confirma con su propio Finished. A partir de aquí, datos cifrados con claves simétricas de aplicación."},
+    {label:"Application Data",from:"B",color:"#8b5cf6",desc:"GET /index.html ← cifrado con AES-256-GCM. La clave se deriva del shared secret ECDHE + randoms. Perfect Forward Secrecy garantizada."},
+  ];
+  const s=tlsSteps[step];
+  return(
+    <div>
+      <h1>TLS 1.3 — Handshake y Seguridad</h1>
+      <p className="subtitle">TLS (Transport Layer Security) protege la capa de transporte. TLS 1.3 (RFC 8446, 2018) simplifica el handshake a 1-RTT y elimina algoritmos inseguros</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Handshake TLS 1.3 (1-RTT)</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:3}}>
+              {tlsSteps.map((ts,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{background:step===i?ts.color+"22":"#0a1020",border:`1px solid ${step===i?ts.color:"#1e3a5f"}`,color:step===i?ts.color:"#7c8db8",borderRadius:4,padding:"5px 10px",cursor:"pointer",textAlign:"left",fontSize:11,display:"flex",justifyContent:"space-between",fontWeight:step===i?700:400,transition:"all .2s"}}>
+                  <span><span style={{opacity:.6,marginRight:6}}>{i+1}.</span>{ts.label}</span>
+                  <span style={{opacity:.7}}>{ts.from==="C"?"→ Cliente":"ts.from"==="S"?"← Servidor":"↔ Ambos"}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{background:"#0a1020",border:`2px solid ${s.color}`,marginBottom:12}}>
+            <h3 style={{color:s.color}}>{s.label} {s.from==="C"?"(Cliente → Servidor)":s.from==="S"?"(Servidor → Cliente)":"(Datos)"}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7}}>{s.desc}</p>
+          </div>
+          <div className="card">
+            <h3>TLS 1.2 vs TLS 1.3</h3>
+            <table style={{fontSize:12}}><tbody>
+              <tr><th>Aspecto</th><th style={{color:"#f97316"}}>TLS 1.2</th><th style={{color:"#10b981"}}>TLS 1.3</th></tr>
+              <tr><td>RTT handshake</td><td>2-RTT</td><td>1-RTT (0-RTT opcional)</td></tr>
+              <tr><td>Cipher suites</td><td>~37 (muchas inseguras)</td><td>5 (solo AEAD)</td></tr>
+              <tr><td>RSA key exchange</td><td>Permitido</td><td>Eliminado</td></tr>
+              <tr><td>Forward Secrecy</td><td>Opcional</td><td>Obligatorio</td></tr>
+              <tr><td>Compresión TLS</td><td>Opcional (CRIME)</td><td>Eliminada</td></tr>
+              <tr><td>Hash handshake</td><td>MD5/SHA-1 (FREAK)</td><td>Solo SHA-256+</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  return(
+    <div>
+      <h1>HTTPS y Seguridad Web</h1>
+      <p className="subtitle">HTTPS = HTTP sobre TLS. El candado en el navegador indica que la conexión está cifrada y que el servidor está autenticado</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>¿Qué protege HTTPS?</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:12}}>
+              {[
+                {n:"Confidencialidad",c:"#3b82f6",d:"El contenido de las peticiones HTTP (URL completa, cookies, formularios) está cifrado. Solo cliente y servidor pueden leerlo."},
+                {n:"Integridad",c:"#10b981",d:"Los datos no pueden modificarse en tránsito sin que se detecte. Protege contra inyección de ads o malware por el ISP."},
+                {n:"Autenticación del servidor",c:"#f97316",d:"El certificado garantiza que el servidor es quien dice ser. El navegador verifica la cadena de confianza."},
+              ].map(p=>(
+                <div key={p.n} style={{background:"#0a1020",border:`1px solid ${p.c}44`,borderRadius:6,padding:10}}>
+                  <div style={{color:p.c,fontWeight:600,fontSize:12,marginBottom:3}}>{p.n}</div>
+                  <div style={{color:"#7c8db8",fontSize:11,lineHeight:1.7}}>{p.d}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:"#1a0808",border:"1px solid #ef444444",borderRadius:6,padding:10,fontSize:12}}>
+              <div style={{color:"#ef4444",fontWeight:600,marginBottom:4}}>¿Qué NO protege HTTPS?</div>
+              <div style={{color:"#7c8db8",lineHeight:1.8}}>
+                • Quién eres (anonimato) — el servidor sabe tu IP<br/>
+                • Metadatos — qué dominio visitas (SNI visible)<br/>
+                • El servidor en sí — si el servidor es malicioso<br/>
+                • Ataques XSS/CSRF en la aplicación web
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>HSTS y seguridad HTTP adicional</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"HSTS (HTTP Strict Transport Security)",c:"#3b82f6",d:"Cabecera que fuerza HTTPS para futuras visitas durante max-age segundos. Evita ataques SSL-stripping.",ex:"Strict-Transport-Security: max-age=31536000; includeSubDomains; preload"},
+                {n:"CSP (Content Security Policy)",c:"#10b981",d:"Controla qué recursos puede cargar la página. Mitiga XSS al bloquear scripts inline no autorizados.",ex:"Content-Security-Policy: default-src 'self'; script-src 'self' cdn.example.com"},
+                {n:"Certificate Transparency (CT)",c:"#f97316",d:"Los CAs deben registrar todos los certificados en logs públicos verificables. Detecta mis-issuance.",ex:"Expect-CT: max-age=86400, enforce"},
+                {n:"HPKP (Deprecado)",c:"#7c8db8",d:"Public Key Pinning: fijaba qué clave pública era válida. Muy peligroso (sitios inaccesibles). Reemplazado por CT.",ex:"Deprecado en Chrome 67 (2018)"},
+              ].map(h=>(
+                <div key={h.n} style={{background:"#0a1020",border:`1px solid ${h.c}44`,borderRadius:6,padding:8}}>
+                  <div style={{color:h.c,fontWeight:600,marginBottom:3}}>{h.n}</div>
+                  <div style={{color:"#7c8db8",marginBottom:4}}>{h.d}</div>
+                  <div style={{fontFamily:"monospace",fontSize:10,color:"#3b82f6"}}>{h.ex}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Let's Encrypt — Certificados gratuitos</h3>
+            <p style={{color:"#e8f0fe",fontSize:12,lineHeight:1.7,marginBottom:8}}>Let's Encrypt (ISRG) automatiza la emisión de certificados DV gratuitos mediante el protocolo <strong style={{color:"#3b82f6"}}>ACME</strong> (RFC 8555). Renueva automáticamente cada 90 días.</p>
+            <div className="mono" style={{fontSize:11}}>
+              <div style={{color:"#7c8db8"}}># Con certbot:</div>
+              <div>certbot --nginx -d example.com</div>
+              <div style={{color:"#7c8db8",marginTop:4}}># Verificación HTTP-01:</div>
+              <div>GET /.well-known/acme-challenge/TOKEN</div>
+              <div style={{color:"#10b981",marginTop:4}}># 250M+ certs activos (2024)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>8.5 IPsec/TLS</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

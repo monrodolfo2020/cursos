@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 6.7 – Rendimiento de Red</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+.formula{background:#0a1020;border:1px solid #3b82f6;border-radius:6px;padding:12px;font-family:monospace;font-size:14px;text-align:center;margin:10px 0}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Latencia y throughput"},{id:2,label:"Throughput TCP"},{id:3,label:"Optimización de red"}];
+
+function Scene1(){
+  const [bw,setBw]=useState(100);
+  const [rtt,setRtt]=useState(50);
+  const bdp=(bw*1e6*rtt/1000/8).toFixed(0);
+  const metrics=[
+    {n:"Latencia (RTT)",c:"#3b82f6",d:"Tiempo ida y vuelta de un paquete. Afecta apps interactivas (SSH, gaming, trading). Compuesta por: propagación + transmisión + procesamiento + cola."},
+    {n:"Throughput",c:"#10b981",d:"Cantidad de datos transferidos por unidad de tiempo (bits/s). Afecta apps de bulk transfer (FTP, backup, video download). Limitado por el cuello de botella."},
+    {n:"Jitter",c:"#f97316",d:"Variación en la latencia entre paquetes consecutivos. Crítico para VoIP/video en tiempo real. Se mitiga con buffers de jitter."},
+    {n:"Pérdida de paquetes",c:"#ef4444",d:"Paquetes descartados (buffer overflow, errores). TCP retransmite, UDP los pierde. Pérdida >1% degrada VoIP significativamente."},
+  ];
+  return(
+    <div>
+      <h1>Latencia, Throughput y BDP</h1>
+      <p className="subtitle">Métricas fundamentales para entender el rendimiento de una red</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Métricas principales</h3>
+            {metrics.map(m=>(
+              <div key={m.n} style={{background:"#0a1020",borderLeft:`3px solid ${m.c}`,borderRadius:"0 6px 6px 0",padding:"8px 12px",marginBottom:8}}>
+                <div style={{color:m.c,fontWeight:600,fontSize:13}}>{m.n}</div>
+                <div style={{color:"#e8f0fe",fontSize:12,marginTop:3}}>{m.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Bandwidth-Delay Product (BDP)</h3>
+            <div style={{marginBottom:14}}>
+              <div style={{color:"#7c8db8",fontSize:11,marginBottom:4}}>Ancho de banda: {bw} Mbps</div>
+              <input type="range" min={1} max={1000} value={bw} onChange={e=>setBw(+e.target.value)} style={{width:"100%"}}/>
+              <div style={{color:"#7c8db8",fontSize:11,marginTop:8,marginBottom:4}}>RTT: {rtt} ms</div>
+              <input type="range" min={1} max={500} value={rtt} onChange={e=>setRtt(+e.target.value)} style={{width:"100%"}}/>
+            </div>
+            <div className="formula">BDP = {bw}Mbps × {rtt}ms = <span style={{color:"#10b981"}}>{(bdp/1024).toFixed(1)} KB</span></div>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10,fontSize:12}}>
+              <div style={{color:"#3b82f6",fontWeight:600,marginBottom:4}}>¿Qué significa?</div>
+              <div style={{color:"#e8f0fe"}}>El "pipe" contiene hasta <strong style={{color:"#10b981"}}>{(bdp/1024).toFixed(1)} KB</strong> de datos en vuelo.</div>
+              <div style={{color:"#e8f0fe",marginTop:4}}>La ventana TCP debe ser ≥ BDP para saturar el enlace.</div>
+              {parseInt(bdp)>65535&&<div style={{color:"#ef4444",marginTop:4}}>⚠ Requiere Window Scale (BDP {'>'} 64KB)</div>}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Componentes de la latencia</h3>
+            <table><tbody>
+              <tr><th>Componente</th><th>Fórmula</th><th>Ejemplo</th></tr>
+              <tr><td style={{color:"#3b82f6"}}>Propagación</td><td style={{fontFamily:"monospace",fontSize:11}}>d / (2×10⁸ m/s)</td><td>NY→LA: ~13ms</td></tr>
+              <tr><td style={{color:"#f97316"}}>Transmisión</td><td style={{fontFamily:"monospace",fontSize:11}}>L / R (bits/bps)</td><td>1KB@1Mbps: 8ms</td></tr>
+              <tr><td style={{color:"#10b981"}}>Procesamiento</td><td style={{fontFamily:"monospace",fontSize:11}}>&lt;1ms en switches</td><td>~0.1ms</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>Cola</td><td style={{fontFamily:"monospace",fontSize:11}}>Variable</td><td>0–100ms</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [wnd,setWnd]=useState(64);
+  const [rttMs,setRttMs]=useState(50);
+  const thMbps=((wnd*1024*8)/(rttMs/1000)/1e6).toFixed(2);
+  return(
+    <div>
+      <h1>Throughput TCP Teórico</h1>
+      <p className="subtitle">Fórmulas para estimar el rendimiento máximo de TCP</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Throughput limitado por ventana</h3>
+            <div className="formula">Throughput = <span style={{color:"#3b82f6"}}>Window</span> / <span style={{color:"#f97316"}}>RTT</span></div>
+            <div style={{marginBottom:14}}>
+              <div style={{color:"#7c8db8",fontSize:11,marginBottom:4}}>Ventana (Window): {wnd} KB</div>
+              <input type="range" min={1} max={1024} value={wnd} onChange={e=>setWnd(+e.target.value)} style={{width:"100%"}}/>
+              <div style={{color:"#7c8db8",fontSize:11,marginTop:8,marginBottom:4}}>RTT: {rttMs} ms</div>
+              <input type="range" min={1} max={500} value={rttMs} onChange={e=>setRttMs(+e.target.value)} style={{width:"100%"}}/>
+            </div>
+            <div style={{background:"#0a1020",border:"1px solid #10b981",borderRadius:8,padding:14,textAlign:"center"}}>
+              <div style={{color:"#7c8db8",fontSize:12,marginBottom:4}}>Throughput máximo:</div>
+              <div style={{color:"#10b981",fontWeight:700,fontSize:22}}>{thMbps} Mbps</div>
+              <div style={{color:"#7c8db8",fontSize:11,marginTop:4}}>con Window={wnd}KB, RTT={rttMs}ms</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Throughput con pérdidas (Mathis)</h3>
+            <div className="formula">T ≈ <span style={{color:"#3b82f6"}}>MSS</span> / (RTT × √<span style={{color:"#ef4444"}}>p</span>)</div>
+            <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7,marginTop:10}}>
+              <div>p = probabilidad de pérdida de paquetes</div>
+              <div style={{marginTop:6}}>Ejemplo: MSS=1460B, RTT=50ms, p=0.01 (1%)</div>
+              <div style={{fontFamily:"monospace",marginTop:4,color:"#10b981"}}>T = 1460 / (0.05 × √0.01) = 292 KB/s = 2.34 Mbps</div>
+              <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>Incluso 0.1% de pérdidas puede degradar significativamente el throughput en RTTs altos.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Evolución del throughput HTTP</h3>
+            <table><tbody>
+              <tr><th>Versión</th><th>Conexiones</th><th>RTTs hasta datos</th><th>HoL Block</th></tr>
+              <tr><td style={{color:"#7c8db8"}}>HTTP/1.0</td><td>1 por recurso</td><td>2 RTT/req</td><td>Sí</td></tr>
+              <tr><td style={{color:"#7c8db8"}}>HTTP/1.1</td><td>Keep-alive, pipelining</td><td>1 RTT/req</td><td>Sí (TCP)</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>HTTP/2</td><td>1 TCP, multiplexado</td><td>1 RTT + TLS</td><td>Sí (TCP)</td></tr>
+              <tr><td style={{color:"#10b981"}}>HTTP/3</td><td>QUIC/UDP</td><td>0-1 RTT</td><td>No</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Goodput vs Throughput</h3>
+            <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+              <div style={{marginBottom:8,padding:10,background:"#0a1020",border:"1px solid #3b82f6",borderRadius:6}}>
+                <strong style={{color:"#3b82f6"}}>Throughput:</strong> Bits totales entregados por segundo, incluyendo retransmisiones y cabeceras.
+              </div>
+              <div style={{marginBottom:8,padding:10,background:"#0a1020",border:"1px solid #10b981",borderRadius:6}}>
+                <strong style={{color:"#10b981"}}>Goodput:</strong> Bytes de datos de aplicación útiles por segundo (sin headers, sin retransmisiones).
+              </div>
+              <div style={{fontFamily:"monospace",fontSize:12}}>
+                Goodput = Throughput × (1 - overhead_ratio) × (1 - pérdida)
+              </div>
+              <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>TCP tiene ~2.7% overhead de cabecera (20B TCP + 20B IP sobre 1460B MSS).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const tips=[
+    {n:"Habilitar TCP_NODELAY",c:"#3b82f6",d:"Para apps interactivas (SSH, gaming): desactiva Nagle, elimina el delay de 200ms en mensajes pequeños."},
+    {n:"Ajustar buffers TCP",c:"#10b981",d:"net.core.rmem_max y wmem_max. Para 10Gbps × 100ms RTT necesitas buffers de ~125MB (BDP)."},
+    {n:"TCP Fast Open (TFO)",c:"#f97316",d:"Envía datos en el SYN. Elimina 1 RTT en la primera petición (RFC 7413). Usado por Google, Facebook."},
+    {n:"Jumbo Frames",c:"#8b5cf6",d:"MTU 9000 en redes 10GbE internas. Reduce overhead de cabeceras (menos paquetes para mismos datos)."},
+    {n:"RSS / NUMA affinity",c:"#3b82f6",d:"Receive Side Scaling: distribuir interrupciones de red entre CPUs. Crítico para servidores de alta velocidad."},
+    {n:"TSO / GRO",c:"#10b981",d:"TCP Segmentation Offload: el NIC segmenta/reagrupa paquetes, liberando CPU. Mejora throughput masivamente."},
+    {n:"QUIC sobre UDP",c:"#f97316",d:"Evita head-of-line blocking de TCP. 0-RTT reconnect. Cifrado obligatorio. Base de HTTP/3."},
+    {n:"Multipath TCP (MPTCP)",c:"#8b5cf6",d:"Una conexión lógica sobre múltiples caminos físicos. Mayor throughput + redundancia (RFC 8684)."},
+  ];
+  return(
+    <div>
+      <h1>Optimización del Rendimiento de Red</h1>
+      <p className="subtitle">Técnicas para maximizar throughput y minimizar latencia</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Técnicas de optimización</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {tips.slice(0,4).map(t=>(
+                <div key={t.n} style={{background:"#0a1020",borderLeft:`3px solid ${t.c}`,borderRadius:"0 6px 6px 0",padding:"8px 12px"}}>
+                  <div style={{color:t.c,fontWeight:600,fontSize:13}}>{t.n}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12,marginTop:3}}>{t.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Técnicas avanzadas</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {tips.slice(4).map(t=>(
+                <div key={t.n} style={{background:"#0a1020",borderLeft:`3px solid ${t.c}`,borderRadius:"0 6px 6px 0",padding:"8px 12px"}}>
+                  <div style={{color:t.c,fontWeight:600,fontSize:13}}>{t.n}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12,marginTop:3}}>{t.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Resumen Módulo 6 — Capa de Transporte</h3>
+            <table><tbody>
+              <tr><th>Tema</th><th>Clave</th></tr>
+              <tr><td>UDP</td><td style={{fontSize:12}}>8B header, sin conexión, rápido</td></tr>
+              <tr><td>TCP conexión</td><td style={{fontSize:12}}>3WHS, 4-way FIN, 11 estados</td></tr>
+              <tr><td>Control flujo</td><td style={{fontSize:12}}>rwnd, ventana deslizante, Nagle</td></tr>
+              <tr><td>Control congestión</td><td style={{fontSize:12}}>SS/CA/FR/FRec, AIMD, CUBIC/BBR</td></tr>
+              <tr><td>Rendimiento</td><td style={{fontSize:12}}>BDP, Mathis, Window Scale</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>6.7 Rendimiento</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 5.1 — Diseño Capa de Red</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const servicios=[
+    {t:'Sin conexión (datagramas)',c:'#f97316',
+     ej:'IP (Internet Protocol)',
+     desc:'Cada paquete viaja de forma independiente. El emisor solo necesita la dirección de destino. Los routers toman decisiones hop-by-hop. No hay garantías de entrega, orden o QoS.',
+     pros:['Sin establecimiento de conexión','Enrutamiento adaptativo por paquete','Robusto ante fallos de red','Simple en el núcleo de la red'],
+     contras:['Sin garantías de entrega','Sin orden garantizado','Sin QoS nativo'],
+     uso:'Internet (toda la web, email, streaming)'},
+    {t:'Con conexión (circuito virtual)',c:'#3b82f6',
+     ej:'ATM, Frame Relay, MPLS',
+     desc:'Se establece un circuito virtual (VC) antes de enviar datos. Los paquetes siguen el mismo camino, llegan en orden. El VC tiene recursos reservados a lo largo del trayecto.',
+     pros:['Orden garantizado','QoS posible (reserva de recursos)','Predecible y determinista'],
+     contras:['Establecimiento previo necesario','Frágil ante fallos de red','Menos flexible'],
+     uso:'MPLS en ISPs, VPN, ATM (telefonía)'},
+  ];
+  return(<div>
+    <div className="sec-title">La Capa de Red: Diseño y Servicios</div>
+    <div className="sec-sub">El debate fundamental: datagrams vs. circuitos virtuales</div>
+    <div style={{marginBottom:10,background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.18)',borderRadius:8,padding:'10px 14px'}}>
+      <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6}}><strong style={{color:'#3b82f6'}}>La capa de red</strong> es responsable de llevar paquetes desde el origen hasta el destino, posiblemente a través de múltiples redes intermedias. A diferencia de la capa de enlace (un solo salto), la capa de red gestiona el camino completo de extremo a extremo entre hosts en redes diferentes.</div>
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      {servicios.map((s,i)=>(
+        <div key={i} className="card" style={{borderColor:s.c+'33'}}>
+          <div style={{fontSize:14,fontWeight:700,color:s.c,marginBottom:3}}>{s.t}</div>
+          <div style={{fontSize:11,color:'#f97316',marginBottom:6,fontFamily:'IBM Plex Mono,monospace'}}>Ejemplo: {s.ej}</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.55,marginBottom:8}}>{s.desc}</div>
+          <div style={{marginBottom:8}}>
+            {s.pros.map((p,j)=><div key={j} style={{fontSize:10,color:'#10b981',padding:'1px 0'}}>+ {p}</div>)}
+            {s.contras.map((c,j)=><div key={j} style={{fontSize:10,color:'#ef4444',padding:'1px 0'}}>− {c}</div>)}
+          </div>
+          <div style={{fontSize:10,color:s.c,fontFamily:'IBM Plex Mono,monospace'}}>Uso: {s.uso}</div>
+        </div>
+      ))}
+    </div>
+    <div className="card" style={{marginTop:4,borderColor:'rgba(139,92,246,0.25)'}}>
+      <div className="card-h" style={{color:'#8b5cf6'}}>El gran debate: "Dumb network" vs. "Smart network"</div>
+      <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Los creadores de Internet (Cerf, Kahn) argumentaron que la red debe ser simple y sin estado (dumb core, smart edge). La inteligencia vive en los hosts (extremos). IP implementa esto: routers simples, responsabilidad en TCP (host). Esto permitió la innovación explosiva de Internet. Las redes de telecomunicaciones (ATM, Frame Relay) tomaron el camino contrario: red inteligente, terminales simples — más control, menos innovación.</div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Enrutamiento: Conceptos Fundamentales</div>
+    <div className="sec-sub">Cómo los routers construyen tablas de enrutamiento</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">La tabla de enrutamiento</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8,marginBottom:8}}>
+            {`Destino/Prefix   Next-Hop      Métrica  Interfaz\n10.0.1.0/24      10.0.0.1       1        eth0\n192.168.0.0/16   10.0.0.2       2        eth0\n172.16.0.0/12    10.0.0.3       3        eth1\n0.0.0.0/0        203.0.113.1    5        eth1  ← default`}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Longest Prefix Match: se elige la ruta con el prefijo más largo que coincida con la IP destino. La ruta default (0.0.0.0/0) se usa si no hay coincidencia más específica.</div>
+        </div>
+        <div className="card">
+          <div className="card-h">Algoritmos de enrutamiento: categorías</div>
+          {[
+            {c:'Estático (no-adaptativo)',d:'Las rutas se configuran manualmente. No cambia ante fallos. Simple pero rígido. Útil en topologías pequeñas y estables.'},
+            {c:'Dinámico (adaptativo)',d:'Las rutas cambian según el estado de la red. Responde a fallos y congestión. Dos grandes familias: Link State y Distance Vector.'},
+            {c:'Centralizado',d:'Un controlador calcula las rutas para toda la red (SDN). Visión global pero dependencia del controlador central.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6',marginBottom:2}}>{r.c}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Métricas de enrutamiento</div>
+          {[
+            {m:'Número de saltos',d:'Cuenta los routers intermedios (hops). Simple. RIP lo usa. No considera velocidad de enlace.'},
+            {m:'Ancho de banda',d:'Prefiere enlaces más rápidos. OSPF usa cost = referencia/BW. Un enlace 10G tiene cost=1, uno 100M cost=10.'},
+            {m:'Retardo (latencia)',d:'Tiempo total de extremo a extremo. Considera propagación + transmisión + colas. IGRP/EIGRP lo usa.'},
+            {m:'Carga del enlace',d:'Porcentaje de utilización. Puede causar oscilaciones si muchos routers evitan el mismo enlace cargado.'},
+            {m:'Confiabilidad',d:'Tasa de error del enlace. Evita rutas con alta BER. EIGRP lo incorpora en su métrica compuesta.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#f97316'}}>{r.m}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Grafo de red y Shortest Path</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`    A──1──B──2──D\n    │       │\n    3       1\n    │       │\n    C──2──────┘\n\nDijkstra desde A:\nA→B: coste 1\nA→C: coste 3\nA→B→D: coste 3\nA→B→C: ya tenemos C con coste 3\nA→B→D directo es mejor`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Routers: Arquitectura Interna</div>
+    <div className="sec-sub">Cómo procesa paquetes un router moderno</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Planos de un router</div>
+          {[
+            {p:'Data Plane (forwarding)',c:'#10b981',d:'Proceso de reenvío paquete a paquete en hardware (ASIC/TCAM). Velocidades de Gbps–Tbps. Consulta la FIB (Forwarding Information Base). Sin procesamiento CPU por paquete.'},
+            {p:'Control Plane (routing)',c:'#3b82f6',d:'Cálculo de rutas y actualización de tablas. Corre en CPU (software). Protocolos BGP, OSPF, ISIS. Alimenta la RIB (Routing Information Base) → genera FIB.'},
+            {p:'Management Plane',c:'#8b5cf6',d:'Configuración, monitoreo, SNMP, SSH, NetFlow. Interfaces de gestión. Separado del forwarding para seguridad.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'7px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:12,fontWeight:700,color:r.c,marginBottom:3}}>{r.p}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Arquitectura interna del router</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`[Tarjeta de línea (port card)]\n   ├── Procesador de paquetes (ASIC)\n   ├── Buffer de entrada/salida\n   └── FIB local (TCAM lookup)\n           │\n[Switching fabric (bus/matriz crossbar)]\n           │\n[Tarjeta de línea destino]\n   └── Buffer de salida → enlace\n\n[Route Processor]\n   ├── CPU (OSPF, BGP, SNMP)\n   ├── RIB → distribuye FIB a tarjetas\n   └── Management`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">TCAM vs. SRAM para lookup</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {[
+              {t:'TCAM',c:'#f97316',items:['Ternary CAM (0/1/don\'t care)','Lookup en 1 ciclo de reloj','Longest prefix match paralelo','Caro: ~100× más que SRAM','Core de routers Cisco/Juniper']},
+              {t:'SRAM con hash',c:'#3b82f6',items:['Más barato que TCAM','Hash de IP destino','Colisiones requieren manejo','Más lento que TCAM','Usado en switches L3']},
+            ].map((col,i)=>(
+              <div key={i} style={{background:'#060a14',borderRadius:6,padding:'8px',borderLeft:`3px solid ${col.c}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:col.c,marginBottom:6}}>{col.t}</div>
+                {col.items.map((it,j)=><div key={j} style={{fontSize:10,color:'#7c8db8',padding:'2px 0'}}>• {it}</div>)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Servicios de red',C:Scene1},{id:2,label:'Tablas y métricas de ruteo',C:Scene2},{id:3,label:'Arquitectura del router',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 5.1 — Diseño de la Capa de Red</div><div className="topbar-sub">Módulo 5 — La Capa de Red</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender los servicios de la capa de red (datagrams vs VC), los fundamentos del enrutamiento y la arquitectura interna de un router.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

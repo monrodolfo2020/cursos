@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.5 — Red Telefónica PSTN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">Estructura de la Red Telefónica Pública (PSTN)</div>
+    <div className="sec-sub">La mayor red del mundo antes de Internet</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Bucle local (Local Loop)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>El tramo más crítico: par trenzado de cobre desde el teléfono del cliente hasta la central local (CO — Central Office). Características típicas:</div>
+          {[
+            {k:'Calibre',v:'0.4 – 0.9 mm de cobre'},
+            {k:'Longitud',v:'Hasta 5–6 km (máx. para ADSL)'},
+            {k:'Impedancia',v:'600 Ω (balanceada)'},
+            {k:'Ancho de banda',v:'300 Hz – 3400 Hz (voz analógica)'},
+            {k:'Con ADSL2+',v:'Hasta 25 Mbps (< 1.5 km)'},
+            {k:'Con VDSL2',v:'Hasta 100 Mbps (< 500 m)'},
+          ].map(({k,v})=>(
+            <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',fontSize:11}}>
+              <span style={{color:'#7c8db8'}}>{k}</span>
+              <span style={{color:'#e8f0fe',fontFamily:'IBM Plex Mono,monospace'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Jerarquía de la PSTN</div>
+          <div style={{fontSize:11,fontFamily:'IBM Plex Mono,monospace',color:'#3b82f6',background:'#060a14',borderRadius:6,padding:'10px',lineHeight:2}}>
+            {`[Teléfono cliente]\n    │ par de cobre (bucle local)\n[Central Local (CO)]\n    │ fibra/microondas\n[Central de Tránsito Regional]\n    │\n[Central Nacional de Larga Distancia]\n    │ fibra submarina/satélite\n[Gateway Internacional]`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Troncales (Trunks)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7}}>Los enlaces entre centrales se llaman troncales. Transportan muchas llamadas multiplexadas sobre fibra óptica. Históricamente usaban FDM (análogo) y ahora TDM (digital) o paquetes.</div>
+        </div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Conmutación de circuitos vs. paquetes</div>
+          {[
+            {t:'Circuitos (PSTN tradicional)',d:'Reserva un canal dedicado de extremo a extremo durante toda la llamada. Garantiza QoS pero desperdicia ancho de banda en silencios. Capacidad fija: 64 kbps PCM por circuito.'},
+            {t:'Paquetes (VoIP moderno)',d:'Las llamadas se dividen en paquetes IP. Comparte ancho de banda. Más eficiente pero puede haber jitter y pérdidas. Códecs: G.711 (64 kbps), G.729 (8 kbps).'},
+          ].map((r,i)=>(
+            <div key={i} style={{marginBottom:8,padding:'8px',background:'#060a14',borderRadius:6,borderLeft:`3px solid ${i===0?'#f97316':'#3b82f6'}`}}>
+              <div style={{fontSize:11,fontWeight:700,color:i===0?'#f97316':'#3b82f6',marginBottom:4}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.5}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Señalización SS7</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Sistema de señalización fuera de banda que controla el establecimiento de llamadas, routing, facturación, SMS, portabilidad numérica. Protocolos: MTP, SCCP, TCAP, MAP, ISUP. Red SS7 separada de la red de voz.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const mux=[
+    {nombre:'FDM — Multiplexión por División de Frecuencia',color:'#f97316',
+     desc:'Divide el espectro disponible en canales de frecuencia. Cada canal lleva una señal analógica continua. Usado en radio AM/FM, TV analógica, y en los primeros sistemas de telefonía de larga distancia.',
+     jerarquia:'Grupo básico: 12 canales × 4 kHz = 48 kHz\nSupergrupo: 5 grupos = 60 canales\nGrupo maestro: 10 supergrupos = 600 canales\nJumbo (15): 3600 canales en par coaxial',
+     pros:'No necesita sincronización. Simple en analog.',contras:'Interferencia entre canales. Ineficiente en tráfico variable.'},
+    {nombre:'TDM — Multiplexión por División de Tiempo',color:'#3b82f6',
+     desc:'Divide el tiempo en ranuras (slots) y asigna ranuras a cada canal. Digital: todos los canales tienen el mismo slot cada trama. Estándar fundamental de la telefonía digital PCM.',
+     jerarquia:'E1 (Europa): 32 slots × 64 kbps = 2.048 Mbps\nE2: 4 × E1 = 8.448 Mbps\nE3: 16 × E1 = 34.368 Mbps\nT1 (EEUU): 24 slots × 64 kbps = 1.544 Mbps',
+     pros:'Digital, sin interferencia entre canales.',contras:'Requiere sincronización precisa. Capacidad fija.'},
+    {nombre:'WDM — Multiplexión por División de Longitud de Onda',color:'#10b981',
+     desc:'En fibra óptica: cada canal usa una longitud de onda diferente (color). Es el FDM del mundo óptico. DWDM (Dense WDM) puede tener 80–160 longitudes de onda por fibra.',
+     jerarquia:'CWDM: 18 λ espaciadas 20 nm\nDWDM: hasta 160 λ espaciadas 0.8 nm\nCada λ: 10/40/100/400 Gbps\nTotal: hasta 100+ Tbps por fibra',
+     pros:'Inmensa capacidad. Cada λ es independiente.',contras:'Amplificadores EDFA costosos. Gestión compleja.'},
+  ];
+  return(<div>
+    <div className="sec-title">Multiplexión: FDM, TDM y WDM</div>
+    <div className="sec-sub">Compartir el medio entre múltiples usuarios</div>
+    {mux.map((m,i)=>(
+      <div key={i} className="card" style={{borderColor:m.color+'33',marginBottom:10}}>
+        <div style={{display:'grid',gridTemplateColumns:'2fr 1.5fr 1fr',gap:12,alignItems:'start'}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:700,color:m.color,marginBottom:6}}>{m.nombre}</div>
+            <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>{m.desc}</div>
+          </div>
+          <div style={{fontSize:10,fontFamily:'IBM Plex Mono,monospace',color:'#10b981',background:'#060a14',borderRadius:6,padding:'8px',lineHeight:1.8,whiteSpace:'pre'}}>{m.jerarquia}</div>
+          <div>
+            <div style={{fontSize:10,color:'#10b981',marginBottom:4}}>+ {m.pros}</div>
+            <div style={{fontSize:10,color:'#ef4444'}}>− {m.contras}</div>
+          </div>
+        </div>
+      </div>
+    ))}
+    <div className="card" style={{borderColor:'rgba(139,92,246,0.3)'}}>
+      <div className="card-h" style={{color:'#8b5cf6'}}>SONET / SDH — La jerarquía digital síncrona</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+        {[{s:'OC-1/STM-0',v:'51.84 Mbps'},{s:'OC-3/STM-1',v:'155.52 Mbps'},{s:'OC-12/STM-4',v:'622.08 Mbps'},{s:'OC-48/STM-16',v:'2.488 Gbps'},{s:'OC-192/STM-64',v:'9.953 Gbps'},{s:'OC-768/STM-256',v:'39.813 Gbps'},{s:'Uso',v:'Backbone ISP'},{s:'Capa',v:'Fibra + WDM'}].map((r,i)=>(
+          <div key={i} style={{background:'#060a14',borderRadius:6,padding:'6px 8px',textAlign:'center'}}>
+            <div style={{fontSize:10,color:'#8b5cf6',fontFamily:'IBM Plex Mono,monospace'}}>{r.s}</div>
+            <div style={{fontSize:11,color:'#e8f0fe',fontWeight:600,marginTop:2}}>{r.v}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const tech=[
+    {nombre:'ADSL / ADSL2+',rango:'Asimétrico: 24 Mbps↓ / 3.5 Mbps↑',dist:'< 1.5 km del CO',nota:'Modulación DMT (Discrete Multi-Tone): divide 1.1 MHz en 256 subcanales de 4.3 kHz. Aprovecha el par de cobre existente. El módem ADSL filtra la voz (POTS splitter).'},
+    {nombre:'VDSL2',rango:'100 Mbps simétrico',dist:'< 500 m (fibra hasta armario)',nota:'FTTC/FTTCab: fibra hasta cabina en acera, cobre el último tramo. G.fast puede llegar a 500 Mbps en < 100 m. La base de FTTN de muchos operadores.'},
+    {nombre:'ISDN BRI',rango:'2B+D = 128 kbps',dist:'Hasta 5 km',nota:'Integrated Services Digital Network. Dos canales B de 64 kbps + un canal D de 16 kbps para señalización. Reemplazó en parte el dial-up. Hoy casi obsoleto excepto en algunos entornos empresariales.'},
+    {nombre:'VoIP / SIP',rango:'G.711: 64 kbps, G.729: 8 kbps',dist:'Global via IP',nota:'Session Initiation Protocol reemplaza SS7 para llamadas sobre IP. PSTN Gateway convierte entre TDM y VoIP. Códec G.729 comprime voz a 8 kbps con calidad aceptable. Jitter buffer compensa variaciones.'},
+    {nombre:'Fibra hasta el hogar (FTTH)',rango:'1 Gbps simétrico típico',dist:'Sin límite práctico',nota:'GPON/XG-PON: red óptica pasiva. OLT en la central, ONT en el cliente. Un árbol óptico (splitter 1:32 o 1:64) sirve múltiples hogares con una sola fibra hasta el splitter. El futuro del bucle local.'},
+    {nombre:'Cable HFC (DOCSIS)',rango:'DOCSIS 3.1: ~10 Gbps canal',dist:'Red cable coaxial',nota:'Hybrid Fiber-Coaxial. Fibra hasta el nodo, coaxial al hogar. Compartido entre vecinos (hasta ~500 usuarios/nodo). DOCSIS 3.1 usa OFDM en 192 MHz. Competencia directa con FTTH.'},
+  ];
+  return(<div>
+    <div className="sec-title">DSL, ISDN, VoIP y Acceso de Banda Ancha</div>
+    <div className="sec-sub">Evolución del acceso de usuario desde la PSTN</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {tech.map((t,i)=>(
+        <div key={i} className="card" style={{borderColor:i%2===0?'rgba(59,130,246,0.25)':'rgba(249,115,22,0.2)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#e8f0fe'}}>{t.nombre}</div>
+            <span style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',background:'rgba(59,130,246,0.1)',padding:'2px 6px',borderRadius:4}}>{t.dist}</span>
+          </div>
+          <div style={{fontSize:11,color:'#f97316',fontFamily:'IBM Plex Mono,monospace',marginBottom:6}}>{t.rango}</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>{t.nota}</div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Estructura PSTN',C:Scene1},{id:2,label:'Multiplexión FDM/TDM/WDM',C:Scene2},{id:3,label:'DSL, VoIP y banda ancha',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 2.5 — Red Telefónica Pública Conmutada (PSTN)</div><div className="topbar-sub">Módulo 2 — La Capa Física</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender la estructura jerárquica de la PSTN, cómo funciona la multiplexión y la evolución hacia banda ancha y VoIP.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

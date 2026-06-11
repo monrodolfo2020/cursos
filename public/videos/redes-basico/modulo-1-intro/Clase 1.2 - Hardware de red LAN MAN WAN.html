@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.2 — Hardware de red: LAN, MAN, WAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:6px;}
+.badge-b{background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);}
+.badge-o{background:rgba(249,115,22,0.15);color:#f97316;border:1px solid rgba(249,115,22,0.3);}
+.badge-g{background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);}
+.badge-v{background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const tipos=[
+    {tipo:'LAN',nombre:'Local Area Network',color:'#3b82f6',dist:'Hasta ~1 km',vel:'10 Mbps – 10 Gbps',prop:'Privada, baja latencia, alta fiabilidad',ej:'Red de oficina, laboratorio universitario, planta industrial, red doméstica',tec:'Ethernet (802.3), WiFi (802.11), Token Ring (obsoleto)'},
+    {tipo:'MAN',nombre:'Metropolitan Area Network',color:'#8b5cf6',dist:'1 – 100 km',vel:'10 Mbps – 10 Gbps',prop:'Puede ser pública o privada, conecta edificios en una ciudad',ej:'Red del metro de una ciudad, red universitaria multicampus, cable TV',tec:'DQDB (IEEE 802.6), fibra óptica, WiMAX (802.16)'},
+    {tipo:'WAN',nombre:'Wide Area Network',color:'#10b981',dist:'Cientos a miles de km',vel:'Variable (Kbps a Tbps)',prop:'Generalmente pública, alta latencia, menor fiabilidad que LAN',ej:'Internet, red bancaria internacional, intranet corporativa multinacional',tec:'SONET/SDH, ATM, Frame Relay, MPLS, fibra submarina'},
+  ];
+  return(<div>
+    <div className="sec-title">Clasificación por Escala Geográfica</div>
+    <div className="sec-sub">LAN, MAN y WAN: las tres grandes categorías</div>
+    {tipos.map((t,i)=>(
+      <div key={i} className="card" style={{marginBottom:10,borderColor:t.color+'33'}}>
+        <div style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+          <div style={{flexShrink:0}}>
+            <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:22,fontWeight:700,color:t.color}}>{t.tipo}</span>
+            <div style={{fontSize:11,color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',marginTop:2}}>{t.nombre}</div>
+          </div>
+          <div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+            {[{l:'Distancia',v:t.dist},{l:'Velocidad típica',v:t.vel},{l:'Propiedad',v:t.prop}].map((r,j)=>(
+              <div key={j} style={{background:'#060a14',borderRadius:6,padding:'7px 10px'}}>
+                <div style={{fontSize:9,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.1em',marginBottom:3}}>{r.l}</div>
+                <div style={{fontSize:11,color:'#e8f0fe'}}>{r.v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{marginTop:10,display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          <div><span style={{fontSize:10,color:t.color,fontFamily:'IBM Plex Mono,monospace',fontWeight:700}}>EJEMPLOS: </span><span style={{fontSize:12,color:'#7c8db8'}}>{t.ej}</span></div>
+          <div><span style={{fontSize:10,color:t.color,fontFamily:'IBM Plex Mono,monospace',fontWeight:700}}>TECNOLOGÍAS: </span><span style={{fontSize:12,color:'#7c8db8'}}>{t.tec}</span></div>
+        </div>
+      </div>
+    ))}
+  </div>);
+}
+
+function Scene2(){
+  const dispositivos=[
+    {d:'Hub',capa:'Capa 1 (Física)',color:'#3a4a72',desc:'Repite la señal eléctrica hacia todos los puertos. No tiene inteligencia: todo el tráfico llega a todos. Crea un dominio de colisión único. Prácticamente obsoleto, reemplazado por switches.'},
+    {d:'Switch (conmutador)',capa:'Capa 2 (Enlace)',color:'#3b82f6',desc:'Aprende las direcciones MAC de los dispositivos conectados y reenvía tramas solo al puerto de destino. Elimina colisiones. Cada puerto es un dominio de colisión separado. Componente central de las LAN modernas.'},
+    {d:'Router (encaminador)',capa:'Capa 3 (Red)',color:'#10b981',desc:'Conecta diferentes redes y determina la mejor ruta para los paquetes IP. Interpreta direcciones IP. Separa dominios de broadcast. Es la base de Internet. Puede ser hardware dedicado o software.'},
+    {d:'Bridge (puente)',capa:'Capa 2 (Enlace)',color:'#8b5cf6',desc:'Conecta dos segmentos de red con la misma tecnología. Aprende qué MACs están en cada lado y filtra el tráfico. Precursor del switch. Hoy en día los switches son bridges multipuerto.'},
+    {d:'Repetidor',capa:'Capa 1 (Física)',color:'#7c8db8',desc:'Regenera y amplifica la señal eléctrica para extender la longitud máxima de un segmento. No interpreta datos. En redes ópticas se llama amplificador EDFA. Límite de 4 repetidores en Ethernet 10BASE5.'},
+    {d:'Gateway (pasarela)',capa:'Capa 7 (Aplicación)',color:'#f97316',desc:'Convierte protocolos entre redes completamente diferentes. Por ejemplo, conectar una red de correo X.400 con una red SMTP/Internet. Opera en la capa de aplicación. Más complejo que un router.'},
+    {d:'NIC (tarjeta de red)',capa:'Capas 1-2',color:'#3b82f6',desc:'Interfaz entre la computadora y el medio de red. Tiene dirección MAC grabada en fábrica (48 bits). Convierte datos del bus del sistema al formato del medio (eléctrico, óptico, radio). Puede ser integrada en la placa base.'},
+    {d:'Access Point (AP)',capa:'Capa 2 (Enlace)',color:'#10b981',desc:'Punto de acceso inalámbrico que conecta dispositivos WiFi a una red cableada. Funciona como un bridge entre la red inalámbrica (802.11) y la red Ethernet. Gestiona autenticación y cifrado WPA2/WPA3.'},
+  ];
+  return(<div>
+    <div className="sec-title">Hardware de Red — Dispositivos Clave</div>
+    <div className="sec-sub">Los elementos físicos que forman una red</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {dispositivos.map((d,i)=>(
+        <div key={i} className="card" style={{marginBottom:0,padding:'11px 14px'}}>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:5}}>
+            <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:13,fontWeight:700,color:d.color}}>{d.d}</span>
+            <span style={{fontSize:10,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace',padding:'1px 6px',borderRadius:3,border:'1px solid rgba(59,130,246,0.2)'}}>{d.capa}</span>
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.55}}>{d.desc}</div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Topologías de Red</div>
+    <div className="sec-sub">Cómo se organizan físicamente los nodos</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Topologías principales</div>
+          {[
+            {top:'Bus',desc:'Todos los nodos comparten un único cable (backbone). Económico pero con un punto único de fallo. Cada nodo "escucha" todo el tráfico. Usado en Ethernet 10BASE2 (coaxial delgado). Hoy obsoleto.',pro:'Simple, bajo costo',con:'Un fallo corta toda la red'},
+            {top:'Estrella (Star)',desc:'Todos los nodos se conectan a un concentrador central (hub o switch). Es la topología LAN dominante hoy. El fallo de un nodo no afecta a los demás, pero el fallo del hub/switch central sí.',pro:'Fácil gestión, aislamiento de fallos',con:'Dependencia del concentrador central'},
+            {top:'Anillo (Ring)',desc:'Cada nodo se conecta al siguiente formando un círculo cerrado. Los datos viajan en una dirección (o dos en anillo doble). Token Ring (IEEE 802.5) y SONET/SDH usan esta topología.',pro:'Latencia predecible, sin colisiones',con:'Un fallo en el anillo puede parar la red'},
+            {top:'Malla (Mesh)',desc:'Cada nodo tiene conexiones directas con múltiples nodos. Totalmente malla: n(n-1)/2 enlaces para n nodos. Alta redundancia. Usado en WAN (Internet) y redes de telecomunicaciones troncales.',pro:'Alta tolerancia a fallos',con:'Costo de cableado muy elevado'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'8px 0',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+              <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
+                <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:12,fontWeight:700,color:'#3b82f6'}}>{r.top}</span>
+                <span style={{fontSize:10,color:'#10b981',fontFamily:'IBM Plex Mono,monospace'}}>{r.pro}</span>
+                <span style={{fontSize:10,color:'#f97316',fontFamily:'IBM Plex Mono,monospace'}}>/ {r.con}</span>
+              </div>
+              <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.5}}>{r.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Comparación de topologías</div>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,fontFamily:'IBM Plex Mono,monospace'}}>
+            <thead>
+              <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+                {['Topología','Costo','Rendimiento','Fiabilidad','Escalabilidad'].map((h,i)=>(
+                  <th key={i} style={{padding:'6px 8px',color:'#3b82f6',textAlign:'left',fontSize:9,letterSpacing:'.08em'}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['Bus','Muy bajo','Bajo','Muy baja','Pobre'],
+                ['Estrella','Medio','Alto','Alta (nodo)','Buena'],
+                ['Anillo','Medio','Medio','Media','Media'],
+                ['Malla','Muy alto','Muy alto','Muy alta','Excelente'],
+                ['Árbol','Medio','Medio','Media','Buena'],
+              ].map((r,i)=>(
+                <tr key={i} style={{background:i%2===0?'#060a14':'transparent',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+                  {r.map((c,j)=>(
+                    <td key={j} style={{padding:'6px 8px',color:j===0?'#e8f0fe':c.includes('Alto')||c.includes('Alta')||c.includes('Excelente')||c.includes('Buena')?'#10b981':c.includes('Muy bajo')||c.includes('Pobre')||c.includes('Muy baja')?'#f97316':'#7c8db8'}}>{c}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{marginTop:12,fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+            <strong style={{color:'#e8f0fe'}}>Topología lógica vs. física:</strong> La topología física describe cómo están cableados los nodos. La topología lógica describe cómo fluyen los datos. Una red puede tener topología física de estrella pero topología lógica de bus (ejemplo: Ethernet con hub).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'LAN, MAN y WAN',C:Scene1},{id:2,label:'Dispositivos de red',C:Scene2},{id:3,label:'Topologías',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 1.2 — Hardware de red: LAN, MAN y WAN</div><div className="topbar-sub">Módulo 1 — Introducción · Redes de Computadoras</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Distinguir LAN, MAN y WAN por escala y tecnología. Identificar los principales dispositivos de hardware de red y las topologías de interconexión.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

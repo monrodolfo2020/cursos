@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 6.2 – UDP</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+.field{border-radius:6px;padding:10px 14px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Cabecera UDP"},{id:2,label:"Checksum UDP"},{id:3,label:"Aplicaciones de UDP"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("src");
+  const fields={
+    src:{name:"Source Port",bits:"16 bits",color:"#3b82f6",detail:"Puerto del proceso emisor. Opcional: puede ser 0 si no se espera respuesta. Ejemplo: 52341 (efímero del cliente)"},
+    dst:{name:"Destination Port",bits:"16 bits",color:"#f97316",detail:"Puerto del proceso receptor. Identifica la aplicación destino. Ejemplo: 53 (DNS), 67 (DHCP), 5353 (mDNS)"},
+    len:{name:"Length",bits:"16 bits",color:"#10b981",detail:"Longitud total en bytes del datagrama UDP = cabecera (8B) + datos. Mínimo: 8 bytes (sin datos). Máximo: 65535 bytes."},
+    chk:{name:"Checksum",bits:"16 bits",color:"#8b5cf6",detail:"Verificación de errores sobre pseudo-cabecera + cabecera + datos. Opcional en IPv4 (se puede poner 0), obligatorio en IPv6."},
+  };
+  const f=fields[sel];
+  return(
+    <div>
+      <h1>UDP — User Datagram Protocol</h1>
+      <p className="subtitle">RFC 768 (1980) — El protocolo de transporte más simple: sin conexión, sin garantías</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Cabecera UDP (8 bytes fijos)</h3>
+            <div style={{display:"flex",gap:6,marginBottom:14}}>
+              {Object.entries(fields).map(([k,v])=>(
+                <div key={k} onClick={()=>setSel(k)}
+                  style={{flex:1,background:sel===k?"#1e3a5f":"#0a1020",border:`2px solid ${sel===k?v.color:"#1e3a5f"}`,borderRadius:8,padding:"10px 6px",textAlign:"center",cursor:"pointer"}}>
+                  <div style={{color:sel===k?v.color:"#7c8db8",fontWeight:700,fontSize:11}}>{v.name.split(" ")[0]}</div>
+                  <div style={{color:sel===k?v.color:"#3a4a72",fontSize:10}}>{v.bits}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${f.color}`,borderRadius:8,padding:14,minHeight:80}}>
+              <div style={{color:f.color,fontWeight:700,fontSize:14,marginBottom:6}}>{f.name} ({f.bits})</div>
+              <div style={{color:"#e8f0fe",fontSize:13}}>{f.detail}</div>
+            </div>
+            <div style={{marginTop:12}} className="mono">
+              <div style={{color:"#7c8db8"}}> 0      15 16     31</div>
+              <div>┌──────────┬──────────┐</div>
+              <div>│<span style={{color:"#3b82f6"}}> Src Port </span>│<span style={{color:"#f97316"}}> Dst Port </span>│</div>
+              <div>├──────────┼──────────┤</div>
+              <div>│<span style={{color:"#10b981"}}> Length   </span>│<span style={{color:"#8b5cf6"}}> Checksum </span>│</div>
+              <div>├──────────┴──────────┤</div>
+              <div>│         Data        │</div>
+              <div>└─────────────────────┘</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Propiedades de UDP</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {[
+                {n:"Sin conexión",d:"No hay handshake previo. El primer datagrama puede contener datos ya.",c:"#3b82f6"},
+                {n:"No confiable",d:"Sin ACK, sin retransmisión. Los datagramas pueden perderse, duplicarse o llegar desordenados.",c:"#ef4444"},
+                {n:"Sin control de flujo",d:"El emisor envía a la velocidad que quiera. No hay ventana de recepción.",c:"#f97316"},
+                {n:"Sin control de congestión",d:"No reduce velocidad ante congestión de red. Puede agravar la situación.",c:"#f97316"},
+                {n:"Preserva límites de mensaje",d:"Un send() = un recv(). A diferencia de TCP (stream), UDP es orientado a mensajes.",c:"#10b981"},
+                {n:"Overhead mínimo",d:"Solo 8 bytes de cabecera vs 20+ de TCP. Ideal para latencia mínima.",c:"#10b981"},
+              ].map(p=>(
+                <div key={p.n} style={{background:"#0a1020",borderLeft:`3px solid ${p.c}`,borderRadius:"0 6px 6px 0",padding:"8px 12px"}}>
+                  <div style={{color:p.c,fontWeight:600,fontSize:13}}>{p.n}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12,marginTop:2}}>{p.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  return(
+    <div>
+      <h1>Checksum UDP</h1>
+      <p className="subtitle">Detección de errores bit a bit mediante suma de complemento a 1</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Pseudo-cabecera para el cálculo</h3>
+            <div style={{background:"#0a1020",border:"1px solid #f97316",borderRadius:8,padding:14,marginBottom:12}}>
+              <div style={{color:"#f97316",fontWeight:700,fontSize:13,marginBottom:8}}>Pseudo-cabecera IPv4 (12 bytes)</div>
+              <div style={{fontFamily:"monospace",fontSize:12,lineHeight:2}}>
+                <div>┌────────────────────────────────┐</div>
+                <div>│ <span style={{color:"#3b82f6"}}>Source IP Address</span> (32 bits)   │</div>
+                <div>├────────────────────────────────┤</div>
+                <div>│ <span style={{color:"#3b82f6"}}>Destination IP Address</span> (32 b) │</div>
+                <div>├──────────┬────────┬────────────┤</div>
+                <div>│ <span style={{color:"#7c8db8"}}>Zeros(8)</span> │<span style={{color:"#10b981"}}>Proto=17</span>│ <span style={{color:"#8b5cf6"}}>UDP Length</span> │</div>
+                <div>└──────────┴────────┴────────────┘</div>
+              </div>
+              <div style={{color:"#7c8db8",fontSize:12,marginTop:8}}>La pseudo-cabecera NO se transmite. Solo se usa para calcular el checksum.</div>
+            </div>
+            <div className="card" style={{marginBottom:0}}>
+              <h3>Cálculo del Checksum</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.8}}>
+                <div>1. Concatenar: <strong style={{color:"#f97316"}}>pseudo-cabecera</strong> + <strong style={{color:"#3b82f6"}}>cabecera UDP</strong> + <strong style={{color:"#10b981"}}>datos</strong></div>
+                <div>2. Dividir en palabras de 16 bits</div>
+                <div>3. Sumar todas con <strong style={{color:"#8b5cf6"}}>complemento a 1</strong></div>
+                <div>4. Tomar complemento a 1 del resultado</div>
+                <div>5. Insertar en campo Checksum</div>
+                <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>Si datos tienen longitud impar, se padea con un byte 0.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Ejemplo numérico simplificado</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}># Datos a sumar (16-bit words)</div>
+              <div><span style={{color:"#f97316"}}>Pseudo-hdr:</span> 0xC0A8 + 0x0105 + 0xC0A8 + 0x0101</div>
+              <div>             + 0x0011 + 0x000C</div>
+              <div><span style={{color:"#3b82f6"}}>UDP hdr:   </span> 0xC35A + 0x0035 + 0x000C + 0x0000</div>
+              <div><span style={{color:"#10b981"}}>Datos:     </span> 0x4865 + 0x6C6C + 0x6F00</div>
+              <div style={{marginTop:8,color:"#7c8db8"}}>──────────────────────────────</div>
+              <div>Suma:        <span style={{color:"#8b5cf6"}}>0x2E7C2</span> → carry fold → <span style={{color:"#8b5cf6"}}>0x2E7F</span></div>
+              <div>Checksum:    <span style={{color:"#10b981"}}>~0x2E7F = 0xD180</span></div>
+            </div>
+            <div style={{marginTop:12,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10,fontSize:12}}>
+              <div style={{color:"#3b82f6",fontWeight:600,marginBottom:4}}>Verificación en el receptor:</div>
+              <div style={{color:"#e8f0fe"}}>Sumar todos los campos + checksum recibido. Si resultado = 0xFFFF → sin errores.</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Checksum UDP vs IPv4 vs TCP</h3>
+            <table><tbody>
+              <tr><th>Protocolo</th><th>Cubre</th><th>Obligatorio</th></tr>
+              <tr><td style={{color:"#10b981"}}>IPv4</td><td>Solo cabecera IP (no datos)</td><td style={{color:"#10b981"}}>Sí</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>UDP/IPv4</td><td>Pseudo-hdr + UDP + datos</td><td style={{color:"#f97316"}}>Opcional</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>UDP/IPv6</td><td>Pseudo-hdr + UDP + datos</td><td style={{color:"#10b981"}}>Obligatorio</td></tr>
+              <tr><td style={{color:"#f97316"}}>TCP</td><td>Pseudo-hdr + TCP + datos</td><td style={{color:"#10b981"}}>Obligatorio</td></tr>
+            </tbody></table>
+            <div style={{marginTop:10,background:"#0a1020",borderLeft:"3px solid #f97316",borderRadius:"0 6px 6px 0",padding:10,fontSize:12}}>
+              <div style={{color:"#f97316",fontWeight:600}}>UDP checksum = 0</div>
+              <div style={{color:"#e8f0fe",marginTop:4}}>Indica que no se calculó checksum (IPv4 solo). Usado en túneles cuando la capa exterior ya verifica integridad.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [sel,setSel]=useState(null);
+  const apps=[
+    {n:"DNS",port:"53",why:"Consultas rápidas de resolución de nombres. RTT < 1ms esperado. Retries manejados por la aplicación.",color:"#3b82f6"},
+    {n:"DHCP",port:"67/68",why:"Bootstrapping: el cliente no tiene IP aún. No puede establecer conexión TCP.",color:"#f97316"},
+    {n:"VoIP / RTP",port:"5004+",why:"Latencia < 150ms crítica. Un paquete perdido es mejor que esperar retransmisión TCP.",color:"#10b981"},
+    {n:"Gaming online",port:"Varía",why:"Estado del juego se actualiza ~60Hz. Datos viejos son inútiles; mejor perder y recibir el siguiente.",color:"#8b5cf6"},
+    {n:"Streaming video",port:"Varía",why:"QUIC/UDP con control de flujo propio. Latencia baja para live. Buffer aplicación cubre pérdidas.",color:"#3b82f6"},
+    {n:"SNMP",port:"161/162",why:"Gestión de red: alertas simples, no críticos, overhead TCP innecesario.",color:"#f97316"},
+    {n:"TFTP",port:"69",why:"Transferencia trivial de archivos en bootstrap (sin TCP disponible, ej: PXE boot).",color:"#10b981"},
+    {n:"NTP",port:"123",why:"Sincronización de tiempo: mensajes cortos, respuesta rápida más importante que garantía.",color:"#8b5cf6"},
+  ];
+  return(
+    <div>
+      <h1>Aplicaciones de UDP</h1>
+      <p className="subtitle">Cuándo usar UDP en lugar de TCP</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Aplicaciones típicas — clic para ver motivo</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {apps.map(a=>(
+                <div key={a.n} onClick={()=>setSel(sel===a.n?null:a.n)}
+                  style={{background:sel===a.n?"#1e3a5f":"#0a1020",border:`1px solid ${sel===a.n?a.color:"#1e3a5f"}`,borderRadius:6,padding:"10px 12px",cursor:"pointer"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{color:sel===a.n?a.color:"#e8f0fe",fontWeight:600,fontSize:13}}>{a.n}</span>
+                    <span style={{fontFamily:"monospace",color:"#3b82f6",fontSize:11}}>:{a.port}</span>
+                  </div>
+                  {sel===a.n&&<div style={{color:"#e8f0fe",fontSize:12,marginTop:8}}>{a.why}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>QUIC — UDP moderno</h3>
+            <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+              <div style={{marginBottom:8,padding:10,background:"#0a1020",border:"1px solid #3b82f6",borderRadius:6}}>
+                QUIC (RFC 9000) corre sobre UDP y agrega confiabilidad, cifrado (TLS 1.3), y multiplexado de streams — base de HTTP/3.
+              </div>
+              <div>• <strong style={{color:"#3b82f6"}}>0-RTT:</strong> Reconexión sin handshake adicional</div>
+              <div>• <strong style={{color:"#f97316"}}>Sin head-of-line blocking:</strong> Streams independientes</div>
+              <div>• <strong style={{color:"#10b981"}}>Connection migration:</strong> Cambia red sin perder conexión</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>¿Cuándo elegir UDP sobre TCP?</h3>
+            <table><tbody>
+              <tr><th>Criterio</th><th>→ UDP</th><th>→ TCP</th></tr>
+              <tr><td>Latencia</td><td style={{color:"#10b981"}}>Crítica (&lt;50ms)</td><td>Aceptable</td></tr>
+              <tr><td>Pérdida de datos</td><td style={{color:"#10b981"}}>Tolerable</td><td>Inaceptable</td></tr>
+              <tr><td>Mensajes cortos</td><td style={{color:"#10b981"}}>Sí (fit en 1 dgram)</td><td>Streams largos</td></tr>
+              <tr><td>Multicast</td><td style={{color:"#10b981"}}>Nativo</td><td>No soportado</td></tr>
+              <tr><td>Control propio app</td><td style={{color:"#10b981"}}>Necesario</td><td>Automático</td></tr>
+              <tr><td>Confiabilidad requerida</td><td>No</td><td style={{color:"#10b981"}}>Sí</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>UDP en multimedia — el modelo RTP</h3>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,fontFamily:"monospace",fontSize:12,lineHeight:1.8}}>
+              <div>Pila para VoIP/Video:</div>
+              <div>┌────────────────────────────────┐</div>
+              <div>│ <span style={{color:"#8b5cf6"}}>Aplicación (codec H.264, Opus)</span> │</div>
+              <div>├────────────────────────────────┤</div>
+              <div>│ <span style={{color:"#3b82f6"}}>RTP</span> (timestamp, seq#, SSRC)    │</div>
+              <div>├────────────────────────────────┤</div>
+              <div>│ <span style={{color:"#f97316"}}>RTCP</span> (control, estadísticas)   │</div>
+              <div>├────────────────────────────────┤</div>
+              <div>│ <span style={{color:"#10b981"}}>UDP</span>                            │</div>
+              <div>└────────────────────────────────┘</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>6.2 UDP</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

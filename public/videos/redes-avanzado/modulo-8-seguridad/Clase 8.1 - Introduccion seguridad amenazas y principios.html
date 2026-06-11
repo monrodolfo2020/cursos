@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 8.1 – Introducción a la Seguridad: Amenazas y Principios</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#ef4444;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#ef4444;background:#0a1020;border-left-color:#ef4444;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#ef4444;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#ef4444;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Triada CIA y principios"},{id:2,label:"Tipos de ataques"},{id:3,label:"Mecanismos de defensa"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("C");
+  const cia={
+    C:{name:"Confidencialidad",color:"#3b82f6",icon:"🔒",desc:"Los datos solo son accesibles por las entidades autorizadas. Se protege mediante cifrado y control de acceso.",threats:["Intercepción (eavesdropping)","Sniffing de paquetes","Ataques a bases de datos","Pérdida de dispositivos sin cifrar"],controls:["Cifrado AES/TLS","Control de acceso RBAC","VPN para tráfico sensible","Cifrado de disco completo"]},
+    I:{name:"Integridad",color:"#10b981",icon:"✓",desc:"Los datos no son modificados sin autorización. Se garantiza que lo recibido es exactamente lo enviado.",threats:["Modificación de datos en tránsito","SQL Injection","Rootkits que alteran binarios","Ataques MITM"],controls:["HMAC / firmas digitales","Funciones hash (SHA-256)","Control de versiones y audit logs","Certificados y PKI"]},
+    A:{name:"Disponibilidad",color:"#f97316",icon:"⚡",desc:"Los sistemas y datos están accesibles cuando los usuarios autorizados los necesitan.",threats:["Ataques DDoS (Distributed Denial of Service)","Ransomware (cifra y pide rescate)","Fallos hardware/software","Desastres naturales"],controls:["Redundancia y clustering","Backups y DR (Disaster Recovery)","CDN y protección anti-DDoS","Rate limiting y firewalls"]}
+  };
+  const s=cia[sel];
+  return(
+    <div>
+      <h1>Principios de Seguridad — Tríada CIA</h1>
+      <p className="subtitle">Todo sistema de seguridad de redes se fundamenta en tres propiedades esenciales: Confidencialidad, Integridad y Disponibilidad</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {Object.entries(cia).map(([k,v])=>(
+          <button key={k} onClick={()=>setSel(k)}
+            style={{flex:1,background:sel===k?v.color+"22":"#0a1020",border:`2px solid ${sel===k?v.color:"#1e3a5f"}`,color:sel===k?v.color:"#7c8db8",borderRadius:8,padding:"10px 14px",cursor:"pointer",fontWeight:700,fontSize:15,transition:"all .2s"}}>
+            {v.icon} {v.name[0]}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card" style={{borderColor:s.color+"44"}}>
+            <h3 style={{color:s.color}}>{s.icon} {s.name}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:14}}>{s.desc}</p>
+            <div style={{marginBottom:10}}>
+              <div style={{color:"#ef4444",fontWeight:600,fontSize:12,marginBottom:6}}>Amenazas principales:</div>
+              {s.threats.map(t=>(
+                <div key={t} style={{display:"flex",gap:6,marginBottom:5,fontSize:12}}>
+                  <span style={{color:"#ef4444"}}>▸</span><span style={{color:"#e8f0fe"}}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{borderColor:s.color+"44"}}>
+            <h3 style={{color:s.color}}>Controles para {s.name}</h3>
+            {s.controls.map(c=>(
+              <div key={c} style={{display:"flex",gap:6,marginBottom:7,fontSize:13}}>
+                <span style={{color:s.color,fontWeight:700}}>✓</span><span style={{color:"#e8f0fe"}}>{c}</span>
+              </div>
+            ))}
+          </div>
+          <div className="card">
+            <h3 style={{color:"#e8f0fe"}}>Extensiones de la tríada CIA</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"Autenticación",c:"#3b82f6",d:"Verificar la identidad: ¿eres quien dices ser?"},
+                {n:"Autorización",c:"#f97316",d:"Control de acceso: ¿qué tienes permiso de hacer?"},
+                {n:"No repudio",c:"#10b981",d:"El emisor no puede negar haber enviado un mensaje (firmas digitales)."},
+                {n:"Privacidad",c:"#8b5cf6",d:"Derecho del usuario a controlar su información personal (GDPR)."},
+                {n:"Responsabilidad",c:"#06b6d4",d:"Audit trail: quién hizo qué y cuándo. Logs inmutables."},
+              ].map(e=>(
+                <div key={e.n} style={{background:"#0a1020",border:`1px solid ${e.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                  <span style={{color:e.c,fontWeight:600}}>{e.n}: </span>
+                  <span style={{color:"#7c8db8"}}>{e.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [cat,setCat]=useState("pasivo");
+  const attacks={
+    pasivo:{label:"Ataques pasivos",color:"#3b82f6",desc:"El atacante observa pero no modifica los datos. Difícil de detectar.",items:[
+      {n:"Intercepción (Sniffing)",d:"Captura del tráfico de red con herramientas como Wireshark, tcpdump. Especialmente peligroso en WiFi abierta."},
+      {n:"Análisis de tráfico",d:"Aunque el contenido esté cifrado, el análisis de patrones (volumen, timing, direcciones) puede revelar información."},
+      {n:"Escucha pasiva (Eavesdropping)",d:"Monitorizar comunicaciones sin participar. Objetivo: obtener credenciales, datos sensibles, conversaciones."},
+    ]},
+    activo:{label:"Ataques activos",color:"#ef4444",desc:"El atacante modifica, inyecta o interrumpe el flujo de datos. Detectables pero más dañinos.",items:[
+      {n:"Man-in-the-Middle (MITM)",d:"El atacante se interpone entre dos partes que creen comunicarse directamente. Puede leer y modificar mensajes."},
+      {n:"Replay attack",d:"Re-envío de mensajes válidos capturados previamente. Solución: nonces (números de un solo uso) o timestamps."},
+      {n:"Modificación de mensajes",d:"Alteración del contenido de un mensaje en tránsito. Viola la integridad."},
+      {n:"Denegación de servicio (DoS/DDoS)",d:"Saturar el servidor con solicitudes falsas hasta que no pueda atender a usuarios legítimos."},
+      {n:"Mascarada",d:"Un atacante finge ser una entidad legítima. Incluye IP spoofing, ARP spoofing, DNS spoofing."},
+    ]},
+    insider:{label:"Amenazas internas",color:"#f97316",desc:"Usuarios legítimos que abusan de sus privilegios. Difíciles de detectar con seguridad perimetral.",items:[
+      {n:"Empleado malicioso",d:"Extrae datos confidenciales, sabotea sistemas. Motivaciones: dinero, venganza, espionaje."},
+      {n:"Error humano",d:"Configuración incorrecta, click en phishing. La mayor causa de brechas de seguridad."},
+      {n:"Privilegios excesivos",d:"Principio de mínimo privilegio: un usuario solo debe tener acceso a lo estrictamente necesario."},
+    ]},
+  };
+  const att=attacks[cat];
+  return(
+    <div>
+      <h1>Tipos de Ataques a Redes</h1>
+      <p className="subtitle">Los ataques se clasifican según si modifican los datos (activos) o solo los observan (pasivos)</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {Object.entries(attacks).map(([k,v])=>(
+          <button key={k} onClick={()=>setCat(k)}
+            style={{background:cat===k?v.color+"22":"#0a1020",border:`2px solid ${cat===k?v.color:"#1e3a5f"}`,color:cat===k?v.color:"#7c8db8",borderRadius:6,padding:"6px 18px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card" style={{borderColor:att.color+"44"}}>
+            <h3 style={{color:att.color}}>{att.label}</h3>
+            <p style={{color:"#7c8db8",fontSize:12,marginBottom:12}}>{att.desc}</p>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {att.items.map(i=>(
+                <div key={i.n} style={{background:"#0a1020",border:`1px solid ${att.color}33`,borderRadius:6,padding:10}}>
+                  <div style={{color:att.color,fontWeight:600,fontSize:12,marginBottom:4}}>{i.n}</div>
+                  <div style={{color:"#7c8db8",fontSize:11,lineHeight:1.7}}>{i.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Modelo de amenazas — STRIDE</h3>
+            <table><tbody>
+              <tr><th>Letra</th><th>Amenaza</th><th>Viola</th></tr>
+              <tr><td style={{color:"#ef4444",fontWeight:700}}>S</td><td>Spoofing Identity</td><td style={{color:"#3b82f6"}}>Autenticación</td></tr>
+              <tr><td style={{color:"#ef4444",fontWeight:700}}>T</td><td>Tampering with data</td><td style={{color:"#10b981"}}>Integridad</td></tr>
+              <tr><td style={{color:"#ef4444",fontWeight:700}}>R</td><td>Repudiation</td><td style={{color:"#8b5cf6"}}>No repudio</td></tr>
+              <tr><td style={{color:"#ef4444",fontWeight:700}}>I</td><td>Information Disclosure</td><td style={{color:"#3b82f6"}}>Confidencialidad</td></tr>
+              <tr><td style={{color:"#ef4444",fontWeight:700}}>D</td><td>Denial of Service</td><td style={{color:"#f97316"}}>Disponibilidad</td></tr>
+              <tr><td style={{color:"#ef4444",fontWeight:700}}>E</td><td>Elevation of Privilege</td><td style={{color:"#06b6d4"}}>Autorización</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Ciclo de vida de un ataque — Kill Chain</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:4,fontSize:11}}>
+              {[
+                {n:"1. Reconocimiento",c:"#7c8db8",d:"Recopilación de información (OSINT, scanning)"},
+                {n:"2. Armado",c:"#f97316",d:"Preparar exploit o payload malicioso"},
+                {n:"3. Entrega",c:"#ef4444",d:"Phishing, USB, exploit web"},
+                {n:"4. Explotación",c:"#ef4444",d:"Ejecutar el código malicioso"},
+                {n:"5. Instalación",c:"#ef4444",d:"Rootkit, backdoor, persistencia"},
+                {n:"6. C2 (Command & Control)",c:"#8b5cf6",d:"El atacante controla el sistema remotamente"},
+                {n:"7. Acciones sobre objetivos",c:"#8b5cf6",d:"Robo, cifrado ransomware, lateral movement"},
+              ].map(s=>(
+                <div key={s.n} style={{display:"flex",gap:8,padding:"5px 8px",background:"#0a1020",borderRadius:4,borderLeft:`3px solid ${s.c}`}}>
+                  <span style={{color:s.c,fontWeight:600,width:120,flexShrink:0}}>{s.n}</span>
+                  <span style={{color:"#7c8db8"}}>{s.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const mechanisms=[
+    {n:"Cifrado (Encryption)",c:"#3b82f6",layer:"Aplicación/Red",protects:"Confidencialidad",ex:"TLS, AES, RSA"},
+    {n:"Autenticación",c:"#f97316",layer:"Aplicación",protects:"Autenticación",ex:"OAuth, SAML, certificados"},
+    {n:"Control de acceso",c:"#10b981",layer:"Sistema operativo",protects:"Autorización",ex:"RBAC, ACL, firewalls"},
+    {n:"Integridad de datos",c:"#8b5cf6",layer:"Aplicación/Red",protects:"Integridad",ex:"HMAC, SHA-256, firmas"},
+    {n:"Auditoría y logs",c:"#06b6d4",layer:"Sistema operativo",protects:"Responsabilidad",ex:"SIEM, audit trail, ELK"},
+    {n:"Detección de intrusiones",c:"#f59e0b",layer:"Red",protects:"Detección",ex:"IDS/IPS (Snort, Suricata)"},
+  ];
+  return(
+    <div>
+      <h1>Mecanismos de Defensa</h1>
+      <p className="subtitle">La defensa en profundidad (Defense in Depth) aplica múltiples capas de seguridad para que ningún fallo único comprometa todo el sistema</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Mecanismos principales</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {mechanisms.map(m=>(
+                <div key={m.n} style={{background:"#0a1020",border:`1px solid ${m.c}44`,borderRadius:6,padding:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                    <span style={{color:m.c,fontWeight:600,fontSize:12}}>{m.n}</span>
+                    <span style={{color:"#7c8db8",fontSize:10}}>{m.layer}</span>
+                  </div>
+                  <div style={{display:"flex",gap:8,fontSize:11}}>
+                    <span style={{color:"#e8f0fe"}}>Protege: <strong style={{color:m.c}}>{m.protects}</strong></span>
+                    <span style={{color:"#7c8db8"}}>| {m.ex}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Modelo Zero Trust</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>El modelo Zero Trust reemplaza el perímetro de seguridad tradicional: <strong style={{color:"#ef4444"}}>"Never trust, always verify"</strong>. No existe la confianza implícita, ni siquiera para tráfico interno.</p>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"Verificación continua",c:"#3b82f6",d:"Cada acceso se autentica y autoriza, sin importar la ubicación."},
+                {n:"Mínimo privilegio",c:"#f97316",d:"Los usuarios solo tienen acceso a lo estrictamente necesario."},
+                {n:"Microsegmentación",c:"#10b981",d:"La red se divide en zonas pequeñas. Un ataque no se propaga."},
+                {n:"Monitoreo continuo",c:"#8b5cf6",d:"Toda actividad se registra y analiza en busca de anomalías."},
+              ].map(p=>(
+                <div key={p.n} style={{background:"#0a1020",border:`1px solid ${p.c}44`,borderRadius:6,padding:"6px 10px"}}>
+                  <span style={{color:p.c,fontWeight:600}}>{p.n}: </span>
+                  <span style={{color:"#7c8db8"}}>{p.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Marco NIST Cybersecurity Framework</h3>
+            <div style={{display:"flex",gap:6}}>
+              {[
+                {n:"Identify",c:"#3b82f6"},
+                {n:"Protect",c:"#10b981"},
+                {n:"Detect",c:"#f97316"},
+                {n:"Respond",c:"#ef4444"},
+                {n:"Recover",c:"#8b5cf6"},
+              ].map(f=>(
+                <div key={f.n} style={{flex:1,background:"#0a1020",border:`1px solid ${f.c}44`,borderRadius:6,padding:8,textAlign:"center"}}>
+                  <div style={{color:f.c,fontWeight:700,fontSize:12}}>{f.n}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>8.1 Seguridad</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

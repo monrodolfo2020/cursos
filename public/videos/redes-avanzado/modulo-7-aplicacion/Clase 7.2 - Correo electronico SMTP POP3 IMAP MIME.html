@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 7.2 – Correo Electrónico: SMTP, POP3, IMAP y MIME</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Arquitectura SMTP"},{id:2,label:"POP3 vs IMAP"},{id:3,label:"MIME y formato"}];
+
+function Scene1(){
+  const smtpCmds=[
+    {cmd:"EHLO domain",resp:"250 OK — lista capacidades",desc:"Saludo extendido; el servidor responde con sus capacidades"},
+    {cmd:"MAIL FROM:<addr>",resp:"250 OK",desc:"Inicia transacción; especifica remitente del sobre (envelope)"},
+    {cmd:"RCPT TO:<addr>",resp:"250 OK / 550 No user",desc:"Destinatario. Puede repetirse para múltiples destinatarios"},
+    {cmd:"DATA",resp:"354 Start input",desc:"Inicia la transferencia del mensaje; termina con '.' en línea sola"},
+    {cmd:"QUIT",resp:"221 Bye",desc:"Cierra la conexión SMTP"},
+    {cmd:"AUTH LOGIN",resp:"334 Challenge",desc:"Autenticación SMTP (SMTP-AUTH RFC 4954) — obligatorio hoy"},
+    {cmd:"STARTTLS",resp:"220 Ready",desc:"Negocia cifrado TLS sobre la conexión existente (port 587)"},
+  ];
+  return(
+    <div>
+      <h1>Arquitectura del Correo Electrónico y SMTP</h1>
+      <p className="subtitle">El correo usa tres componentes principales: MUA, MSA/MTA (SMTP) y MDA</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Componentes del sistema de correo</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+              {[
+                {n:"MUA (Mail User Agent)",c:"#8b5cf6",d:"Cliente de correo del usuario: Outlook, Thunderbird, Gmail web"},
+                {n:"MSA (Mail Submission Agent)",c:"#3b82f6",d:"Recibe correo del MUA (port 587, con autenticación)"},
+                {n:"MTA (Mail Transfer Agent)",c:"#f97316",d:"Transfiere correo entre servidores SMTP (port 25)"},
+                {n:"MDA (Mail Delivery Agent)",c:"#10b981",d:"Entrega correo al buzón del usuario (Dovecot, Procmail)"},
+                {n:"MRA (Mail Retrieval Agent)",c:"#06b6d4",d:"Recupera correo via POP3/IMAP desde el buzón al MUA"},
+              ].map(c=>(
+                <div key={c.n} style={{background:"#0a1020",border:`1px solid ${c.c}44`,borderRadius:6,padding:"8px 12px"}}>
+                  <div style={{color:c.c,fontWeight:700,fontSize:12}}>{c.n}</div>
+                  <div style={{color:"#7c8db8",fontSize:11,marginTop:2}}>{c.d}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mono" style={{fontSize:11}}>
+              <div style={{color:"#7c8db8"}}>MUA → (587) → MSA → (25) → MTA → (25) → MTA</div>
+              <div style={{color:"#7c8db8"}}>                                              ↓ MDA → Buzón</div>
+              <div style={{color:"#7c8db8"}}>                                        MUA ← (993/995) ← MRA</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Comandos SMTP esenciales</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {smtpCmds.map(c=>(
+                <div key={c.cmd} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:8}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                    <span style={{color:"#3b82f6",fontFamily:"monospace",fontWeight:600,fontSize:12}}>{c.cmd}</span>
+                    <span style={{color:"#10b981",fontFamily:"monospace",fontSize:11}}>{c.resp}</span>
+                  </div>
+                  <div style={{color:"#7c8db8",fontSize:11}}>{c.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [mode,setMode]=useState("pop3");
+  const pop3=[
+    {cmd:"USER nombre",resp:"+OK",desc:"Envía nombre de usuario"},
+    {cmd:"PASS contraseña",resp:"+OK mailbox ready",desc:"Envía contraseña para autenticación"},
+    {cmd:"STAT",resp:"+OK 3 12345",desc:"Número de mensajes y tamaño total en octetos"},
+    {cmd:"LIST [n]",resp:"+OK lista",desc:"Lista mensajes con sus tamaños"},
+    {cmd:"RETR n",resp:"+OK mensaje",desc:"Descarga el mensaje número n"},
+    {cmd:"DELE n",resp:"+OK",desc:"Marca el mensaje n para borrado (efectivo al QUIT)"},
+    {cmd:"QUIT",resp:"+OK",desc:"Cierra sesión y aplica borrados marcados"},
+  ];
+  const imap=[
+    {cmd:"LOGIN user pass",resp:"OK LOGIN completed",desc:"Autenticación (también AUTHENTICATE para SASL)"},
+    {cmd:"LIST '' '*'",resp:"* LIST flags sep name",desc:"Lista todos los buzones disponibles"},
+    {cmd:"SELECT INBOX",resp:"* EXISTS * RECENT",desc:"Abre buzón; recibe estado (nº mensajes, no leídos)"},
+    {cmd:"FETCH 1:* (FLAGS)",resp:"* 1 FETCH (FLAGS (\\Seen))",desc:"Obtiene flags de mensajes; sin descargar el cuerpo"},
+    {cmd:"FETCH 1 BODY[]",resp:"* 1 FETCH (BODY[])",desc:"Descarga el mensaje completo con cabeceras y cuerpo"},
+    {cmd:"FETCH 1 BODY[HEADER]",resp:"Headers only",desc:"Descarga solo las cabeceras para previsualización rápida"},
+    {cmd:"STORE 1 +FLAGS (\\Seen)",resp:"OK",desc:"Establece flag de leído sin mover ni borrar el mensaje"},
+    {cmd:"COPY 1 Sent",resp:"OK",desc:"Copia mensaje a otra carpeta en el servidor"},
+  ];
+  const data=mode==="pop3"?pop3:imap;
+  return(
+    <div>
+      <h1>POP3 vs IMAP — Acceso al buzón</h1>
+      <p className="subtitle">Dos paradigmas opuestos: POP3 descarga y borra; IMAP sincroniza y mantiene en servidor</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        <button onClick={()=>setMode("pop3")} style={{background:mode==="pop3"?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:mode==="pop3"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>POP3 (port 110/995)</button>
+        <button onClick={()=>setMode("imap")} style={{background:mode==="imap"?"#f97316":"#0a1020",border:"1px solid #1e3a5f",color:mode==="imap"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>IMAP (port 143/993)</button>
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Comandos {mode==="pop3"?"POP3":"IMAP4"}</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+              {data.map(c=>(
+                <div key={c.cmd} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:5,padding:"6px 10px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                    <span style={{color:mode==="pop3"?"#3b82f6":"#f97316",fontFamily:"monospace",fontSize:11,fontWeight:600}}>{c.cmd}</span>
+                    <span style={{color:"#10b981",fontFamily:"monospace",fontSize:10}}>{c.resp}</span>
+                  </div>
+                  <div style={{color:"#7c8db8",fontSize:11}}>{c.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Comparativa POP3 vs IMAP</h3>
+            <table><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>POP3</th><th style={{color:"#f97316"}}>IMAP</th></tr>
+              <tr><td>Almacenamiento</td><td>Local (cliente)</td><td>Servidor</td></tr>
+              <tr><td>Acceso multi-dispositivo</td><td>No (borra del servidor)</td><td>Sí (sincroniza)</td></tr>
+              <tr><td>Carpetas en servidor</td><td>Solo INBOX</td><td>Múltiples carpetas</td></tr>
+              <tr><td>Descarga parcial</td><td>No</td><td>Sí (solo headers)</td></tr>
+              <tr><td>Búsqueda servidor</td><td>No</td><td>Sí (SEARCH)</td></tr>
+              <tr><td>Offline</td><td>Sí (copia local)</td><td>Limitado</td></tr>
+              <tr><td>Port plano/TLS</td><td>110 / 995</td><td>143 / 993</td></tr>
+              <tr><td>Uso actual</td><td>Legado</td><td>Estándar actual</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3>Seguridad del correo</h3>
+            <div style={{fontSize:12,lineHeight:1.8}}>
+              {[
+                {n:"SMTP-AUTH + STARTTLS",c:"#3b82f6",d:"Autenticación obligatoria, cifrado en tránsito (port 587)"},
+                {n:"SMTPS (port 465)",c:"#10b981",d:"SMTP sobre TLS implícito (deprecated pero usado)"},
+                {n:"SPF (TXT record)",c:"#f97316",d:"Autoriza qué IPs pueden enviar por el dominio"},
+                {n:"DKIM (firma)",c:"#8b5cf6",d:"Firma criptográfica del cuerpo del mensaje"},
+                {n:"DMARC (política)",c:"#06b6d4",d:"Política de qué hacer si SPF/DKIM fallan"},
+              ].map(i=>(
+                <div key={i.n} style={{display:"flex",gap:8,marginBottom:5}}>
+                  <span style={{color:i.c,fontWeight:700,fontSize:11,width:180,flexShrink:0}}>{i.n}</span>
+                  <span style={{color:"#7c8db8",fontSize:11}}>{i.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [part,setPart]=useState("header");
+  const headerEx=`From: Alice <alice@example.com>
+To: Bob <bob@example.com>
+Subject: =?UTF-8?Q?Reuni=C3=B3n_ma=C3=B1ana?=
+Date: Tue, 10 Jun 2025 09:30:00 +0100
+Message-ID: <abc123@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+  boundary="boundary-abc123"`;
+  const bodyEx=`--boundary-abc123
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hola Bob,=0D=0AReuni=C3=B3n ma=C3=B1ana a las 10h.=0D=0A
+
+--boundary-abc123
+Content-Type: image/png; name="logo.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="logo.png"
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ...
+--boundary-abc123--`;
+  return(
+    <div>
+      <h1>MIME — Multipurpose Internet Mail Extensions</h1>
+      <p className="subtitle">MIME extiende el correo RFC 5322 para soportar adjuntos, HTML, internacionalización y tipos no-ASCII</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["header","body"].map(p=>(
+          <button key={p} onClick={()=>setPart(p)}
+            style={{background:part===p?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:part===p?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>
+            {p==="header"?"Cabeceras MIME":"Cuerpo multipart"}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Ejemplo de mensaje MIME</h3>
+            <pre className="mono" style={{whiteSpace:"pre-wrap",fontSize:11}}>{part==="header"?headerEx:bodyEx}</pre>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Tipos de contenido MIME</h3>
+            <table><tbody>
+              <tr><th>Content-Type</th><th>Descripción</th></tr>
+              <tr><td style={{color:"#3b82f6"}}>text/plain</td><td>Texto sin formato</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>text/html</td><td>Correo HTML</td></tr>
+              <tr><td style={{color:"#f97316"}}>multipart/mixed</td><td>Partes heterogéneas (adjuntos)</td></tr>
+              <tr><td style={{color:"#f97316"}}>multipart/alternative</td><td>plain + html, elige el cliente</td></tr>
+              <tr><td style={{color:"#10b981"}}>image/png</td><td>Imagen incrustada o adjunta</td></tr>
+              <tr><td style={{color:"#10b981"}}>application/pdf</td><td>Documento PDF adjunto</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>message/rfc822</td><td>Correo adjunto como mensaje</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3>Codificaciones de transferencia</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"7bit",c:"#7c8db8",d:"Solo ASCII 7 bits, líneas ≤998 caracteres. Por defecto para texto."},
+                {n:"quoted-printable",c:"#3b82f6",d:"Texto con caracteres especiales. Codifica =XX (hex). Legible."},
+                {n:"base64",c:"#f97316",d:"Binario (imágenes, PDF). Aumenta tamaño ~33%. Estándar para adjuntos."},
+                {n:"8bit",c:"#10b981",d:"Texto UTF-8 directo si el servidor soporta 8BITMIME (RFC 6152)."},
+              ].map(c=>(
+                <div key={c.n} style={{background:"#0a1020",border:`1px solid ${c.c}44`,borderRadius:6,padding:8}}>
+                  <div style={{color:c.c,fontWeight:700}}>{c.n}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{c.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>7.2 Correo</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

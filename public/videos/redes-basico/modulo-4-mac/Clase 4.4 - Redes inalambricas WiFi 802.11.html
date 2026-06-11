@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 4.4 — WiFi IEEE 802.11</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const std=[
+    {n:'802.11 legacy',y:1997,f:'2.4 GHz',bw:'20 MHz',mod:'DSSS/FHSS',max:'2 Mbps',mimo:'—',nota:'Primera versión. Raramente desplegada.'},
+    {n:'802.11b',y:1999,f:'2.4 GHz',bw:'20 MHz',mod:'DSSS (CCK)',max:'11 Mbps',mimo:'—',nota:'WiFi 1. Popularizó el WiFi doméstico. Sensible a microondas/BT.'},
+    {n:'802.11a',y:1999,f:'5 GHz',bw:'20 MHz',mod:'OFDM',max:'54 Mbps',mimo:'—',nota:'OFDM por primera vez. 5 GHz menos congestionado. Menor alcance.'},
+    {n:'802.11g',y:2003,f:'2.4 GHz',bw:'20 MHz',mod:'OFDM',max:'54 Mbps',mimo:'—',nota:'WiFi 3. OFDM en 2.4 GHz. Compatible con 802.11b.'},
+    {n:'802.11n',y:2009,f:'2.4/5 GHz',bw:'20/40 MHz',mod:'OFDM+MIMO',max:'600 Mbps',mimo:'4×4',nota:'WiFi 4. MIMO múltiples antenas. Canal 40 MHz.'},
+    {n:'802.11ac',y:2013,f:'5 GHz',bw:'80/160 MHz',mod:'256-QAM',max:'3.5 Gbps',mimo:'8×8 MU',nota:'WiFi 5. MU-MIMO downlink. Beamforming.'},
+    {n:'802.11ax',y:2019,f:'2.4/5/6 GHz',bw:'160 MHz',mod:'1024-QAM',max:'9.6 Gbps',mimo:'8×8 MU',nota:'WiFi 6/6E. OFDMA, BSS Coloring. TWT para IoT.'},
+    {n:'802.11be',y:2024,f:'2.4/5/6 GHz',bw:'320 MHz',mod:'4096-QAM',max:'46 Gbps',mimo:'16×16',nota:'WiFi 7. Multi-Link Operation. MLO simultáneo.'},
+  ];
+  return(<div>
+    <div className="sec-title">Estándares WiFi: Evolución 802.11</div>
+    <div className="sec-sub">De 2 Mbps a 46 Gbps en 27 años de evolución</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Estándar','Año','Freq.','BW canal','Modulación','Velocidad pico','MIMO','Novedades'].map((h,i)=>(
+            <th key={i} style={{padding:'7px 8px',color:'#3b82f6',textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {std.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'6px 8px',color:'#f97316',fontFamily:'IBM Plex Mono,monospace',fontWeight:700,fontSize:10}}>{r.n}</td>
+            <td style={{padding:'6px 8px',color:'#3a4a72',fontSize:10}}>{r.y}</td>
+            <td style={{padding:'6px 8px',color:'#7c8db8',fontSize:10}}>{r.f}</td>
+            <td style={{padding:'6px 8px',color:'#3a4a72',fontSize:10,fontFamily:'IBM Plex Mono,monospace'}}>{r.bw}</td>
+            <td style={{padding:'6px 8px',color:'#8b5cf6',fontSize:10}}>{r.mod}</td>
+            <td style={{padding:'6px 8px',color:'#10b981',fontWeight:600,fontSize:11}}>{r.max}</td>
+            <td style={{padding:'6px 8px',color:'#3b82f6',fontSize:10,fontFamily:'IBM Plex Mono,monospace'}}>{r.mimo}</td>
+            <td style={{padding:'6px 8px',color:'#3a4a72',fontSize:10}}>{r.nota}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{marginTop:8,background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.18)',borderRadius:8,padding:'8px 14px',fontSize:11,color:'#7c8db8'}}>
+      <strong style={{color:'#3b82f6'}}>Bandas de frecuencia: </strong>
+      2.4 GHz (14 canales, solo 3 no solapados: 1,6,11) — penetra paredes mejor pero más congestionado.
+      5 GHz (25+ canales de 20 MHz no solapados) — menos interferencia.
+      6 GHz (WiFi 6E, 59 canales de 20 MHz) — casi libre de interferencias, solo dispositivos nuevos.
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Arquitectura 802.11: BSS, ESS y Modos</div>
+    <div className="sec-sub">Cómo se organiza una red WiFi</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Conceptos fundamentales</div>
+          {[
+            {t:'BSS — Basic Service Set',d:'Un AP (Access Point) y sus clientes asociados. Identificado por el BSSID (= MAC del AP). Los clientes se comunican a través del AP, no directamente entre sí (en infraestructura mode).'},
+            {t:'SSID — Service Set ID',d:'Nombre de la red WiFi visible al usuario. Hasta 32 caracteres. Múltiples AP pueden tener el mismo SSID para crear un ESS.'},
+            {t:'ESS — Extended Service Set',d:'Múltiples BSS (AP) conectados por un sistema de distribución (DS), típicamente Ethernet. Permite roaming entre AP transparente para el usuario.'},
+            {t:'IBSS — Independent BSS',d:'Red ad-hoc: estaciones se comunican directamente sin AP. No hay roaming. Usos: gaming P2P, emergencias, WiFi Direct.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6',marginBottom:3}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Proceso de asociación al AP</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`1. AP emite Beacon cada 100ms (SSID, caps)\n2. Cliente envía Probe Request (activo)\n   o escucha Beacons (pasivo)\n3. AP responde Probe Response\n4. Cliente envía Authentication Request\n5. AP responde Authentication (Open o SAE)\n6. Cliente envía Association Request\n7. AP asigna AID, responde Association\n8. WPA3 handshake 4-way (PMK → PTK)\n9. Tráfico IP encriptado (AES-CCMP/GCM)`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Trama 802.11 — 4 Direcciones MAC</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`Frame Control | Duration | Addr1 | Addr2 | Addr3 | Seq | Addr4 | QoS | HT | Datos | FCS\n\nAddr1: Receptor inmediato (DST o AP)\nAddr2: Transmisor inmediato (SRC o AP)\nAddr3: BSSID o dirección filtrado\nAddr4: Solo en WDS (AP-to-AP)\n\nToDS=1,FromDS=0: cliente→AP→red\nToDS=0,FromDS=1: red→AP→cliente`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Seguridad WiFi y Tecnologías Avanzadas</div>
+    <div className="sec-sub">WEP, WPA2, WPA3 y las mejoras de WiFi 6/7</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(239,68,68,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#ef4444'}}>Evolución de seguridad WiFi</div>
+          {[
+            {p:'WEP (1997)',s:'ROTO',d:'RC4 con clave estática. IV de 24 bits reutilizable. Crackeable en < 5 min. No usar nunca.'},
+            {p:'WPA-TKIP (2003)',s:'DÉBIL',d:'Mejora temporal sobre WEP. TKIP extiende RC4. Vulnerable a varios ataques. Evitar.'},
+            {p:'WPA2-CCMP (2004)',s:'OK',d:'AES-CCMP 128 bits. Seguro con contraseña larga (>12 chars). PMKID attack posible offline.'},
+            {p:'WPA3-SAE (2018)',s:'BUENO',d:'Simultaneous Authentication of Equals. Dragonfly handshake. Resistente a ataques de diccionario offline. Mandatory en WiFi 6.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',display:'flex',gap:8,alignItems:'flex-start'}}>
+              <div style={{minWidth:100}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#e8f0fe'}}>{r.p}</div>
+                <span style={{fontSize:9,fontFamily:'IBM Plex Mono,monospace',color:r.s==='ROTO'?'#ef4444':r.s==='DÉBIL'?'#f97316':r.s==='OK'?'#3b82f6':'#10b981',fontWeight:700}}>{r.s}</span>
+              </div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">802.1X — Autenticación empresarial</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`[Cliente] ──EAP over 802.11──►[AP]\n[AP] ──RADIUS──────────────►[Servidor AAA]\n[Servidor] valida credenciales\n[Servidor] ──PMK──────────►[AP]\n[AP+Cliente] hacen 4-way handshake\n→ Clave única por sesión y usuario`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(59,130,246,0.25)',marginBottom:10}}>
+          <div className="card-h">WiFi 6 (802.11ax) — Innovaciones</div>
+          {[
+            {t:'OFDMA',d:'Como LTE: divide el canal en Resource Units. Múltiples usuarios en el mismo símbolo OFDM. Reduce latencia en redes densas.'},
+            {t:'MU-MIMO 8×8',d:'Multi-User MIMO uplink Y downlink. El AP sirve hasta 8 usuarios simultáneos espacialmente.'},
+            {t:'BSS Coloring',d:'Bit en cada trama identifica la BSS. Permite transmisión simultánea en canales superpuestos si son colores diferentes. Reduce CCI.'},
+            {t:'Target Wake Time (TWT)',d:'AP negocia con dispositivos IoT cuándo "despertarse". Reduce consumo hasta 7× en sensores.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6',marginBottom:2}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{borderColor:'rgba(139,92,246,0.2)'}}>
+          <div className="card-h" style={{color:'#8b5cf6'}}>WiFi 7 (802.11be) — Multi-Link</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Multi-Link Operation (MLO): el dispositivo puede transmitir/recibir en 2.4 + 5 + 6 GHz simultáneamente como si fueran un solo enlace lógico. Latencia garantizada para gaming/XR: &lt;1 ms. Canal de 320 MHz. 4096-QAM. Pico teórico: 46 Gbps. Disponible en routers y laptops desde 2024.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Estándares 802.11',C:Scene1},{id:2,label:'Arquitectura BSS/ESS',C:Scene2},{id:3,label:'Seguridad y WiFi 6/7',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 4.4 — Redes Inalámbricas: WiFi IEEE 802.11</div><div className="topbar-sub">Módulo 4 — La Subcapa MAC</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comprender los estándares 802.11, la arquitectura BSS/ESS, el proceso de asociación y la evolución de seguridad WiFi.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

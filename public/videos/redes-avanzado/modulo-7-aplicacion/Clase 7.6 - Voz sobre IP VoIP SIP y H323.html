@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 7.6 – Voz sobre IP (VoIP): SIP, H.323 y Codecs</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"SIP — Protocolo de señalización"},{id:2,label:"H.323 y comparativa"},{id:3,label:"Codecs de voz y QoS"}];
+
+function Scene1(){
+  const [step,setStep]=useState(0);
+  const sipFlow=[
+    {from:"Alice",to:"SIP Proxy",msg:"INVITE sip:bob@example.com SIP/2.0",color:"#3b82f6",desc:"Alice inicia la llamada. INVITE contiene SDP con codecs propuestos y dirección RTP."},
+    {from:"SIP Proxy",to:"Bob",msg:"INVITE sip:bob@example.com SIP/2.0",color:"#3b82f6",desc:"El proxy reenvía el INVITE a Bob (puede hacer look-up en registro o base de datos)."},
+    {from:"Bob",to:"SIP Proxy",msg:"100 Trying",color:"#7c8db8",desc:"Bob (o el proxy) indica que está procesando la solicitud. Evita retransmisiones."},
+    {from:"Bob",to:"SIP Proxy",msg:"180 Ringing",color:"#f97316",desc:"El teléfono de Bob está sonando. Se reproduce tono de llamada en el lado de Alice."},
+    {from:"Bob",to:"Alice",msg:"200 OK (SDP respuesta)",color:"#10b981",desc:"Bob acepta la llamada. Incluye SDP con codecs aceptados y su dirección IP:puerto RTP."},
+    {from:"Alice",to:"Bob",msg:"ACK",color:"#10b981",desc:"Alice confirma la recepción del 200 OK. Se establece el 3-way handshake SIP."},
+    {from:"Alice",to:"Bob",msg:"RTP Media Stream",color:"#8b5cf6",desc:"Audio fluye directamente Alice↔Bob mediante RTP/UDP. El proxy ya no interviene."},
+    {from:"Alice",to:"Bob",msg:"BYE",color:"#ef4444",desc:"Alice termina la llamada. Bob responde con 200 OK y el media stream RTP se detiene."},
+  ];
+  const cur=sipFlow[step];
+  return(
+    <div>
+      <h1>SIP — Session Initiation Protocol</h1>
+      <p className="subtitle">SIP (RFC 3261) es un protocolo de señalización basado en texto para establecer, modificar y terminar sesiones multimedia</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Flujo de llamada SIP</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:12}}>
+              {sipFlow.map((s,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{background:step===i?s.color+"22":"#0a1020",border:`1px solid ${step===i?s.color:"#1e3a5f"}`,color:step===i?s.color:"#7c8db8",borderRadius:5,padding:"5px 10px",cursor:"pointer",textAlign:"left",fontSize:11,fontFamily:"monospace",transition:"all .2s"}}>
+                  <span style={{color:"#7c8db8",marginRight:6}}>{i+1}.</span>{s.from} → {s.to}: <strong>{s.msg}</strong>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{background:"#0a1020",border:`2px solid ${cur.color}`}}>
+            <h3 style={{color:cur.color}}>Paso {step+1}: {cur.msg}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>{cur.desc}</p>
+          </div>
+          <div className="card">
+            <h3>Componentes SIP</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"User Agent (UA)",c:"#3b82f6",d:"Teléfono SIP, softphone. UAC inicia; UAS responde."},
+                {n:"SIP Proxy",c:"#f97316",d:"Enruta mensajes SIP. Puede ser stateful o stateless."},
+                {n:"Registrar",c:"#10b981",d:"Almacena la localización actual del UA (REGISTER)."},
+                {n:"Redirect Server",c:"#8b5cf6",d:"Devuelve la nueva dirección sin reenviar el request."},
+                {n:"Back-to-Back UA",c:"#06b6d4",d:"B2BUA: actúa como endpoint en ambos lados. Control total."},
+              ].map(c=>(
+                <div key={c.n} style={{background:"#0f1628",border:`1px solid ${c.c}44`,borderRadius:6,padding:"6px 10px"}}>
+                  <span style={{color:c.c,fontWeight:600}}>{c.n}: </span>
+                  <span style={{color:"#7c8db8"}}>{c.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const data=[
+    {attr:"Organismo",sip:"IETF (RFC 3261)",h323:"ITU-T H.323"},
+    {attr:"Arquitectura",sip:"Distribuida, flexible",h323:"Centralizada (Gatekeeper)"},
+    {attr:"Formato mensaje",sip:"Texto (similar a HTTP)",h323:"Binario ASN.1"},
+    {attr:"Señalización",sip:"SIP + SDP",h323:"H.225 + H.245"},
+    {attr:"Protocolo media",sip:"RTP/RTCP",h323:"RTP/RTCP"},
+    {attr:"NAT traversal",sip:"STUN/TURN/ICE",h323:"Complejo, requiere ALG"},
+    {attr:"Escalabilidad",sip:"Alta (stateless)",h323:"Limitada por Gatekeeper"},
+    {attr:"Interoperabilidad",sip:"Alta",h323:"Alta en telefonía empresarial"},
+    {attr:"Uso actual",sip:"Estándar (WebRTC, IP PBX)",h323:"Legado (videoconferencia)"},
+  ];
+  const h323components=[
+    {n:"Terminal H.323",c:"#3b82f6",d:"Endpoint: teléfono, PC, videoconferencia. Soporta G.711/G.729."},
+    {n:"Gatekeeper",c:"#f97316",d:"Control central: admisión, traducción de direcciones, ancho de banda."},
+    {n:"Gateway",c:"#10b981",d:"Interconecta H.323 con PSTN o SIP. Convierte protocolos de señalización."},
+    {n:"MCU (Multipoint Control Unit)",c:"#8b5cf6",d:"Conferencias multipunto: mezcla audio/vídeo de múltiples participantes."},
+  ];
+  return(
+    <div>
+      <h1>H.323 — Estándar de Videoconferencia ITU</h1>
+      <p className="subtitle">H.323 fue el estándar dominante de VoIP antes de SIP. Aún usado en sistemas empresariales y videoconferencia heredada</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Arquitectura H.323</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+              {h323components.map(c=>(
+                <div key={c.n} style={{background:"#0a1020",border:`1px solid ${c.c}44`,borderRadius:6,padding:8}}>
+                  <div style={{color:c.c,fontWeight:600,fontSize:12}}>{c.n}</div>
+                  <div style={{color:"#7c8db8",fontSize:11,marginTop:2}}>{c.d}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mono" style={{fontSize:11}}>
+              <div style={{color:"#7c8db8"}}>Pila de protocolos H.323:</div>
+              <div>Media: <span style={{color:"#3b82f6"}}>RTP</span> sobre <span style={{color:"#f97316"}}>UDP</span></div>
+              <div>Control: <span style={{color:"#10b981"}}>H.245</span> (capabilities)</div>
+              <div>Señal: <span style={{color:"#8b5cf6"}}>H.225/Q.931</span> sobre TCP</div>
+              <div>Registro: <span style={{color:"#06b6d4"}}>RAS (H.225)</span> → Gatekeeper</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>SIP vs H.323 — Comparativa</h3>
+            <table><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>SIP</th><th style={{color:"#f97316"}}>H.323</th></tr>
+              {data.map(r=>(
+                <tr key={r.attr}>
+                  <td style={{color:"#7c8db8",fontWeight:600,fontSize:12}}>{r.attr}</td>
+                  <td style={{fontSize:12}}>{r.sip}</td>
+                  <td style={{fontSize:12}}>{r.h323}</td>
+                </tr>
+              ))}
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [codec,setCodec]=useState("G711");
+  const codecs={
+    G711:{name:"G.711",standard:"ITU-T",bitrate:"64 kbps",latencia:"0.125 ms/frame",mos:4.4,color:"#3b82f6",desc:"Codec de referencia. Sin compresión del audio (PCM). A-law (Europa) y µ-law (EEUU). Ancho de banda de telefonía: 300–3400 Hz. Calidad MOS excelente.",use:"PSTN, ISDN, sistemas heredados. Sin compresión = alta calidad y bajo CPU."},
+    G729:{name:"G.729",standard:"ITU-T",bitrate:"8 kbps",latencia:"10 ms/frame",mos:3.9,color:"#f97316",desc:"CS-ACELP: análisis predictivo lineal. 8 kbps con calidad aceptable. Muy extendido en VoIP empresarial por bajo ancho de banda. G.729a variante de menor CPU.",use:"IP PBX, troncales SIP. Reduce ancho de banda 8× respecto a G.711."},
+    Opus:{name:"Opus",standard:"IETF RFC 6716",bitrate:"6–510 kbps",latencia:"2.5–60 ms",mos:4.5,color:"#10b981",desc:"Combina SILK (voz) + CELT (música). Adaptativo: cambia bitrate y modo según la señal. Soporta VBR, DTX (silencio), FEC (corrección de errores forward).",use:"WebRTC, Discord, WhatsApp, Zoom. El codec más moderno y eficiente disponible."},
+    G722:{name:"G.722",standard:"ITU-T",bitrate:"48/56/64 kbps",latencia:"1 ms",mos:4.5,color:"#8b5cf6",desc:"Wideband: 50–7000 Hz (vs 300–3400 Hz de G.711). Sub-band ADPCM. Mayor naturalidad en voz. Conocido como 'HD Voice'.",use:"Teléfonos IP de alta gama, conferencias. Wideband mejora inteligibilidad."},
+  };
+  const c=codecs[codec];
+  return(
+    <div>
+      <h1>Codecs de Voz y Calidad QoS</h1>
+      <p className="subtitle">Los codecs comprimen la voz para su transporte IP; la QoS garantiza que los paquetes lleguen a tiempo</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {Object.keys(codecs).map(k=>(
+          <button key={k} onClick={()=>setCodec(k)}
+            style={{background:codec===k?codecs[k].color:"#0a1020",border:`2px solid ${codec===k?codecs[k].color:"#1e3a5f"}`,color:codec===k?"#0a1020":"#7c8db8",borderRadius:6,padding:"6px 18px",cursor:"pointer",fontWeight:700,fontSize:13}}>
+            {k}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3 style={{color:c.color}}>{c.name} — {c.standard}</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+              {[
+                {l:"Bitrate",v:c.bitrate,c:c.color},
+                {l:"Latencia frame",v:c.latencia,c:c.color},
+                {l:"MOS score",v:c.mos+"/5.0",c:c.mos>=4.3?"#10b981":c.mos>=3.7?"#f97316":"#ef4444"},
+              ].map(stat=>(
+                <div key={stat.l} style={{background:"#0a1020",border:`1px solid ${stat.c}44`,borderRadius:6,padding:8,textAlign:"center"}}>
+                  <div style={{color:stat.c,fontWeight:700,fontSize:13}}>{stat.v}</div>
+                  <div style={{color:"#7c8db8",fontSize:10,marginTop:2}}>{stat.l}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>{c.desc}</p>
+            <div style={{background:"#0a1020",border:`1px solid ${c.color}33`,borderRadius:6,padding:8,fontSize:12}}>
+              <span style={{color:c.color,fontWeight:600}}>Uso: </span>
+              <span style={{color:"#7c8db8"}}>{c.use}</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>QoS para VoIP</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>VoIP es sensible a latencia, jitter y pérdida de paquetes. La QoS prioriza el tráfico de voz sobre datos:</p>
+            <table style={{marginBottom:10}}><tbody>
+              <tr><th>Parámetro</th><th>Recomendado</th><th>Crítico</th></tr>
+              <tr><td style={{color:"#3b82f6"}}>Latencia (one-way)</td><td>&lt; 150 ms</td><td>&lt; 400 ms</td></tr>
+              <tr><td style={{color:"#f97316"}}>Jitter</td><td>&lt; 30 ms</td><td>&lt; 50 ms</td></tr>
+              <tr><td style={{color:"#10b981"}}>Pérdida paquetes</td><td>&lt; 1%</td><td>&lt; 5%</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>MOS score</td><td>&gt; 4.0</td><td>&gt; 3.5</td></tr>
+            </tbody></table>
+            <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:12}}>
+              {[
+                {n:"DSCP/DiffServ",c:"#3b82f6",d:"Marca paquetes VoIP con EF (Expedited Forwarding) = 46. Router da prioridad absoluta."},
+                {n:"QoS en router",c:"#f97316",d:"WFQ, CBWFQ, LLQ — colas separadas para voz, datos, video."},
+                {n:"Jitter buffer",c:"#10b981",d:"El receptor almacena paquetes y los reproduce con retardo constante para compensar jitter."},
+              ].map(q=>(
+                <div key={q.n} style={{background:"#0a1020",border:`1px solid ${q.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                  <span style={{color:q.c,fontWeight:600}}>{q.n}: </span>
+                  <span style={{color:"#7c8db8"}}>{q.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>7.6 VoIP</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 8.3 – Criptografía de Clave Pública: RSA y Diffie-Hellman</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#ef4444;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#ef4444;background:#0a1020;border-left-color:#ef4444;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"RSA — generación y operaciones"},{id:2,label:"Diffie-Hellman"},{id:3,label:"ECC y criptografía moderna"}];
+
+function Scene1(){
+  const [step,setStep]=useState(0);
+  const rsaSteps=[
+    {title:"1. Generar dos primos grandes",color:"#3b82f6",content:`Seleccionar p y q, primos grandes y distintos.\n\nEjemplo educativo (pequeño):\n  p = 61\n  q = 53\n\nEn producción: p, q de 1024–2048 bits cada uno.`},
+    {title:"2. Calcular n = p×q",color:"#f97316",content:`n es el módulo público, parte de ambas claves.\n\n  n = p × q\n  n = 61 × 53\n  n = 3233\n\nLa factorización de n en p y q es computacionalmente\ninfactible para n de 2048 bits. Esa es la seguridad de RSA.`},
+    {title:"3. Calcular φ(n) = (p-1)(q-1)",color:"#10b981",content:`φ(n) es la función de Euler (totient): cantidad de\nnúmeros menores que n coprimos con n.\n\n  φ(n) = (p-1)(q-1)\n  φ(3233) = 60 × 52 = 3120\n\nEste valor se mantiene SECRETO.`},
+    {title:"4. Elegir e: 1 < e < φ(n), gcd(e,φ(n))=1",color:"#8b5cf6",content:`e es el exponente público (clave pública junto a n).\nDebe ser coprimo con φ(n).\n\n  e = 17 (coprimo con 3120)\n  gcd(17, 3120) = 1 ✓\n\n  Clave pública: (e=17, n=3233)\n\nEn RSA estándar se usa e=65537 (F4): primo, eficiente.`},
+    {title:"5. Calcular d: d×e ≡ 1 (mod φ(n))",color:"#06b6d4",content:`d es el exponente privado (clave privada junto a n).\nInverso multiplicativo de e módulo φ(n).\n\n  d × 17 ≡ 1 (mod 3120)\n  d = 2753\n  Verificación: 17 × 2753 = 46801 = 15×3120 + 1 ✓\n\n  Clave privada: (d=2753, n=3233)\n  SECRETO: d, p, q, φ(n)`},
+    {title:"6. Cifrar y descifrar",color:"#f59e0b",content:`Cifrar con clave pública:\n  C = Mᵉ mod n\n  M = 65 (mensaje)\n  C = 65¹⁷ mod 3233 = 2790\n\nDescifrar con clave privada:\n  M = Cᵈ mod n\n  M = 2790²⁷⁵³ mod 3233 = 65 ✓\n\nSeguridad: sin d, calcular M desde C requiere\nfactorizar n (problema NP-hard para n grande).`},
+  ];
+  const s=rsaSteps[step];
+  return(
+    <div>
+      <h1>RSA — Rivest, Shamir, Adleman (1977)</h1>
+      <p className="subtitle">RSA es el algoritmo de clave pública más usado. Su seguridad se basa en la dificultad de factorizar el producto de dos primos grandes</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Generación de claves RSA</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:10}}>
+              {rsaSteps.map((rs,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{background:step===i?rs.color+"22":"#0a1020",border:`1px solid ${step===i?rs.color:"#1e3a5f"}`,color:step===i?rs.color:"#7c8db8",borderRadius:5,padding:"6px 10px",cursor:"pointer",textAlign:"left",fontSize:11,fontWeight:step===i?700:400,transition:"all .2s"}}>
+                  {rs.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{background:"#0a1020",border:`2px solid ${s.color}`,minHeight:180}}>
+            <h3 style={{color:s.color}}>{s.title}</h3>
+            <pre style={{color:"#e8f0fe",fontSize:12,lineHeight:1.8,whiteSpace:"pre-wrap",fontFamily:"monospace"}}>{s.content}</pre>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3>Usos de RSA en la práctica</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:12}}>
+              {[
+                {n:"TLS/HTTPS",c:"#3b82f6",d:"RSA para autenticar el servidor y acordar clave simétrica (RSA key exchange, ahora reemplazado por ECDHE)"},
+                {n:"Firmas digitales",c:"#10b981",d:"Firma con clave privada, verifica con clave pública. Certificados X.509."},
+                {n:"SSH",c:"#8b5cf6",d:"Par de claves RSA/ECDSA para autenticación sin contraseña."},
+                {n:"PGP/GPG",c:"#f97316",d:"Cifrado de emails y firmas de paquetes de software."},
+              ].map(u=>(
+                <div key={u.n} style={{background:"#0f1628",border:`1px solid ${u.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                  <span style={{color:u.c,fontWeight:600}}>{u.n}: </span><span style={{color:"#7c8db8"}}>{u.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [step,setStep]=useState(0);
+  const dhSteps=[
+    {label:"Parámetros públicos",color:"#3b82f6",alice:null,bob:null,shared:null,
+     desc:"Alice y Bob acuerdan públicamente los parámetros: un primo grande p y un generador g (raíz primitiva módulo p). Cualquiera puede conocer p y g.",
+     mono:"p = 23 (primo)\ng = 5 (generador)\np y g son PÚBLICOS"},
+    {label:"Claves privadas",color:"#f97316",alice:"a = 6 (secreto de Alice)",bob:"b = 15 (secreto de Bob)",shared:null,
+     desc:"Alice y Bob generan independientemente sus claves privadas (números aleatorios). Estas claves NUNCA se transmiten.",
+     mono:"Alice elige: a = 6 (SECRETO)\nBob elige:   b = 15 (SECRETO)"},
+    {label:"Valores públicos",color:"#10b981",alice:"A = 5⁶ mod 23 = 8",bob:"B = 5¹⁵ mod 23 = 19",shared:null,
+     desc:"Cada uno calcula su valor público usando la operación de exponenciación modular: A = g^a mod p. Estos valores SÍ se transmiten.",
+     mono:"Alice: A = g^a mod p = 5^6 mod 23 = 8\nBob:   B = g^b mod p = 5^15 mod 23 = 19\n\nA y B son PÚBLICOS — se transmiten"},
+    {label:"Clave compartida",color:"#8b5cf6",alice:"S = 19⁶ mod 23 = 2",bob:"S = 8¹⁵ mod 23 = 2",shared:"S = 2",
+     desc:"Cada uno eleva el valor público del otro a su clave privada. Ambos obtienen el mismo resultado S, que se usa como clave simétrica.",
+     mono:"Alice: S = B^a mod p = 19^6 mod 23 = 2\nBob:   S = A^b mod p = 8^15 mod 23 = 2\n\nS = 2 ← MISMA clave compartida ✓\nUn atacante ve: p=23, g=5, A=8, B=19\nNecesita resolver log discreto: 5^a ≡ 8 (mod 23)"},
+  ];
+  const s=dhSteps[step];
+  return(
+    <div>
+      <h1>Diffie-Hellman — Intercambio de Claves</h1>
+      <p className="subtitle">Diffie-Hellman (1976) permite a dos partes establecer una clave secreta compartida sobre un canal inseguro, sin haber intercambiado secretos previamente</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {dhSteps.map((st,i)=>(
+          <button key={i} onClick={()=>setStep(i)}
+            style={{background:step===i?st.color+"33":"#0a1020",border:`2px solid ${step===i?st.color:"#1e3a5f"}`,color:step===i?st.color:"#7c8db8",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontWeight:600,fontSize:12,flex:1,transition:"all .2s"}}>
+            {i+1}. {st.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card" style={{border:`2px solid ${s.color}`}}>
+            <h3 style={{color:s.color}}>{s.label}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>{s.desc}</p>
+            <pre className="mono" style={{whiteSpace:"pre-wrap",fontSize:11}}>{s.mono}</pre>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Estado en el paso {step+1}</h3>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #3b82f644",borderRadius:8,padding:12,textAlign:"center"}}>
+                <div style={{color:"#3b82f6",fontWeight:700,marginBottom:6}}>Alice</div>
+                <div style={{color:"#e8f0fe",fontSize:12,fontFamily:"monospace"}}>{s.alice||"—"}</div>
+              </div>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #f9731644",borderRadius:8,padding:12,textAlign:"center"}}>
+                <div style={{color:"#f97316",fontWeight:700,marginBottom:6}}>Bob</div>
+                <div style={{color:"#e8f0fe",fontSize:12,fontFamily:"monospace"}}>{s.bob||"—"}</div>
+              </div>
+            </div>
+            {s.shared&&(
+              <div style={{background:"#0a1020",border:"2px solid #10b981",borderRadius:8,padding:12,textAlign:"center"}}>
+                <div style={{color:"#10b981",fontWeight:700,fontSize:14}}>Clave compartida: {s.shared}</div>
+                <div style={{color:"#7c8db8",fontSize:11,marginTop:4}}>Se usa como semilla para derivar clave AES</div>
+              </div>
+            )}
+          </div>
+          <div className="card">
+            <h3>DHE vs ECDHE en TLS</h3>
+            <table><tbody>
+              <tr><th></th><th style={{color:"#3b82f6"}}>DHE</th><th style={{color:"#10b981"}}>ECDHE</th></tr>
+              <tr><td>Base matemática</td><td>Log discreto mod p</td><td>Curvas elípticas</td></tr>
+              <tr><td>Tamaño clave</td><td>2048–4096 bits</td><td>256–521 bits</td></tr>
+              <tr><td>Seguridad equivalente</td><td>2048 bits ≈ 112 bits</td><td>256 bits ≈ 128 bits</td></tr>
+              <tr><td>Rendimiento</td><td>Más lento</td><td>10× más rápido</td></tr>
+              <tr><td>Forward Secrecy</td><td>Sí (efímero)</td><td>Sí (efímero)</td></tr>
+              <tr><td>TLS 1.3</td><td>Soportado</td><td>Preferido</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const curves=[
+    {n:"P-256 (secp256r1)",c:"#3b82f6",bits:256,nist:true,use:"TLS, HTTPS, certificados web. El más común."},
+    {n:"P-384 (secp384r1)",c:"#f97316",bits:384,nist:true,use:"Gobierno, aplicaciones de alta seguridad."},
+    {n:"Curve25519",c:"#10b981",bits:255,nist:false,use:"TLS 1.3, SSH, Signal, WhatsApp. Diseñado para resistir ataques de canal lateral."},
+    {n:"secp256k1",c:"#8b5cf6",bits:256,nist:false,use:"Bitcoin, Ethereum. Misma seguridad que P-256, parámetros diferentes."},
+  ];
+  return(
+    <div>
+      <h1>Criptografía de Curva Elíptica (ECC)</h1>
+      <p className="subtitle">ECC ofrece la misma seguridad que RSA con claves mucho más pequeñas, basándose en el problema del logaritmo discreto sobre curvas elípticas</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>¿Qué es una curva elíptica?</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>Una curva elíptica sobre un campo finito Fp satisface la ecuación <strong style={{color:"#3b82f6"}}>y² = x³ + ax + b (mod p)</strong>. La "suma" de puntos en la curva define un grupo abeliano.</p>
+            <div className="mono" style={{marginBottom:10,fontSize:11}}>
+              <div style={{color:"#7c8db8"}}>Curva secp256k1 (Bitcoin):</div>
+              <div>y² = x³ + 7 (mod p)</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}>Operación ECDH:</div>
+              <div>Privada: k (número aleatorio)</div>
+              <div style={{color:"#3b82f6"}}>Pública: K = k × G (punto generador G)</div>
+              <div style={{color:"#10b981",marginTop:4}}>Secreto compartido: S = k_A × K_B = k_B × K_A</div>
+            </div>
+            <div style={{background:"#0a1020",border:"1px solid #3b82f6",borderRadius:6,padding:10,fontSize:12}}>
+              <div style={{color:"#3b82f6",fontWeight:600,marginBottom:4}}>Seguridad equivalente:</div>
+              <table style={{fontSize:11}}><tbody>
+                <tr><th>RSA / DH</th><th>ECC</th><th>Simétrico</th></tr>
+                <tr><td>1024 bits</td><td>160 bits</td><td>80 bits</td></tr>
+                <tr><td>2048 bits</td><td>224 bits</td><td>112 bits</td></tr>
+                <tr><td>3072 bits</td><td>256 bits</td><td>128 bits</td></tr>
+                <tr><td>7680 bits</td><td>384 bits</td><td>192 bits</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Curvas elípticas principales</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+              {curves.map(c=>(
+                <div key={c.n} style={{background:"#0a1020",border:`1px solid ${c.c}44`,borderRadius:6,padding:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                    <span style={{color:c.c,fontWeight:700,fontSize:12}}>{c.n}</span>
+                    <span style={{background:c.nist?"#3b82f622":"#7c8db822",color:c.nist?"#3b82f6":"#7c8db8",borderRadius:3,padding:"1px 6px",fontSize:10,fontWeight:600}}>{c.nist?"NIST":"No-NIST"}</span>
+                  </div>
+                  <div style={{color:"#7c8db8",fontSize:11}}>{c.use}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Criptografía post-cuántica</h3>
+            <p style={{color:"#e8f0fe",fontSize:12,lineHeight:1.7,marginBottom:8}}>Un ordenador cuántico con suficientes qubits ejecutaría el <strong style={{color:"#ef4444"}}>algoritmo de Shor</strong> para romper RSA y ECC en tiempo polinomial. NIST estandarizó en 2024 algoritmos post-cuánticos:</p>
+            <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:11}}>
+              {[
+                {n:"ML-KEM (Kyber)",c:"#3b82f6",d:"Intercambio de claves. Basado en problemas de redes (lattices)."},
+                {n:"ML-DSA (Dilithium)",c:"#10b981",d:"Firmas digitales. Resistente a ataques cuánticos."},
+                {n:"SLH-DSA (SPHINCS+)",c:"#8b5cf6",d:"Firmas basadas en hash. Diferente base matemática."},
+              ].map(p=>(
+                <div key={p.n} style={{background:"#0a1020",border:`1px solid ${p.c}44`,borderRadius:5,padding:"5px 8px"}}>
+                  <span style={{color:p.c,fontWeight:600}}>{p.n}: </span><span style={{color:"#7c8db8"}}>{p.d}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>8.3 Clave Pública</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

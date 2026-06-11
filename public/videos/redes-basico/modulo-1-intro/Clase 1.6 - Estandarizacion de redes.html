@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.6 — Estandarización de Redes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+const ORGS=[
+  {sigla:'ISO',nombre:'International Organization for Standardization',color:'#3b82f6',
+   desc:'Organización no gubernamental con 167 países miembros. En redes, publicó el modelo OSI (ISO/IEC 7498) y múltiples estándares de seguridad (ISO 27001). Trabaja en todos los sectores, no solo TI.',
+   estandares:['ISO/IEC 7498 — Modelo OSI','ISO/IEC 11801 — Cableado estructurado','ISO 27001 — Gestión de seguridad','ISO/IEC 14443 — RFID contactless (NFC)']},
+  {sigla:'IEEE',nombre:'Institute of Electrical and Electronics Engineers',color:'#8b5cf6',
+   desc:'Organización profesional que define estándares para LAN y MAN. El comité 802 es el más influyente en redes locales. Sus estándares son la base de Ethernet y WiFi.',
+   estandares:['IEEE 802.3 — Ethernet (LAN cableada)','IEEE 802.11 — WiFi (WLAN)','IEEE 802.15.1 — Bluetooth','IEEE 802.16 — WiMAX (WMAN)','IEEE 802.1Q — VLANs y 802.1D STP']},
+  {sigla:'IETF',nombre:'Internet Engineering Task Force',color:'#10b981',
+   desc:'Organización abierta que desarrolla y promueve estándares de Internet mediante RFCs (Request for Comments). No tiene membresía formal: cualquier persona puede participar. Manifiesto: "Rough consensus and running code".',
+   estandares:['RFC 791 — IPv4 (1981)','RFC 793 — TCP (1981)','RFC 2460 — IPv6 (1998)','RFC 2616 — HTTP/1.1','RFC 4271 — BGP-4','RFC 5321 — SMTP']},
+  {sigla:'ITU-T',nombre:'Int. Telecommunication Union — Telecom. Standardization Sector',color:'#f97316',
+   desc:'Agencia de la ONU que regula las telecomunicaciones globales. Antes llamada CCITT. Publica recomendaciones (no normas vinculantes). Histórica en telefonía, hoy activa en broadband y óptico.',
+   estandares:['G.711 — Codificación de voz (PCM, telefónica)','G.729 — Voz comprimida (VoIP)','H.323 — Videoconferencia','X.509 — Certificados digitales (PKI)','G.652 — Fibra óptica monomodo']},
+  {sigla:'W3C',nombre:'World Wide Web Consortium',color:'#ec4899',
+   desc:'Fundado por Tim Berners-Lee (inventor de la Web) en 1994. Desarrolla estándares web: HTML, CSS, XML, HTTP. Sus especificaciones se llaman "Recomendaciones". Garantiza la interoperabilidad de la Web.',
+   estandares:['HTML5 — Lenguaje de marcado web','CSS3 — Hojas de estilo','XML / JSON-LD','WebRTC — Comunicación en tiempo real','HTTPS — HTTP sobre TLS']},
+  {sigla:'ICANN',nombre:'Internet Corporation for Assigned Names and Numbers',color:'#7c8db8',
+   desc:'Administra el espacio de nombres de dominio (DNS) y la asignación de direcciones IP globales (delegando a los RIRs: ARIN, RIPE, LACNIC, APNIC, AFRINIC). Gestiona el servidor raíz DNS.',
+   estandares:['Gestión de TLDs (.com, .org, .net)','Coordinación de servidores raíz DNS','Políticas de asignación de IPs','DNSSEC — Extensiones de seguridad DNS']},
+];
+
+function Scene1(){
+  const [sel,setSel]=useState('IEEE');
+  const org=ORGS.find(o=>o.sigla===sel);
+  return(<div>
+    <div className="sec-title">Organismos de Estandarización de Redes</div>
+    <div className="sec-sub">Quién define las reglas de Internet y las redes</div>
+    <div style={{display:'flex',gap:8,marginBottom:14,flexWrap:'wrap'}}>
+      {ORGS.map(o=>(
+        <button key={o.sigla} onClick={()=>setSel(o.sigla)}
+          style={{padding:'6px 14px',borderRadius:6,border:`1px solid ${sel===o.sigla?o.color:o.color+'44'}`,background:sel===o.sigla?`${o.color}15`:'transparent',color:sel===o.sigla?o.color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace',fontSize:11,fontWeight:700,cursor:'pointer',transition:'all .2s'}}>
+          {o.sigla}
+        </button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card" style={{borderColor:org.color+'44'}}>
+          <div style={{fontSize:13,fontWeight:700,color:org.color,marginBottom:4}}>{org.sigla}</div>
+          <div style={{fontSize:11,color:'#7c8db8',marginBottom:10,fontStyle:'italic'}}>{org.nombre}</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#7c8db8'}}>{org.desc}</p>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:org.color+'44'}}>
+          <div className="card-h" style={{color:org.color}}>Estándares más importantes</div>
+          {org.estandares.map((e,i)=>(
+            <div key={i} className="row">
+              <span style={{color:org.color,flexShrink:0}}>▸</span>
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,color:'#e8f0fe'}}>{e}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const rfcs=[
+    {rfc:'RFC 791',año:1981,titulo:'Internet Protocol (IPv4)',impacto:'Define el protocolo IP versión 4, la base de toda la comunicación en Internet. Establece el formato del datagrama de 32 bits para la dirección IP.'},
+    {rfc:'RFC 793',año:1981,titulo:'Transmission Control Protocol (TCP)',impacto:'Define TCP, el protocolo de transporte confiable de Internet. Three-way handshake, números de secuencia, control de flujo y retransmisión.'},
+    {rfc:'RFC 1034/1035',año:1987,titulo:'Domain Name System (DNS)',impacto:'Define el sistema jerárquico de nombres de Internet, que traduce nombres de dominio (google.com) a direcciones IP. La guía telefónica de Internet.'},
+    {rfc:'RFC 2460',año:1998,titulo:'Internet Protocol Version 6 (IPv6)',impacto:'Resuelve el agotamiento de direcciones IPv4. Espacio de 128 bits: 340 undecillones de direcciones. Autoconfiguración, sin NAT obligatorio.'},
+    {rfc:'RFC 2616',año:1999,titulo:'Hypertext Transfer Protocol 1.1 (HTTP/1.1)',impacto:'Define HTTP/1.1, el protocolo de la Web. Host virtual, conexiones persistentes, chunked transfer. Actualizado por RFC 7230-7235.'},
+    {rfc:'RFC 5246',año:2008,titulo:'Transport Layer Security 1.2 (TLS)',impacto:'El estándar de cifrado en la Web (HTTPS). Negociación de claves, cifrado simétrico, certificados X.509. TLS 1.3 (RFC 8446) es el actual.'},
+  ];
+  return(<div>
+    <div className="sec-title">Los RFCs que Definen Internet</div>
+    <div className="sec-sub">IETF Request for Comments — el proceso de estándares de Internet desde 1969</div>
+    <div className="card" style={{marginBottom:12,padding:'10px 16px'}}>
+      <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+        Los <strong style={{color:'#3b82f6'}}>RFCs (Request for Comments)</strong> son los documentos técnicos del IETF. El nombre es irónico: son estándares formales, no solicitudes de comentarios. La serie comenzó en 1969 con RFC 1 (escrito por Steve Crocker). Hoy existen más de 9,000 RFCs. Cada protocolo de Internet está definido en uno o más RFCs. Son de acceso público y gratuito en <strong style={{color:'#e8f0fe'}}>tools.ietf.org</strong>.
+      </div>
+    </div>
+    {rfcs.map((r,i)=>(
+      <div key={i} style={{display:'flex',gap:12,alignItems:'flex-start',padding:'8px 0',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+        <div style={{flexShrink:0,width:90}}>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:12,fontWeight:700,color:'#3b82f6'}}>{r.rfc}</div>
+          <div style={{fontSize:10,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace'}}>{r.año}</div>
+        </div>
+        <div>
+          <div style={{fontSize:13,fontWeight:600,color:'#e8f0fe',marginBottom:3}}>{r.titulo}</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.5}}>{r.impacto}</div>
+        </div>
+      </div>
+    ))}
+  </div>);
+}
+
+function Scene3(){
+  const ieee802=[
+    {std:'802.3',nombre:'Ethernet',aplica:'LAN cableada',vel:'10 Mbps (original) → 10 Gbps, 40 Gbps, 100 Gbps, 400 Gbps',estado:'Activo y en expansión'},
+    {std:'802.3u',nombre:'Fast Ethernet',aplica:'LAN cableada',vel:'100 Mbps sobre UTP Cat.5',estado:'Vigente (parte de 802.3)'},
+    {std:'802.3ab',nombre:'Gigabit Ethernet (1000BASE-T)',aplica:'LAN cableada',vel:'1 Gbps sobre UTP Cat.5e',estado:'Vigente, muy común'},
+    {std:'802.11a',nombre:'WiFi 5 GHz',aplica:'WLAN',vel:'54 Mbps en 5 GHz',estado:'Obsoleto'},
+    {std:'802.11g',nombre:'WiFi 2.4 GHz',aplica:'WLAN',vel:'54 Mbps en 2.4 GHz',estado:'Aún en uso'},
+    {std:'802.11n',nombre:'WiFi 4 (Wi-Fi 4)',aplica:'WLAN',vel:'600 Mbps, MIMO 4×4',estado:'Muy común'},
+    {std:'802.11ac',nombre:'WiFi 5 (Wi-Fi 5)',aplica:'WLAN',vel:'6.9 Gbps teórico, MU-MIMO',estado:'Actual'},
+    {std:'802.11ax',nombre:'WiFi 6 (Wi-Fi 6)',aplica:'WLAN',vel:'9.6 Gbps, OFDMA, BSS coloring',estado:'Más reciente'},
+    {std:'802.15.1',nombre:'Bluetooth',aplica:'WPAN',vel:'1-3 Mbps, rango ~10m',estado:'Vigente'},
+    {std:'802.16',nombre:'WiMAX',aplica:'WMAN',vel:'75 Mbps, hasta 50 km',estado:'Legado (reemplazado por LTE/5G)'},
+  ];
+  return(<div>
+    <div className="sec-title">Familia IEEE 802 — Los Estándares de LAN y WAN</div>
+    <div className="sec-sub">El comité IEEE 802 es responsable de casi toda la conectividad de red moderna</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,fontFamily:'IBM Plex Mono,monospace'}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Estándar','Nombre','Aplica a','Velocidad','Estado'].map((h,i)=>(
+            <th key={i} style={{padding:'7px 10px',color:'#3b82f6',textAlign:'left',fontSize:9,letterSpacing:'.08em'}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {ieee802.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'7px 10px',color:'#3b82f6',fontWeight:700}}>{r.std}</td>
+            <td style={{padding:'7px 10px',color:'#e8f0fe'}}>{r.nombre}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8'}}>{r.aplica}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8'}}>{r.vel}</td>
+            <td style={{padding:'7px 10px',color:r.estado.includes('Obsoleto')||r.estado.includes('Legado')?'#f97316':r.estado.includes('Actual')||r.estado.includes('reciente')?'#10b981':'#7c8db8'}}>{r.estado}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Organismos (ISO,IEEE,IETF…)',C:Scene1},{id:2,label:'Los RFCs de Internet',C:Scene2},{id:3,label:'Familia IEEE 802',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 1.6 — Estandarización de redes: ISO, IEEE, IETF, ITU</div><div className="topbar-sub">Módulo 1 — Introducción</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Identificar los principales organismos de estandarización y comprender qué estándares producen para las redes de computadoras.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

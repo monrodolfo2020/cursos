@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.6 — Telefonía Móvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const gens=[
+    {g:'1G',año:'1980–1991',nombre:'AMPS (EE.UU.) / NMT (Europa)',acc:'FDMA',mod:'FM analógico',voz:'Analógica',datos:'No',freq:'800–900 MHz',nota:'Sistema celular original. Canales de 30 kHz (AMPS). Seguridad prácticamente nula: clonación trivial. Handoff analógico ruidoso. 14 millones de usuarios en peak 1990s.',color:'#3a4a72'},
+    {g:'2G',año:'1991–2003',nombre:'GSM (900/1800 MHz)',acc:'TDMA (GSM) / CDMA (IS-95)',mod:'GMSK / QPSK',voz:'Digital 13 kbps',datos:'9.6–384 kbps (GPRS/EDGE)',freq:'900, 1800, 1900 MHz',nota:'GSM: 8 usuarios/canal de 200 kHz vía TDMA. SIM card separable. SMS nativo. GPRS (2.5G): 114 kbps. EDGE (2.75G): 384 kbps. Cifrado A5/1. Roaming internacional estandarizado.',color:'#f97316'},
+    {g:'3G',año:'2001–2012',nombre:'UMTS / WCDMA / HSPA',acc:'WCDMA (5 MHz)',mod:'QPSK / QAM',voz:'AMR 12.2 kbps',datos:'384 kbps – 42 Mbps',freq:'850, 900, 1700, 1900, 2100 MHz',nota:'WCDMA usa 5 MHz de ancho de banda con CDMA de banda ancha. HSDPA (3.5G): 14.4 Mbps ↓. HSPA+ (3.75G): 42 Mbps. Video llamada nativa (384 kbps). Node B (BTS), RNC, SGSN, GGSN.',color:'#3b82f6'},
+    {g:'4G LTE',año:'2009–presente',nombre:'LTE / LTE-Advanced',acc:'OFDMA (↓) / SC-FDMA (↑)',mod:'64-QAM / 256-QAM',voz:'VoLTE (voz sobre IP)',datos:'100 Mbps – 1 Gbps',freq:'700, 800, 1800, 2100, 2600 MHz',nota:'Todo-IP: voz y datos unificados. OFDMA tolera multipath. eNB (eNodeB) elimina el RNC. Arquitectura EPC plana. Carrier Aggregation junta varias bandas. LTE-A: hasta 1 Gbps con MIMO 8×8.',color:'#10b981'},
+    {g:'5G',año:'2019–presente',nombre:'NR (New Radio) 3GPP Rel-15+',acc:'OFDM con subportadoras flexibles',mod:'256-QAM / 1024-QAM',voz:'VoNR',datos:'<1 ms latencia, 20 Gbps pico',freq:'Sub-6 GHz + mmWave (24–100 GHz)',nota:'Tres servicios: eMBB (banda ancha), URLLC (latencia <1 ms), mMTC (IoT masivo). mmWave: >1 Gbps pero < 200 m. Beamforming masivo con antenas masivas MIMO (64–256 elementos). Network slicing.',color:'#8b5cf6'},
+  ];
+  return(<div>
+    <div className="sec-title">Evolución de la Telefonía Móvil: 1G → 5G</div>
+    <div className="sec-sub">Cinco generaciones de redes celulares</div>
+    <div style={{overflowX:'auto'}}>
+      <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+        <thead>
+          <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+            {['Gen','Período','Estándar','Acceso','Modulación','Voz','Datos','Frecuencias'].map((h,i)=>(
+              <th key={i} style={{padding:'7px 8px',color:'#3b82f6',textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9,letterSpacing:'.06em',whiteSpace:'nowrap'}}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {gens.map((g,i)=>(
+            <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <td style={{padding:'7px 8px'}}><span style={{fontSize:13,fontWeight:700,color:g.color}}>{g.g}</span></td>
+              <td style={{padding:'7px 8px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{g.año}</td>
+              <td style={{padding:'7px 8px',color:'#e8f0fe',fontSize:10}}>{g.nombre}</td>
+              <td style={{padding:'7px 8px',color:g.color,fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{g.acc}</td>
+              <td style={{padding:'7px 8px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{g.mod}</td>
+              <td style={{padding:'7px 8px',color:'#7c8db8',fontSize:10}}>{g.voz}</td>
+              <td style={{padding:'7px 8px',color:g.color,fontSize:10,fontWeight:600}}>{g.datos}</td>
+              <td style={{padding:'7px 8px',color:'#3a4a72',fontSize:10}}>{g.freq}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div className="card" style={{marginTop:10,borderColor:'rgba(249,115,22,0.2)'}}>
+      <div className="card-h" style={{color:'#f97316'}}>Concepto celular — La clave de todo</div>
+      <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.65}}>La red se divide en celdas (hexagonales en teoría). Cada celda tiene una estación base (BTS/eNodeB/gNodeB). Celdas no adyacentes pueden reutilizar la misma frecuencia (reúso de frecuencia). El móvil hace handoff entre celdas. Celdas más pequeñas = más capacidad por km².</div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">GSM en Detalle: Arquitectura y Protocolos</div>
+    <div className="sec-sub">El estándar que conquistó el mundo: 90% de usuarios 2G</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Arquitectura GSM</div>
+          <div style={{fontSize:11,fontFamily:'IBM Plex Mono,monospace',color:'#10b981',background:'#060a14',borderRadius:6,padding:'10px',lineHeight:1.9}}>
+            {`[MS — Mobile Station]\n   │ Um (radio)\n[BTS — Base Transceiver Station]\n   │ Abis\n[BSC — Base Station Controller]\n   │ A\n[MSC — Mobile Switching Center] ◄──► PSTN\n   │\n[HLR] [VLR] [AUC] [EIR]`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Bases de datos GSM</div>
+          {[
+            {d:'HLR',n:'Home Location Register','i':'BD maestra del operador: suscriptores, servicios, última ubicación'},
+            {d:'VLR',n:'Visitor Location Register','i':'Copia temporal del HLR en la MSC visitada'},
+            {d:'AUC',n:'Authentication Center','i':'Genera tripletas de autenticación (RAND, SRES, Kc)'},
+            {d:'EIR',n:'Equipment Identity Register','i':'Lista blanca/gris/negra de IMEI (equipos robados)'},
+          ].map(r=>(
+            <div key={r.d} style={{display:'grid',gridTemplateColumns:'50px 1fr',gap:8,padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <span style={{color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',fontSize:11,fontWeight:700}}>{r.d}</span>
+              <div><div style={{fontSize:11,color:'#e8f0fe',fontWeight:600}}>{r.n}</div><div style={{fontSize:10,color:'#3a4a72'}}>{r.i}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Canal de radio GSM</div>
+          {[
+            {t:'Frecuencias',v:'900 MHz: 890–915 MHz (↑) / 935–960 MHz (↓)'},
+            {t:'Separación duplex',v:'45 MHz entre uplink y downlink'},
+            {t:'Ancho de canal',v:'200 kHz por portadora TDMA'},
+            {t:'Slots por trama',v:'8 slots de tiempo (time slots)'},
+            {t:'Tasa bruta',v:'270.833 kbps por portadora'},
+            {t:'Voz por slot',v:'13 kbps (códec RPE-LTP)'},
+          ].map(r=>(
+            <div key={r.t} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',fontSize:11}}>
+              <span style={{color:'#7c8db8'}}>{r.t}</span>
+              <span style={{color:'#e8f0fe',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Procedimiento de handoff (handover)</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>
+            1. MS mide señal de BTS vecinas continuamente<br/>
+            2. BSC decide handoff basado en señal/calidad<br/>
+            3. MSC reserva recursos en nueva celda<br/>
+            4. MS recibe orden: cambio en 0.5 s<br/>
+            5. Llamada continúa sin interrumpirse<br/>
+            Tipos: intracelular (BSC), intercelular (MSC), inter-MSC.
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Seguridad GSM</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Autenticación con desafío-respuesta usando Ki (clave en SIM). Cifrado A5/1 (stream cipher, 64-bit) entre MS y BTS. Debilidad: solo autenticación de red a terminal (no bidireccional — vulnerabilidad IMSI catcher). A5/2 intencionalmente debilitado para exportación.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const comp=[
+    {t:'Tecnología de acceso',gsm:'TDMA — 8 slots por portadora 200 kHz',umts:'WCDMA — señal dispersa en 5 MHz',lte:'OFDMA (↓), SC-FDMA (↑)'},
+    {t:'Velocidad pico datos',gsm:'9.6 kbps (GPRS: 114, EDGE: 384)',umts:'HSPA+: 42 Mbps / 22 Mbps',lte:'300 Mbps (↓) / 75 Mbps (↑)'},
+    {t:'Latencia típica',gsm:'300–700 ms',umts:'50–100 ms',lte:'10–40 ms'},
+    {t:'Elemento de red base',gsm:'BTS + BSC',umts:'Node B + RNC',lte:'eNodeB (sin RNC)'},
+    {t:'Core de red',gsm:'MSC (circuitos)',umts:'MSC + SGSN/GGSN',lte:'EPC (SAE-GW, MME, HSS)'},
+    {t:'Voz',gsm:'TDM circuitos',umts:'CS + PS, Video call',lte:'VoLTE (paquetes)'},
+    {t:'Seguridad',gsm:'A5/1 (64-bit), unidireccional',umts:'AES-128, bidireccional',lte:'AES-128/256, autent. mutua'},
+    {t:'Estado actual',gsm:'Apagado en muchos países',umts:'En declinación',lte:'Dominante globalmente'},
+  ];
+  return(<div>
+    <div className="sec-title">GSM vs UMTS vs LTE: Comparativa Técnica</div>
+    <div className="sec-sub">Evolución de 2G a 4G</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginBottom:12}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Característica','2G — GSM','3G — UMTS/HSPA','4G — LTE'].map((h,i)=>(
+            <th key={i} style={{padding:'8px 10px',color:['#7c8db8','#f97316','#3b82f6','#10b981'][i],textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {comp.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'7px 10px',color:'#e8f0fe',fontWeight:600}}>{r.t}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.gsm}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.umts}</td>
+            <td style={{padding:'7px 10px',color:'#10b981',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.lte}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <div className="card" style={{borderColor:'rgba(139,92,246,0.3)'}}>
+        <div className="card-h" style={{color:'#8b5cf6'}}>5G New Radio — Lo nuevo</div>
+        <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Sub-6 GHz (cobertura amplia) + mmWave 24–100 GHz (capacidad extrema, < 200 m). Beamforming con Massive MIMO 64–256 antenas. Latencia < 1 ms para URLLC (vehículos autónomos, cirugía remota). Network slicing: redes virtuales sobre infraestructura común.</div>
+      </div>
+      <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+        <div className="card-h" style={{color:'#10b981'}}>Impacto y perspectiva</div>
+        <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>La telefonía móvil llevó Internet a >5 mil millones de personas. LTE sigue siendo el backbone para 4G/5G NSA. IoT masivo (mMTC) conectará millones de sensores. La fusión WiFi/celular (HetNet) será transparente al usuario en 6G (2030+).</div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'1G → 5G: Evolución',C:Scene1},{id:2,label:'GSM en detalle',C:Scene2},{id:3,label:'GSM vs UMTS vs LTE',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 2.6 — Telefonía Móvil: 1G, 2G, 3G y LTE</div><div className="topbar-sub">Módulo 2 — La Capa Física</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comprender la evolución de las redes celulares, la arquitectura GSM, las diferencias entre generaciones y los principios del handoff.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

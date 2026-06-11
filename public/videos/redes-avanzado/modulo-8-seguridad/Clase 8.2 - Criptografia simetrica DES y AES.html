@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 8.2 – Criptografía Simétrica: DES, Triple-DES y AES</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#ef4444;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#ef4444;background:#0a1020;border-left-color:#ef4444;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Fundamentos criptografía"},{id:2,label:"DES y Triple-DES"},{id:3,label:"AES y modos de operación"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("stream");
+  return(
+    <div>
+      <h1>Fundamentos de Criptografía Simétrica</h1>
+      <p className="subtitle">En criptografía simétrica, la misma clave secreta cifra y descifra. Rápida y eficiente para grandes volúmenes de datos</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["stream","block"].map(t=>(
+          <button key={t} onClick={()=>setSel(t)}
+            style={{background:sel===t?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:sel===t?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>
+            {t==="stream"?"Cifrado de flujo (Stream)":"Cifrado de bloque (Block)"}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {sel==="stream"?(
+            <div className="card">
+              <h3>Cifrado de flujo</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>Cifra bit a bit (o byte a byte) combinando el texto plano con un keystream pseudoaleatorio mediante XOR. La clave semilla genera el keystream.</p>
+              <div className="mono" style={{marginBottom:10,fontSize:11}}>
+                <div>Texto: 10110100 (0xB4)</div>
+                <div>Keystream: 01101011 (0x6B)</div>
+                <div style={{borderTop:"1px solid #1e3a5f",marginTop:4,paddingTop:4,color:"#3b82f6"}}>Cifrado: 11011111 (0xDF) ← XOR</div>
+                <div style={{color:"#10b981",marginTop:6}}>Descifrado: 11011111 XOR 01101011 = 10110100 ✓</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+                {[
+                  {n:"RC4",c:"#f97316",d:"Usado en WEP (deprecado). Roto con ataques estadísticos."},
+                  {n:"ChaCha20",c:"#10b981",d:"Moderno y seguro. Usado en TLS 1.3, WireGuard."},
+                  {n:"Salsa20",c:"#3b82f6",d:"Base de ChaCha20. Rápido en software, sin hardware especial."},
+                ].map(c=>(
+                  <div key={c.n} style={{background:"#0a1020",border:`1px solid ${c.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                    <span style={{color:c.c,fontWeight:600}}>{c.n}: </span><span style={{color:"#7c8db8"}}>{c.d}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ):(
+            <div className="card">
+              <h3>Cifrado de bloque</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>Divide el texto en bloques de tamaño fijo (64 o 128 bits) y los cifra mediante múltiples rondas de sustitución y permutación (red de Feistel o substitution-permutation network).</p>
+              <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:8,padding:12,marginBottom:10}}>
+                <div style={{color:"#3b82f6",fontWeight:600,marginBottom:6,fontSize:12}}>Red de Feistel (DES, 3DES):</div>
+                <div style={{fontFamily:"monospace",fontSize:11,lineHeight:2}}>
+                  <div>Bloque → L₀ | R₀</div>
+                  <div>Lᵢ₊₁ = Rᵢ</div>
+                  <div style={{color:"#3b82f6"}}>Rᵢ₊₁ = Lᵢ XOR F(Rᵢ, Kᵢ)</div>
+                  <div style={{color:"#7c8db8",fontSize:10}}>Misma estructura para cifrar y descifrar</div>
+                </div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+                {[
+                  {n:"DES",c:"#ef4444",d:"56 bits clave. Roto por fuerza bruta en 1998 (EFF DES Cracker)."},
+                  {n:"3DES",c:"#f97316",d:"Triple-DES: aplica DES tres veces. 112 bits efectivos. Lento."},
+                  {n:"AES",c:"#10b981",d:"Estándar actual. 128/192/256 bits. Rápido con AES-NI."},
+                ].map(c=>(
+                  <div key={c.n} style={{background:"#0a1020",border:`1px solid ${c.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                    <span style={{color:c.c,fontWeight:600}}>{c.n}: </span><span style={{color:"#7c8db8"}}>{c.d}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>Simétrica vs Asimétrica</h3>
+            <table><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>Simétrica</th><th style={{color:"#f97316"}}>Asimétrica</th></tr>
+              <tr><td>Claves</td><td>1 (compartida)</td><td>Par (pública + privada)</td></tr>
+              <tr><td>Velocidad</td><td>Muy rápida</td><td>1000× más lenta</td></tr>
+              <tr><td>Tamaño clave</td><td>128–256 bits</td><td>2048–4096 bits (RSA)</td></tr>
+              <tr><td>Distribución clave</td><td>Problema principal</td><td>Clave pública es libre</td></tr>
+              <tr><td>Uso</td><td>Cifrar datos masivos</td><td>Intercambio de claves, firmas</td></tr>
+              <tr><td>Ejemplos</td><td>AES, ChaCha20</td><td>RSA, ECC, Diffie-Hellman</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>El problema de distribución de claves</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:8}}>Con N participantes usando criptografía simétrica, se necesitan <strong style={{color:"#ef4444"}}>N(N-1)/2</strong> claves diferentes. Con 1000 usuarios: 499,500 claves.</p>
+            <div className="mono" style={{fontSize:11}}>
+              <div>N=2:    1 clave</div>
+              <div>N=10:   45 claves</div>
+              <div>N=100:  4,950 claves</div>
+              <div style={{color:"#ef4444"}}>N=1000: 499,500 claves ← inmanejable</div>
+              <div style={{marginTop:6,color:"#10b981"}}>Solución: TLS usa asimétrica para</div>
+              <div style={{color:"#10b981"}}>intercambiar clave simétrica de sesión</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [alg,setAlg]=useState("des");
+  return(
+    <div>
+      <h1>DES y Triple-DES</h1>
+      <p className="subtitle">Data Encryption Standard (1977) fue el primer estándar criptográfico civil. Triple-DES extiende su vida útil, pero ambos han sido supersedidos por AES</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["des","3des"].map(a=>(
+          <button key={a} onClick={()=>setAlg(a)}
+            style={{background:alg===a?"#f97316":"#0a1020",border:"1px solid #1e3a5f",color:alg===a?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 24px",cursor:"pointer",fontWeight:700,fontSize:14}}>
+            {a==="des"?"DES":"Triple-DES (3DES)"}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {alg==="des"?(
+            <div className="card">
+              <h3>DES — Data Encryption Standard</h3>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+                {[
+                  {l:"Tamaño clave",v:"56 bits (64 con paridad)"},
+                  {l:"Tamaño bloque",v:"64 bits"},
+                  {l:"Rondas",v:"16 rondas Feistel"},
+                ].map(s=>(
+                  <div key={s.l} style={{background:"#0a1020",border:"1px solid #f97316",borderRadius:6,padding:8,textAlign:"center"}}>
+                    <div style={{color:"#f97316",fontWeight:700,fontSize:12}}>{s.v}</div>
+                    <div style={{color:"#7c8db8",fontSize:10,marginTop:2}}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+                <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:8}}>
+                  <div style={{color:"#3b82f6",fontWeight:600,marginBottom:4}}>Estructura DES (Red de Feistel):</div>
+                  <div style={{color:"#7c8db8",lineHeight:1.8}}>
+                    1. Permutación inicial (IP)<br/>
+                    2. 16 rondas: expansión, XOR con subkey, 8 S-boxes, permutación P<br/>
+                    3. Permutación final (IP⁻¹)<br/>
+                    → Las S-boxes son el corazón de la seguridad (no linealidad)
+                  </div>
+                </div>
+                <div style={{background:"#1a0808",border:"1px solid #ef4444",borderRadius:6,padding:8}}>
+                  <div style={{color:"#ef4444",fontWeight:600,marginBottom:4}}>¿Por qué DES está roto?</div>
+                  <div style={{color:"#7c8db8"}}>La NSA redujo la clave de 64 a 56 bits en el diseño. 2⁵⁶ ≈ 7.2×10¹⁶ claves posibles. En 1998 el EFF construyó "DES Cracker" por $250,000 que rompía DES en promedio en 4.5 días. Hoy un GPU cluster lo hace en horas.</div>
+                </div>
+              </div>
+            </div>
+          ):(
+            <div className="card">
+              <h3>Triple-DES (3DES / TDEA)</h3>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+                {[
+                  {l:"Tamaño clave",v:"168 bits (112 efectivos)"},
+                  {l:"Tamaño bloque",v:"64 bits"},
+                  {l:"Operaciones",v:"3 × DES (EDE)"},
+                ].map(s=>(
+                  <div key={s.l} style={{background:"#0a1020",border:"1px solid #f97316",borderRadius:6,padding:8,textAlign:"center"}}>
+                    <div style={{color:"#f97316",fontWeight:700,fontSize:12}}>{s.v}</div>
+                    <div style={{color:"#7c8db8",fontSize:10,marginTop:2}}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mono" style={{marginBottom:10,fontSize:11}}>
+                <div style={{color:"#7c8db8"}}>Modo EDE (Encrypt-Decrypt-Encrypt):</div>
+                <div>C = E(K₃, D(K₂, E(K₁, P)))</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}>Si K₁=K₂=K₃ → compatible con DES</div>
+                <div style={{color:"#7c8db8"}}>Si K₁=K₃ ≠ K₂ → 2TDEA (112 bits)</div>
+                <div style={{color:"#7c8db8"}}>Si K₁≠K₂≠K₃ → 3TDEA (168 bits)</div>
+              </div>
+              <div style={{background:"#1a0a00",border:"1px solid #f9731644",borderRadius:6,padding:8,fontSize:12}}>
+                <div style={{color:"#f97316",fontWeight:600,marginBottom:4}}>Limitaciones:</div>
+                <div style={{color:"#7c8db8"}}>3× más lento que DES. Bloque de 64 bits vulnerable a Sweet32 attack. NIST lo deprecó en 2023. Reemplazado por AES.</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>S-Boxes — El corazón de DES</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:8}}>Las 8 S-boxes de DES son tablas de sustitución no lineales. Entrada: 6 bits → Salida: 4 bits. Rompen la linealidad y resisten criptoanálisis diferencial y lineal.</p>
+            <div className="mono" style={{fontSize:10}}>
+              <div style={{color:"#7c8db8"}}>S-box 1 (primeras filas):</div>
+              <div>     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15</div>
+              <div>r=0: 14  4 13  1  2 15 11  8  3 10  6 12  5  9  0  7</div>
+              <div>r=1:  0 15  7  4 14  2 13  1 10  6 12 11  9  5  3  8</div>
+              <div style={{marginTop:6,color:"#3b82f6"}}>entrada 6 bits → fila=bits 1,6 col=bits 2-5</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Cronología y estado</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {y:"1977",e:"DES adoptado como estándar FIPS PUB 46",c:"#3b82f6"},
+                {y:"1997",e:"RSA challenge: DES roto por fuerza bruta en 96 días",c:"#f97316"},
+                {y:"1998",e:"EFF DES Cracker rompe DES en 56 horas",c:"#ef4444"},
+                {y:"1999",e:"DES roto en 22 horas con distributed.net",c:"#ef4444"},
+                {y:"2001",e:"AES anunciado como nuevo estándar (FIPS 197)",c:"#10b981"},
+                {y:"2023",e:"NIST retira 3DES. Solo AES/ChaCha20 aprobados",c:"#10b981"},
+              ].map(e=>(
+                <div key={e.y} style={{display:"flex",gap:10,background:"#0a1020",borderRadius:5,padding:"5px 8px"}}>
+                  <span style={{color:e.c,fontFamily:"monospace",fontWeight:700,width:40}}>{e.y}</span>
+                  <span style={{color:"#7c8db8"}}>{e.e}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [mode,setMode]=useState("ECB");
+  const modes={
+    ECB:{name:"Electronic Codebook",color:"#ef4444",desc:"Cada bloque se cifra independientemente con la misma clave. Patrón en los bloques: bloques iguales producen ciphertext igual. INSEGURO para datos con patrones.",use:"No usar. Históricamente: cifrado de claves individuales.",safe:false},
+    CBC:{name:"Cipher Block Chaining",color:"#f97316",desc:"Cada bloque se XOR con el bloque cifrado anterior antes de cifrar. Requiere IV (Initialization Vector) aleatorio. Errores en un bloque se propagan al siguiente.",use:"TLS 1.2, disco (LUKS). Necesita padding (PKCS#7).",safe:true},
+    CTR:{name:"Counter Mode",color:"#10b981",desc:"Genera un keystream cifrando un contador incrementante. Convierte AES en cifrado de flujo. No necesita padding. Paralelizable.",use:"TLS 1.3, SSH, WireGuard. Seguro con nonce único.",safe:true},
+    GCM:{name:"Galois/Counter Mode",color:"#3b82f6",desc:"CTR + autenticación GHASH (AEAD: Authenticated Encryption with Associated Data). Detecta manipulación. El más recomendado para uso general.",use:"TLS 1.3, SSH, GnuPG, IPsec. Estándar actual.",safe:true},
+  };
+  const m=modes[mode];
+  return(
+    <div>
+      <h1>AES — Advanced Encryption Standard</h1>
+      <p className="subtitle">AES (Rijndael) es el cifrado simétrico estándar desde 2001. Sustituye a DES con mayor seguridad y velocidad (especialmente con instrucciones AES-NI)</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {Object.keys(modes).map(k=>(
+          <button key={k} onClick={()=>setMode(k)}
+            style={{background:mode===k?modes[k].color+"33":"#0a1020",border:`2px solid ${mode===k?modes[k].color:"#1e3a5f"}`,color:mode===k?modes[k].color:"#7c8db8",borderRadius:6,padding:"6px 18px",cursor:"pointer",fontWeight:700,fontSize:13}}>
+            {k}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>AES — Parámetros</h3>
+            <table style={{marginBottom:12}}><tbody>
+              <tr><th>Parámetro</th><th style={{color:"#3b82f6"}}>AES-128</th><th style={{color:"#f97316"}}>AES-192</th><th style={{color:"#10b981"}}>AES-256</th></tr>
+              <tr><td>Clave</td><td>128 bits</td><td>192 bits</td><td>256 bits</td></tr>
+              <tr><td>Bloque</td><td>128 bits</td><td>128 bits</td><td>128 bits</td></tr>
+              <tr><td>Rondas</td><td>10</td><td>12</td><td>14</td></tr>
+              <tr><td>Seguridad</td><td>≈ 128 bits</td><td>≈ 192 bits</td><td>≈ 256 bits</td></tr>
+              <tr><td>Uso</td><td>Web/TLS</td><td>Gov. secreto</td><td>Top secret</td></tr>
+            </tbody></table>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10,fontSize:12}}>
+              <div style={{color:"#3b82f6",fontWeight:600,marginBottom:4}}>Operaciones por ronda:</div>
+              <div style={{color:"#7c8db8",lineHeight:1.8}}>
+                SubBytes → ShiftRows → MixColumns → AddRoundKey<br/>
+                <span style={{color:"#f97316"}}>SubBytes</span>: S-box no lineal (resiste criptoanálisis)<br/>
+                <span style={{color:"#10b981"}}>MixColumns</span>: difusión en campo GF(2⁸)
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{borderColor:m.color+"44"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <h3 style={{color:m.color}}>Modo {mode}</h3>
+              <span style={{background:m.safe?"#10b98133":"#ef444433",border:`1px solid ${m.safe?"#10b981":"#ef4444"}`,color:m.safe?"#10b981":"#ef4444",borderRadius:4,padding:"2px 8px",fontSize:11,fontWeight:600}}>{m.safe?"SEGURO":"INSEGURO"}</span>
+            </div>
+            <div style={{color:"#e8f0fe",fontSize:12,fontWeight:600,marginBottom:4}}>{m.name}</div>
+            <p style={{color:"#7c8db8",fontSize:12,lineHeight:1.7,marginBottom:10}}>{m.desc}</p>
+            <div style={{background:"#0a1020",border:`1px solid ${m.color}33`,borderRadius:6,padding:8,fontSize:12}}>
+              <span style={{color:m.color,fontWeight:600}}>Uso recomendado: </span>
+              <span style={{color:"#7c8db8"}}>{m.use}</span>
+            </div>
+          </div>
+          <div className="card">
+            <h3>AES-GCM en TLS 1.3</h3>
+            <div className="mono" style={{fontSize:11}}>
+              <div style={{color:"#7c8db8"}}># cipher suite TLS 1.3:</div>
+              <div>TLS_AES_256_GCM_SHA384</div>
+              <div style={{marginTop:6,color:"#3b82f6"}}>AES-256: cifrado de datos</div>
+              <div style={{color:"#f97316"}}>GCM: modo de operación + auth</div>
+              <div style={{color:"#10b981"}}>SHA-384: PRF para derivación de claves</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}># Genera 4 claves de sesión:</div>
+              <div>client_write_key, server_write_key</div>
+              <div>client_write_IV, server_write_IV</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>8.2 Cripto Simétrica</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

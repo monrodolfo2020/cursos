@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 5.9 – SDN y NFV</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.plane{border-radius:8px;padding:14px;margin-bottom:10px;text-align:center}
+.layer-box{border:2px solid;border-radius:8px;padding:14px;margin-bottom:10px;position:relative}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+const SCENES=[{id:1,label:"SDN — Redes Definidas por Software"},{id:2,label:"OpenFlow"},{id:3,label:"NFV — Virtualización de Funciones"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("ctrl");
+  const planes={
+    app:{label:"Plano de Aplicación",color:"#8b5cf6",items:["Aplicaciones de red: QoS, load balancing, seguridad","Apps de terceros vía API northbound","Orquestadores: OpenStack, Kubernetes Network"]},
+    ctrl:{label:"Plano de Control",color:"#3b82f6",items:["Controlador SDN centralizado (lógicamente)","Calcula rutas y políticas globales","API Northbound (REST/YANG) → Apps","API Southbound (OpenFlow/NETCONF) → Data Plane"]},
+    data:{label:"Plano de Datos",color:"#10b981",items:["Switches/routers físicos o virtuales","Solo reenvía paquetes según tablas instaladas","Sin inteligencia de enrutamiento propia","Feedback via API southbound al controlador"]},
+  };
+  const controllers=[
+    {n:"ONOS",d:"Open Network Operating System — escalabilidad distribuida, usado por operadores"},
+    {n:"OpenDaylight",d:"Eclipse Foundation — modular, amplio soporte de protocolos, YANG/NETCONF"},
+    {n:"Ryu",d:"Python — ligero, ideal para investigación y labs"},
+    {n:"Floodlight",d:"Java — open source, API REST, compatible OpenFlow"},
+  ];
+  const comparison=[
+    {a:"Arquitectura",trad:"Distribuida (cada router autónomo)",sdn:"Centralizada (lógicamente)"},
+    {a:"Inteligencia",trad:"En cada dispositivo",sdn:"En controlador SDN"},
+    {a:"Config cambios",trad:"Dispositivo a dispositivo",sdn:"API única al controlador"},
+    {a:"Visibilidad",trad:"Local (topología parcial)",sdn:"Global (vista completa)"},
+    {a:"Innovación",trad:"Ciclo de HW del vendor",sdn:"Software, rápida"},
+    {a:"Falla controlador",trad:"N/A",sdn:"Punto crítico (HA requerido)"},
+  ];
+  return(
+    <div>
+      <h1>SDN — Software-Defined Networking</h1>
+      <p className="subtitle">Separación del plano de control del plano de datos para programabilidad</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Arquitectura de 3 planos — clic para detalle</h3>
+            {Object.entries(planes).map(([k,v])=>(
+              <div key={k} onClick={()=>setSel(k)}
+                style={{background:sel===k?"#1e3a5f":"#0a1020",border:`2px solid ${sel===k?v.color:"#1e3a5f"}`,borderRadius:8,padding:12,marginBottom:8,cursor:"pointer"}}>
+                <div style={{color:v.color,fontWeight:700,fontSize:13,marginBottom:sel===k?8:0}}>{v.label}</div>
+                {sel===k&&v.items.map(i=>(
+                  <div key={i} style={{color:"#e8f0fe",fontSize:12,marginBottom:4}}>• {i}</div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="card">
+            <h3>Controladores SDN más usados</h3>
+            {controllers.map(c=>(
+              <div key={c.n} style={{display:"flex",gap:10,marginBottom:8,alignItems:"flex-start"}}>
+                <div style={{background:"#1e3a5f",color:"#3b82f6",fontWeight:700,fontSize:12,padding:"4px 8px",borderRadius:4,minWidth:80,textAlign:"center"}}>{c.n}</div>
+                <div style={{color:"#e8f0fe",fontSize:12,flex:1}}>{c.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>SDN vs Red Tradicional</h3>
+            <table><tbody>
+              <tr><th>Aspecto</th><th>Tradicional</th><th>SDN</th></tr>
+              {comparison.map(r=>(
+                <tr key={r.a}>
+                  <td style={{color:"#7c8db8",fontWeight:600}}>{r.a}</td>
+                  <td style={{color:"#e8f0fe",fontSize:12}}>{r.trad}</td>
+                  <td style={{color:"#3b82f6",fontSize:12}}>{r.sdn}</td>
+                </tr>
+              ))}
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Beneficios reales del SDN</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[
+                {n:"Automatización",d:"Configuración masiva en segundos vía API"},
+                {n:"Traffic Engineering",d:"Rutas óptimas calculadas globalmente"},
+                {n:"Micro-segmentación",d:"Políticas de seguridad granulares por flujo"},
+                {n:"Innovación rápida",d:"Nuevos servicios sin reemplazar hardware"},
+              ].map(b=>(
+                <div key={b.n} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+                  <div style={{color:"#10b981",fontWeight:600,fontSize:12,marginBottom:4}}>{b.n}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12}}>{b.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [tab,setTab]=useState("flow");
+  const flowEntry=[
+    {f:"Match Fields",d:"Combinación de hasta 12 campos: in_port, eth_src, eth_dst, ip_src, ip_dst, tcp_dport, vlan_id, etc."},
+    {f:"Priority",d:"Orden de coincidencia cuando múltiples reglas hacen match (mayor = primero)"},
+    {f:"Counters",d:"Paquetes y bytes procesados por esta regla (estadísticas)"},
+    {f:"Instructions",d:"Actions: OUTPUT, DROP, PUSH_VLAN, POP_VLAN, SET_FIELD, GROUP, METER"},
+    {f:"Timeouts",d:"Hard timeout (absoluto) y Idle timeout (inactividad) para eliminar la regla"},
+    {f:"Cookie",d:"Identificador opaco para que el controlador agrupe reglas (no lo usa el switch)"},
+  ];
+  const messages=[
+    {dir:"Ctrl→Switch",msg:"FLOW_MOD",desc:"Añadir/modificar/borrar regla en flow table"},
+    {dir:"Ctrl→Switch",msg:"PACKET_OUT",desc:"Enviar paquete específico por un puerto"},
+    {dir:"Switch→Ctrl",msg:"PACKET_IN",desc:"Paquete sin match → enviado al controlador"},
+    {dir:"Switch→Ctrl",msg:"FLOW_REMOVED",desc:"Regla expirada/borrada → notificación"},
+    {dir:"Switch→Ctrl",msg:"PORT_STATUS",desc:"Cambio de estado en un puerto"},
+    {dir:"Bidireccional",msg:"ECHO_REQ/REP",desc:"Keepalive del canal de control"},
+  ];
+  return(
+    <div>
+      <h1>OpenFlow — Protocolo SDN Southbound</h1>
+      <p className="subtitle">Estándar ONF para comunicación controlador↔switch (versión actual: 1.5)</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["flow","msg","pipeline"].map(t=>(
+          <button key={t} onClick={()=>setTab(t)}
+            style={{background:tab===t?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:tab===t?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+            {t==="flow"?"Flow Entry":t==="msg"?"Mensajes":"Pipeline"}
+          </button>
+        ))}
+      </div>
+      {tab==="flow"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>Campos de una Flow Entry</h3>
+              {flowEntry.map(f=>(
+                <div key={f.f} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+                  <div style={{color:"#3b82f6",fontWeight:600,fontSize:13}}>{f.f}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12,marginTop:4}}>{f.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>Ejemplo de reglas OpenFlow</h3>
+              <div style={{fontFamily:"monospace",fontSize:11,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,lineHeight:1.8}}>
+                <div style={{color:"#7c8db8"}}># Regla 1: HTTP a servidor web</div>
+                <div>Match: <span style={{color:"#3b82f6"}}>tcp_dst=80, ip_dst=10.0.0.5</span></div>
+                <div>Action: <span style={{color:"#10b981"}}>OUTPUT:port3</span></div>
+                <div style={{marginTop:8,color:"#7c8db8"}}># Regla 2: Bloquear IP sospechosa</div>
+                <div>Match: <span style={{color:"#f97316"}}>ip_src=192.168.1.99</span></div>
+                <div>Action: <span style={{color:"#ef4444"}}>DROP</span></div>
+                <div style={{marginTop:8,color:"#7c8db8"}}># Regla 3: VLAN tagging</div>
+                <div>Match: <span style={{color:"#3b82f6"}}>in_port=1</span></div>
+                <div>Action: <span style={{color:"#8b5cf6"}}>PUSH_VLAN(100), OUTPUT:uplink</span></div>
+                <div style={{marginTop:8,color:"#7c8db8"}}># Table-miss: enviar al ctrl</div>
+                <div>Match: <span style={{color:"#7c8db8"}}>* (cualquiera)</span></div>
+                <div>Action: <span style={{color:"#f97316"}}>CONTROLLER</span></div>
+              </div>
+            </div>
+            <div className="card">
+              <h3>Canal de control</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div>• Conexión <strong style={{color:"#3b82f6"}}>TCP/TLS</strong> entre controlador y switch (puerto 6653)</div>
+                <div>• <strong style={{color:"#f97316"}}>Out-of-band:</strong> canal de gestión separado de la red de datos</div>
+                <div>• <strong style={{color:"#10b981"}}>In-band:</strong> canal usa la misma infraestructura</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {tab==="msg"&&(
+        <div className="card">
+          <h3>Mensajes OpenFlow principales</h3>
+          <table><tbody>
+            <tr><th>Dirección</th><th>Mensaje</th><th>Descripción</th></tr>
+            {messages.map(m=>(
+              <tr key={m.msg}>
+                <td><span style={{background:m.dir.startsWith("Ctrl")?"#1e3a5f":m.dir.startsWith("Switch")?"#0f2a1a":"#1e2a3a",color:m.dir.startsWith("Ctrl")?"#3b82f6":m.dir.startsWith("Switch")?"#10b981":"#8b5cf6",padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:600}}>{m.dir}</span></td>
+                <td style={{fontFamily:"monospace",color:"#f97316",fontWeight:600}}>{m.msg}</td>
+                <td style={{fontSize:12}}>{m.desc}</td>
+              </tr>
+            ))}
+          </tbody></table>
+        </div>
+      )}
+      {tab==="pipeline"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>Pipeline de tablas (OF 1.3+)</h3>
+              <div style={{fontFamily:"monospace",fontSize:12,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,lineHeight:2}}>
+                <div>Paquete entra →</div>
+                <div>┌─────────────────────────┐</div>
+                <div>│ <span style={{color:"#3b82f6"}}>Table 0</span>: Ingress Port  │</div>
+                <div>│ <span style={{color:"#3b82f6"}}>Table 1</span>: VLAN          │</div>
+                <div>│ <span style={{color:"#3b82f6"}}>Table 2</span>: IP routing    │</div>
+                <div>│ <span style={{color:"#3b82f6"}}>Table 3</span>: ACL/QoS      │</div>
+                <div>└─────────────────────────┘</div>
+                <div>→ Action Set → OUTPUT</div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>Group Tables y Meter Tables</h3>
+              <div style={{marginBottom:10}}>
+                <div style={{color:"#f97316",fontWeight:600,fontSize:13,marginBottom:6}}>Group Table — Acciones complejas</div>
+                <div style={{fontSize:12,color:"#e8f0fe",lineHeight:1.7}}>
+                  <div>• <strong>ALL:</strong> Multicast/broadcast (clon a todos los buckets)</div>
+                  <div>• <strong>SELECT:</strong> Load balancing (round-robin o weighted)</div>
+                  <div>• <strong>FAST_FAILOVER:</strong> Failover automático al primer bucket activo</div>
+                  <div>• <strong>INDIRECT:</strong> Indirección (un solo bucket)</div>
+                </div>
+              </div>
+              <div>
+                <div style={{color:"#8b5cf6",fontWeight:600,fontSize:13,marginBottom:6}}>Meter Table — Rate limiting</div>
+                <div style={{fontSize:12,color:"#e8f0fe",lineHeight:1.7}}>
+                  <div>• Aplica rate-limiting por flujo específico</div>
+                  <div>• Bands: DROP (descarta exceso) o DSCP_REMARK (baja DSCP)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Scene3(){
+  const [sel,setSel]=useState(null);
+  const vnfs=[
+    {n:"vRouter",hw:"Router físico (Cisco, Juniper)",color:"#3b82f6",d:"Enrutamiento IP, BGP, OSPF en VM o contenedor"},
+    {n:"vFirewall",hw:"Firewall físico (Fortinet, Palo Alto)",color:"#ef4444",d:"Inspección de paquetes y políticas de seguridad"},
+    {n:"vLB",hw:"Load Balancer físico (F5, A10)",color:"#10b981",d:"Distribución de carga entre servidores de aplicación"},
+    {n:"vIDS/IPS",hw:"IDS/IPS físico (Snort)",color:"#f97316",d:"Detección y prevención de intrusiones en software"},
+    {n:"vWAN Optimizer",hw:"Riverbed, Cisco WAAS",color:"#8b5cf6",d:"Compresión y deduplicación del tráfico WAN"},
+    {n:"vCPE",hw:"Router/switch en sede cliente",color:"#7c8db8",d:"Reemplaza HW en ubicaciones de cliente por software"},
+  ];
+  const mano=[
+    {n:"NFVO",full:"NFV Orchestrator",d:"Gestiona el ciclo de vida de los Network Services (NS). Orquesta VNFs y recursos."},
+    {n:"VNFM",full:"VNF Manager",d:"Instancia, escala y gestiona el ciclo de vida individual de cada VNF."},
+    {n:"VIM",full:"Virtual Infrastructure Manager",d:"Gestiona recursos de cómputo, red y almacenamiento (ej: OpenStack, VMware)."},
+  ];
+  return(
+    <div>
+      <h1>NFV — Network Functions Virtualization</h1>
+      <p className="subtitle">Mover funciones de red de hardware dedicado a software sobre servidores estándar</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>VNFs típicas — clic para detalle</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {vnfs.map(v=>(
+                <div key={v.n} onClick={()=>setSel(sel===v.n?null:v.n)}
+                  style={{background:sel===v.n?"#1e3a5f":"#0a1020",border:`1px solid ${sel===v.n?v.color:"#1e3a5f"}`,borderRadius:6,padding:"8px 12px",cursor:"pointer"}}>
+                  <div style={{color:v.color,fontWeight:700,fontSize:13}}>{v.n}</div>
+                  <div style={{color:"#7c8db8",fontSize:11}}>≡ {v.hw}</div>
+                  {sel===v.n&&<div style={{color:"#e8f0fe",fontSize:12,marginTop:6}}>{v.d}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>NFV vs SDN — Relación</h3>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,fontSize:13,lineHeight:1.7}}>
+              <div><strong style={{color:"#3b82f6"}}>SDN:</strong> Separa plano de control del plano de datos. Programa la red.</div>
+              <div style={{marginTop:6}}><strong style={{color:"#f97316"}}>NFV:</strong> Virtualiza funciones de red en servidores x86. Reemplaza HW específico.</div>
+              <div style={{marginTop:6}}><strong style={{color:"#10b981"}}>Complementarios:</strong> NFV usa redes SDN como infraestructura virtual. Juntos forman la base de las telecomunicaciones modernas.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Arquitectura ETSI NFV MANO</h3>
+            {mano.map(m=>(
+              <div key={m.n} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:8,padding:12,marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <span style={{color:"#3b82f6",fontWeight:700,fontSize:14}}>{m.n}</span>
+                  <span style={{color:"#7c8db8",fontSize:12}}>{m.full}</span>
+                </div>
+                <div style={{color:"#e8f0fe",fontSize:12}}>{m.d}</div>
+              </div>
+            ))}
+            <div style={{background:"#0a1020",borderLeft:"3px solid #f97316",borderRadius:"0 6px 6px 0",padding:10,fontSize:12}}>
+              <div style={{color:"#f97316",fontWeight:600}}>Plataformas de implementación</div>
+              <div style={{color:"#e8f0fe",marginTop:4}}>OpenStack (VIM más usado) + Kubernetes (CNFs — Cloud-Native NFs) + VMware NSX-T</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Ventajas del modelo NFV</h3>
+            <table><tbody>
+              <tr><th>Aspecto</th><th>Hardware</th><th>NFV</th></tr>
+              <tr><td>Costo</td><td style={{color:"#ef4444"}}>Alto (HW dedicado)</td><td style={{color:"#10b981"}}>Bajo (x86 estándar)</td></tr>
+              <tr><td>Escalado</td><td style={{color:"#ef4444"}}>Manual, lento</td><td style={{color:"#10b981"}}>Automático, rápido</td></tr>
+              <tr><td>Actualizaciones</td><td style={{color:"#ef4444"}}>Reemplazo HW</td><td style={{color:"#10b981"}}>Deploy de software</td></tr>
+              <tr><td>Multi-tenant</td><td style={{color:"#ef4444"}}>Difícil</td><td style={{color:"#10b981"}}>Nativo</td></tr>
+              <tr><td>Rendimiento</td><td style={{color:"#10b981"}}>ASIC (máximo)</td><td style={{color:"#f97316"}}>Menor (pero mejora)</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>5.9 SDN y NFV</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

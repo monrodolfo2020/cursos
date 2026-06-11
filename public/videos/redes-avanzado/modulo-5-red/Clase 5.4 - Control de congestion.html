@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 5.4 — Control de Congestión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">El Problema de la Congestión</div>
+    <div className="sec-sub">Cuando más tráfico = menos throughput: el colapso de congestión</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(239,68,68,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#ef4444'}}>El colapso de congestión</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Cuando la carga ofrecida a la red supera su capacidad, el throughput real colapsa. Los paquetes llenan buffers, el retardo aumenta, los timers expiran, se retransmiten paquetes — lo que aumenta aún más la carga. Un ciclo catastrófico.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#ef4444',lineHeight:1.8}}>
+            {`Throughput real vs. carga ofrecida:\n\n Throughput\n    │    /──── ideal\n    │   /\n    │  /     ┌─ sin control\n    │ /     /  \\ ← colapso!\n    │/    /    0\n    └──────────────→ Carga\n           ↑ Punto de congestión\n\nCon control: curva suave sin colapso`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Causas de congestión</div>
+          {[
+            {c:'Convergencia de tráfico',d:'Múltiples fuentes de alta velocidad envían a un mismo enlace de menor capacidad (fan-in).'},
+            {c:'Buffers insuficientes',d:'Si el buffer de salida de un router se llena, los paquetes nuevos se descartan.'},
+            {c:'Línea lenta entrante',d:'Un router recibe por fibra 10 Gbps pero envía por enlace 100 Mbps: cuello de botella.'},
+            {c:'CPU del router lenta',d:'En routers software, la CPU no procesa los paquetes tan rápido como llegan.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#3b82f6',marginBottom:2}}>{r.c}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(59,130,246,0.25)',marginBottom:10}}>
+          <div className="card-h">Soluciones: nivel de actuación</div>
+          {[
+            {n:'Provisión (largo plazo)',c:'#10b981',d:'Sobredimensionar la red. Aumentar capacidad de enlaces y buffers. Costoso pero efectivo. "Throw bandwidth at it" — solución de ISPs ricos.'},
+            {n:'Control de admisión (corto)',c:'#3b82f6',d:'No aceptar nuevas conexiones si la red está al límite. Funciona para circuitos virtuales y QoS reservado. No aplica a IP sin estado.'},
+            {n:'Control de tráfico (reactivo)',c:'#f97316',d:'Señalizar a los emisores para que reduzcan su tasa cuando se detecta congestión. Choke packets, ECN, descarte temprano (RED/AQM).'},
+            {n:'Alivio de carga (extremo)',c:'#ef4444',d:'Descartar paquetes activamente o pedir a la capa de transporte que frene. Último recurso cuando los buffers están al borde del desbordamiento.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:12,fontWeight:700,color:r.c,marginBottom:2}}>{r.n}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Congestión en capas</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>La congestión se gestiona en múltiples capas: Capa 2 (control de flujo de ventana), Capa 3 (señalización ECN, descarte RED), Capa 4 (TCP Slow Start, AIMD, CUBIC, BBR). La solución más efectiva es la colaboración TCP+RED+ECN, que detecta congestión antes de que los buffers se llenen y permite una respuesta antes del colapso.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Técnicas de Control de Congestión</div>
+    <div className="sec-sub">RED, ECN y gestión activa de colas</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>RED — Random Early Detection</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>En lugar de esperar a que el buffer se llene completamente (tail-drop), RED empieza a descartar paquetes de forma probabilística cuando la longitud media de la cola supera un umbral mínimo.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`Cola media < min_th: sin descarte\nmin_th ≤ cola ≤ max_th:\n  P(descarte) = f(cola_media)\n  crece linealmente con la cola\ncola > max_th: descarte de todo\n\nBeneficio: señaliza congestión antes del colapso\nDescarta aleatoriamente → afecta flujos proporcionalmente\nTCP detecta pérdida → reduce cwnd`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">WRED — Weighted RED</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Variante de RED con diferentes umbrales por clase de tráfico (DSCP). El tráfico "mejor esfuerzo" se descarta antes que el tráfico de voz/video. Permite QoS implícito sin reservas explícitas. Estándar en routers empresariales e ISP.</div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>ECN — Explicit Congestion Notification</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>En lugar de descartar paquetes, el router marca los paquetes con ECN cuando detecta congestión incipiente. El receptor informa al emisor mediante el flag ECE en TCP. El emisor reduce su ventana como si hubiese habido pérdida.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`IP header: bits ECT (ECN-Capable Transport)\n  00 = No-ECT\n  01 o 10 = ECT(0) o ECT(1): ECN capable\n  11 = CE (Congestion Experienced)\n\nFlujo:\n1. Router congestionado: CE=11\n2. Receptor: TCP ACK con ECE=1\n3. Emisor: reduce cwnd como si hubiese pérdida\n4. Emisor: CWR=1 en siguiente segmento\n\nVentaja: sin pérdida de paquetes → sin retransmisión`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Choke packets y back pressure</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Técnicas más antiguas: el router congestionado envía un "choke packet" al emisor original pidiéndole que reduzca la tasa. Back pressure: el router notifica al router upstream, que notifica al anterior, etc. Más lento que ECN. Usados en ATM (RM cells) y algunos sistemas industriales.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">Control de Congestión en TCP</div>
+    <div className="sec-sub">AIMD, Slow Start y los algoritmos modernos (CUBIC, BBR)</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">TCP AIMD — Additive Increase, Multiplicative Decrease</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>TCP asume que la pérdida de paquetes indica congestión. Al detectar pérdida, reduce cwnd a la mitad (MD). Luego aumenta linealmente un MSS por RTT (AI).</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`Slow Start:     cwnd → doubles per RTT\n                hasta ssthresh\n\nCongestion Avoidance: +1 MSS per RTT (linear)\n\nAl detectar pérdida (timeout):\n  ssthresh = cwnd/2\n  cwnd = 1 MSS → Slow Start de nuevo\n\nAl detectar pérdida (3 ACK dup):\n  ssthresh = cwnd/2\n  cwnd = ssthresh → Fast Recovery\n\nResultado: "diente de sierra" en throughput`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Algoritmos modernos: CUBIC y BBR</div>
+          {[
+            {a:'TCP CUBIC (Linux default)',d:'Crece la ventana siguiendo una función cúbica del tiempo desde la última pérdida. Más agresivo en BDP (Bandwidth-Delay Product) alto. Default en Linux desde 2.6.19. Mejor en redes de alta velocidad y alto retardo (satélite).'},
+            {a:'BBR (Google, 2016)',d:'Bottleneck Bandwidth and RTT. No usa pérdida como señal de congestión. Modela el ancho de banda del cuello de botella y el RTT de propagación. Aumenta el throughput 2–25× en redes con pérdidas aleatorias (WiFi). Default en YouTube servers.'},
+            {a:'QUIC + BBR',d:'Google QUIC y HTTP/3 usan BBR sobre UDP. Evitan el head-of-line blocking de TCP. Reinicio de conexión más rápido (0-RTT). Unificación de control de congestión + multiplexado + cifrado.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'7px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#f97316',marginBottom:3}}>{r.a}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+          <div className="card-h" style={{color:'#10b981'}}>Fairness — Justicia entre flujos</div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Con AIMD, múltiples flujos TCP que comparten un enlace convergen a una distribución justa (igual throughput por flujo) si tienen el mismo RTT. Flujos de RTT corto son más agresivos — ventaja para servidores cercanos. Max-min fairness: maximizar la tasa del flujo más restringido.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'El problema y soluciones',C:Scene1},{id:2,label:'RED, ECN y AQM',C:Scene2},{id:3,label:'TCP AIMD, CUBIC, BBR',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 5.4 — Control de Congestión en Redes</div><div className="topbar-sub">Módulo 5 — La Capa de Red</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comprender el colapso de congestión, los mecanismos RED/ECN en routers y los algoritmos TCP (AIMD, CUBIC, BBR).</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

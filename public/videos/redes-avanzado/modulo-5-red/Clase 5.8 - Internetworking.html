@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 5.8 – Internetworking</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;color:#e8f0fe;line-height:1.7}
+.step{background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:10px 14px;margin-bottom:8px}
+.step .lbl{color:#3b82f6;font-weight:600;font-size:12px;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+const SCENES=[{id:1,label:"Tunelización"},{id:2,label:"Fragmentación IP"},{id:3,label:"MPLS"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("gre");
+  const tunnels=[
+    {id:"gre",name:"GRE",rfc:"RFC 2784",desc:"Generic Routing Encapsulation — encapsula cualquier protocolo de red dentro de IP. Sin cifrado.",use:"VPNs de sitio a sitio, transporte de multicast sobre internet",color:"#3b82f6"},
+    {id:"ipip",name:"IP-in-IP",rfc:"RFC 2003",desc:"Encapsulación mínima de IPv4 en IPv4. Sin autenticación ni cifrado. Solo 20 bytes de overhead.",use:"6in4 (IPv6 en IPv4), túneles simples entre routers",color:"#f97316"},
+    {id:"ipsec",name:"IPsec Tunnel",rfc:"RFC 4301",desc:"Túnel cifrado + autenticado. Modos: Tunnel (nueva cabecera IP) y Transport (solo cifra payload).",use:"VPNs corporativas seguras, acceso remoto",color:"#10b981"},
+    {id:"gre_ipsec",name:"GRE+IPsec",rfc:"RFC 3193",desc:"GRE para multicast/routing protocols, IPsec para seguridad. Combinación muy común en enterprise.",use:"Túneles OSPF/EIGRP seguros entre sedes",color:"#8b5cf6"},
+    {id:"vxlan",name:"VXLAN",rfc:"RFC 7348",desc:"Virtual Extensible LAN — encapsula frames L2 en UDP/IP. 24-bit VNI permite 16M segmentos.",use:"Data centers, nubes, SDN overlay networks",color:"#f97316"},
+  ];
+  const t=tunnels.find(t=>t.id===sel);
+  return(
+    <div>
+      <h1>Tunelización en Redes</h1>
+      <p className="subtitle">Encapsular protocolos dentro de otros para cruzar redes heterogéneas</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Concepto de Túnel</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}>[Origen] ─────────────────── [Destino]</div>
+              <div style={{marginTop:6}}>
+                <div>Paquete original:</div>
+                <div>┌──────┬─────────────────┐</div>
+                <div>│ IPv4 │    Datos (TCP)  │</div>
+                <div>└──────┴─────────────────┘</div>
+              </div>
+              <div style={{marginTop:8}}>
+                <div>Paquete tunelizado (GRE):</div>
+                <div>┌──────┬─────┬──────┬───────────┐</div>
+                <div>│NewIP │ GRE │ IPv4 │ Datos TCP │</div>
+                <div>└──────┴─────┴──────┴───────────┘</div>
+                <div style={{color:"#3b82f6"}}>↑ Cabecera exterior   ↑ Payload original</div>
+              </div>
+            </div>
+            <div style={{marginTop:12,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+              <div style={{color:"#7c8db8",fontSize:12}}>
+                <strong style={{color:"#e8f0fe"}}>Propósito:</strong> Hacer que dos redes incompatibles se comuniquen como si fueran contiguas. El router de entrada encapsula, el de salida desencapsula.
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Tipos de túneles — seleccionar</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {tunnels.map(t=>(
+                <button key={t.id} onClick={()=>setSel(t.id)}
+                  style={{background:sel===t.id?"#1e3a5f":"#0a1020",border:`1px solid ${sel===t.id?t.color:"#1e3a5f"}`,color:"#e8f0fe",borderRadius:6,padding:"8px 12px",cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{color:sel===t.id?t.color:"#e8f0fe",fontWeight:600,fontSize:13}}>{t.name}</span>
+                  <span style={{color:"#7c8db8",fontSize:11}}>{t.rfc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card" style={{border:`1px solid ${t.color}`}}>
+            <h3 style={{color:t.color}}>{t.name} — {t.rfc}</h3>
+            <p style={{color:"#e8f0fe",fontSize:14,marginBottom:12}}>{t.desc}</p>
+            <div style={{background:"#0a1020",borderRadius:6,padding:10}}>
+              <div style={{color:"#7c8db8",fontSize:12}}><strong style={{color:"#e8f0fe"}}>Uso típico:</strong> {t.use}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>IPv6-in-IPv4 — Transición</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}># Túnel 6in4 (RFC 4213)</div>
+              <div>IPv4 Header (Proto=41)</div>
+              <div>  Src: <span style={{color:"#3b82f6"}}>203.0.113.1</span> (IPv4 del router)</div>
+              <div>  Dst: <span style={{color:"#3b82f6"}}>198.51.100.1</span> (IPv4 del peer)</div>
+              <div>  Payload: <span style={{color:"#10b981"}}>IPv6 packet completo</span></div>
+              <div style={{marginTop:8,color:"#f97316"}}># Protocol 41 = IPv6-in-IPv4</div>
+              <div style={{color:"#f97316"}}># Tunnel Broker: Hurricane Electric</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Consideraciones de MTU en túneles</h3>
+            <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.6}}>
+              <div style={{marginBottom:6}}>GRE añade <strong style={{color:"#f97316"}}>24 bytes</strong> (20 IP outer + 4 GRE header)</div>
+              <div style={{marginBottom:6}}>Si MTU del enlace = 1500 → MTU efectivo = <strong style={{color:"#f97316"}}>1476 bytes</strong></div>
+              <div style={{marginBottom:6}}>IPsec en modo túnel: overhead de <strong style={{color:"#f97316"}}>50–80 bytes</strong></div>
+              <div>Solución: <strong style={{color:"#3b82f6"}}>TCP MSS Clamping</strong> o reducir MTU en interfaz de túnel</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [mode,setMode]=useState("ipv4");
+  const ipv4Fields=[
+    {n:"Identificación (ID)",v:"16 bits — igual en todos los fragmentos del mismo datagrama"},
+    {n:"Flags (3 bits)",v:"Bit 1: DF (Don't Fragment); Bit 2: MF (More Fragments)"},
+    {n:"Offset",v:"13 bits — posición del fragmento en unidades de 8 bytes"},
+  ];
+  return(
+    <div>
+      <h1>Fragmentación y Reensamblado IP</h1>
+      <p className="subtitle">Adaptar datagramas al MTU del enlace subyacente</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["ipv4","pmtud","ipv6"].map(m=>(
+          <button key={m} onClick={()=>setMode(m)}
+            style={{background:mode===m?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:mode===m?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+            {m==="ipv4"?"IPv4 Fragmentación":m==="pmtud"?"Path MTU Discovery":"IPv6"}
+          </button>
+        ))}
+      </div>
+      {mode==="ipv4"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>Campos de fragmentación IPv4</h3>
+              {ipv4Fields.map(f=>(
+                <div key={f.n} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:"8px 12px",marginBottom:8}}>
+                  <div style={{color:"#3b82f6",fontWeight:600,fontSize:13}}>{f.n}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12}}>{f.v}</div>
+                </div>
+              ))}
+            </div>
+            <div className="card">
+              <h3>Ejemplo: 4000 bytes → MTU 1500</h3>
+              <div className="mono">
+                Original: ID=100, TL=4000, Offset=0
+                <br/>
+                <span style={{color:"#7c8db8"}}>─────────────────────────────</span>
+                <br/>
+                <span style={{color:"#3b82f6"}}>Frag 1:</span> ID=100, TL=1500<br/>
+                {'        '}Offset=0, MF=1, Datos=1480B<br/>
+                <span style={{color:"#f97316"}}>Frag 2:</span> ID=100, TL=1500<br/>
+                {'        '}Offset=185, MF=1, Datos=1480B<br/>
+                <span style={{color:"#10b981"}}>Frag 3:</span> ID=100, TL=1060<br/>
+                {'        '}Offset=370, MF=0, Datos=1040B
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>Cálculo del offset</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:2}}>
+                <div>Offset = Posición_inicio / 8</div>
+                <div style={{color:"#7c8db8"}}>Frag1: 0 / 8 = <strong style={{color:"#3b82f6"}}>0</strong></div>
+                <div style={{color:"#7c8db8"}}>Frag2: 1480 / 8 = <strong style={{color:"#f97316"}}>185</strong></div>
+                <div style={{color:"#7c8db8"}}>Frag3: 2960 / 8 = <strong style={{color:"#10b981"}}>370</strong></div>
+              </div>
+            </div>
+            <div className="card">
+              <h3>Reensamblado en el destino</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div style={{marginBottom:8}}><strong style={{color:"#f97316"}}>Solo el destino final reensambla</strong> (no los routers intermedios en IPv4)</div>
+                <div>• Espera todos los fragmentos con mismo ID</div>
+                <div>• Timeout: si no llegan todos, descarta y envía ICMP Time Exceeded (code 1)</div>
+                <div>• Buffer de reensamblado puede saturarse (DoS)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {mode==="pmtud"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>Path MTU Discovery (RFC 1191)</h3>
+              <div>{[
+                {n:"1. Enviar con DF=1",d:"El origen marca Don't Fragment en todos los paquetes"},
+                {n:"2. Router detecta MTU insuficiente",d:"Enlace siguiente tiene MTU menor al paquete"},
+                {n:"3. ICMP Type 3, Code 4",d:"Router descarta y envía 'Fragmentation Needed' con Next-Hop MTU"},
+                {n:"4. Origen reduce tamaño",d:"Ajusta MSS/segmentación al MTU indicado"},
+                {n:"5. Repetir hasta destino",d:"Descubre el MTU mínimo del camino completo"},
+              ].map(s=>(
+                <div key={s.n} className="step"><div className="lbl">{s.n}</div><div style={{fontSize:12,color:"#e8f0fe"}}>{s.d}</div></div>
+              ))}</div>
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>MTU típicos por tecnología</h3>
+              <table><tbody>
+                <tr><th>Tecnología</th><th>MTU</th></tr>
+                <tr><td>Ethernet (estándar)</td><td style={{color:"#3b82f6"}}>1500 B</td></tr>
+                <tr><td>Jumbo Frames (GbE)</td><td style={{color:"#10b981"}}>9000 B</td></tr>
+                <tr><td>PPPoE</td><td style={{color:"#f97316"}}>1492 B</td></tr>
+                <tr><td>GRE sobre Ethernet</td><td style={{color:"#f97316"}}>1476 B</td></tr>
+                <tr><td>802.11 WiFi</td><td style={{color:"#3b82f6"}}>2304 B (pero Eth frame = 1500)</td></tr>
+                <tr><td>ATM AAL5</td><td style={{color:"#7c8db8"}}>9180 B</td></tr>
+              </tbody></table>
+            </div>
+            <div className="card">
+              <h3>Black Hole — Problema con PMTUD</h3>
+              <div style={{background:"#0a1020",borderLeft:"3px solid #ef4444",borderRadius:"0 6px 6px 0",padding:10,fontSize:13}}>
+                <div style={{color:"#ef4444",fontWeight:600}}>ICMP Filtering (firewalls)</div>
+                <div style={{color:"#e8f0fe",marginTop:4}}>Si el firewall bloquea ICMP Type 3, el origen nunca recibe el mensaje de "Fragmentation Needed" → conexión cuelga (PMTUD Black Hole)</div>
+                <div style={{color:"#10b981",marginTop:6}}>Solución: TCP MSS Clamping en el router (ip tcp adjust-mss 1452)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {mode==="ipv6"&&(
+        <div className="grid2">
+          <div>
+            <div className="card">
+              <h3>IPv6 — Sin fragmentación en routers</h3>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div style={{marginBottom:10,padding:10,background:"#0a1020",border:"1px solid #3b82f6",borderRadius:6}}>
+                  <strong style={{color:"#3b82f6"}}>Regla fundamental IPv6:</strong> Los routers NO fragmentan paquetes IPv6. Solo el host origen puede fragmentar.
+                </div>
+                <div>• El origen DEBE ejecutar Path MTU Discovery antes de enviar</div>
+                <div>• Router con MTU insuficiente envía ICMPv6 Type 2 (Packet Too Big)</div>
+                <div>• MTU mínimo IPv6: <strong style={{color:"#f97316"}}>1280 bytes</strong></div>
+              </div>
+            </div>
+            <div className="card">
+              <h3>Extension Header de Fragmentación IPv6</h3>
+              <div className="mono">
+                Next Header: 44 (Fragment)
+                <br/>
+                Reserved: 8 bits
+                <br/>
+                Fragment Offset: <span style={{color:"#3b82f6"}}>13 bits</span>
+                <br/>
+                Res + M flag: 3 bits
+                <br/>
+                Identification: <span style={{color:"#f97316"}}>32 bits</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="card">
+              <h3>Comparación IPv4 vs IPv6 Fragmentación</h3>
+              <table><tbody>
+                <tr><th>Aspecto</th><th>IPv4</th><th>IPv6</th></tr>
+                <tr><td>Fragmenta routers</td><td style={{color:"#10b981"}}>Sí</td><td style={{color:"#ef4444"}}>No</td></tr>
+                <tr><td>Fragmenta origen</td><td style={{color:"#10b981"}}>Sí</td><td style={{color:"#10b981"}}>Sí</td></tr>
+                <tr><td>DF bit</td><td style={{color:"#3b82f6"}}>Opcional</td><td style={{color:"#7c8db8"}}>N/A (siempre DF)</td></tr>
+                <tr><td>MTU mínimo</td><td style={{color:"#3b82f6"}}>68 bytes</td><td style={{color:"#f97316"}}>1280 bytes</td></tr>
+                <tr><td>PMTUD</td><td style={{color:"#f97316"}}>Opcional</td><td style={{color:"#ef4444"}}>Obligatorio</td></tr>
+                <tr><td>ID field</td><td style={{color:"#3b82f6"}}>16 bits</td><td style={{color:"#10b981"}}>32 bits</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Scene3(){
+  const [step,setStep]=useState(0);
+  const mplsSteps=[
+    {label:"Ingress LER — Push Label",desc:"El router de entrada (LER) clasifica el paquete IP, lo asigna a una FEC y añade la etiqueta MPLS (push). A partir de aquí, los LSR no leen la IP.",color:"#3b82f6"},
+    {label:"LSR — Swap Label",desc:"Los routers intermedios (Label Switching Routers) solo leen la etiqueta MPLS (no la IP). Intercambian (swap) la etiqueta por una nueva y reenvían. Operación O(1).",color:"#f97316"},
+    {label:"Penultimate Hop Popping",desc:"El LSP (penúltimo router antes del egress) retira la etiqueta MPLS. Así el LER de salida recibe ya el paquete IP limpio, evitando dos búsquedas.",color:"#8b5cf6"},
+    {label:"Egress LER — Pop Label",desc:"El router de salida entrega el paquete IP original al siguiente hop. El túnel MPLS termina aquí.",color:"#10b981"},
+  ];
+  const labelFields=[
+    {f:"Label",b:"20 bits",c:"#3b82f6",d:"Valor de etiqueta (0-1048575)"},
+    {f:"Exp/TC",b:"3 bits",c:"#f97316",d:"Experimental/Traffic Class (QoS)"},
+    {f:"S",b:"1 bit",c:"#8b5cf6",d:"Bottom of Stack (1 = última etiqueta)"},
+    {f:"TTL",b:"8 bits",c:"#10b981",d:"Time to Live (copiado de IP)"},
+  ];
+  return(
+    <div>
+      <h1>MPLS — Multi-Protocol Label Switching</h1>
+      <p className="subtitle">Conmutación de alta velocidad mediante etiquetas de longitud fija</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Estructura de la etiqueta MPLS (32 bits)</h3>
+            <div style={{display:"flex",gap:4,marginBottom:10}}>
+              {labelFields.map(f=>(
+                <div key={f.f} style={{flex:f.f==="Label"?4:1,background:"#0a1020",border:`2px solid ${f.c}`,borderRadius:6,padding:"8px 6px",textAlign:"center"}}>
+                  <div style={{color:f.c,fontWeight:700,fontSize:12}}>{f.f}</div>
+                  <div style={{color:"#7c8db8",fontSize:11}}>{f.b}</div>
+                </div>
+              ))}
+            </div>
+            {labelFields.map(f=>(
+              <div key={f.f} style={{display:"flex",gap:8,marginBottom:4,fontSize:12}}>
+                <div style={{color:f.c,fontWeight:600,width:60}}>{f.f}:</div>
+                <div style={{color:"#e8f0fe"}}>{f.d}</div>
+              </div>
+            ))}
+            <div style={{marginTop:10,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:8}}>
+              <div style={{fontFamily:"monospace",fontSize:11,color:"#7c8db8"}}>
+                <div>IP Header (TTL=64)</div>
+                <div>  ↑</div>
+                <div style={{color:"#3b82f6"}}>MPLS Label Stack</div>
+                <div style={{color:"#3b82f6"}}>  [Label=100 | Exp=5 | S=1 | TTL=64]</div>
+                <div>  ↑</div>
+                <div>Ethernet Frame</div>
+                <div style={{color:"#7c8db8"}}>(EtherType = 0x8847)</div>
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Terminología MPLS</h3>
+            <table><tbody>
+              <tr><th>Término</th><th>Significado</th></tr>
+              <tr><td style={{color:"#3b82f6"}}>FEC</td><td>Forwarding Equivalence Class — grupo de paquetes con mismo tratamiento</td></tr>
+              <tr><td style={{color:"#f97316"}}>LSP</td><td>Label Switched Path — ruta unidireccional predeterminada</td></tr>
+              <tr><td style={{color:"#10b981"}}>LER</td><td>Label Edge Router — entra/sale del dominio MPLS</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>LSR</td><td>Label Switching Router — solo opera con etiquetas</td></tr>
+              <tr><td style={{color:"#f97316"}}>LDP</td><td>Label Distribution Protocol — distribuye etiquetas</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>RSVP-TE</td><td>Traffic Engineering con reserva de recursos</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Flujo de un paquete MPLS — clic en cada paso</h3>
+            <div style={{display:"flex",gap:6,marginBottom:12}}>
+              {mplsSteps.map((s,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{flex:1,background:step===i?s.color:"#0a1020",border:`1px solid ${s.color}`,color:step===i?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 4px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  {i+1}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${mplsSteps[step].color}`,borderRadius:8,padding:14,minHeight:100}}>
+              <div style={{color:mplsSteps[step].color,fontWeight:700,fontSize:14,marginBottom:8}}>{mplsSteps[step].label}</div>
+              <div style={{color:"#e8f0fe",fontSize:13}}>{mplsSteps[step].desc}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Casos de uso MPLS</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[
+                {n:"MPLS VPN (L3)",d:"Múltiples clientes aislados en la misma red ISP (RFC 4364)"},
+                {n:"Traffic Engineering",d:"Desviar tráfico de rutas congestionadas con RSVP-TE"},
+                {n:"Pseudo-wire (L2VPN)",d:"Transportar L2 (Ethernet, ATM) sobre red MPLS del ISP"},
+                {n:"QoS",d:"Exp bits priorizan tráfico VoIP/video en toda la red MPLS"},
+              ].map(u=>(
+                <div key={u.n} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+                  <div style={{color:"#3b82f6",fontWeight:600,fontSize:12,marginBottom:4}}>{u.n}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12}}>{u.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>5.8 Internetworking</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

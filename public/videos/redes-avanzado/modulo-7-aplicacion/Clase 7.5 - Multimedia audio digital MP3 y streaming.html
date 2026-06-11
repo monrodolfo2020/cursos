@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 7.5 – Multimedia en Red: Audio Digital, MP3 y Streaming</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Audio digital y PCM"},{id:2,label:"Compresión MP3 y codecs"},{id:3,label:"Streaming y protocolos"}];
+
+function Scene1(){
+  const [bits,setBits]=useState(16);
+  const [rate,setRate]=useState(44100);
+  const channels=2;
+  const bitsPerSecond=bits*rate*channels;
+  const mbPerMin=bitsPerSecond*60/8/1024/1024;
+  return(
+    <div>
+      <h1>Audio Digital — Muestreo y Cuantificación</h1>
+      <p className="subtitle">El audio analógico se convierte a digital mediante muestreo (sampling) y cuantificación (PCM)</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Proceso de digitalización</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:8,fontSize:13,lineHeight:1.7}}>
+              {[
+                {n:"1. Señal analógica",c:"#7c8db8",d:"Onda continua de presión de aire (sonido). Variación continua de amplitud."},
+                {n:"2. Muestreo (Sampling)",c:"#3b82f6",d:"Se toman muestras a una frecuencia fs (Hz). Teorema de Nyquist: fs ≥ 2×fmax."},
+                {n:"3. Cuantificación",c:"#f97316",d:"Cada muestra se aproxima al valor discreto más cercano. Resolución = nº de bits."},
+                {n:"4. Codificación PCM",c:"#10b981",d:"Cada nivel cuantificado se codifica en binario. Resultado: flujo de bits."},
+                {n:"5. Compresión opcional",c:"#8b5cf6",d:"MP3, AAC, Opus reducen el tamaño aprovechando la psicoacústica."},
+              ].map(s=>(
+                <div key={s.n} style={{background:"#0a1020",border:`1px solid ${s.c}44`,borderRadius:6,padding:8}}>
+                  <div style={{color:s.c,fontWeight:600,fontSize:12}}>{s.n}</div>
+                  <div style={{color:"#7c8db8",fontSize:11,marginTop:2}}>{s.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Calculadora de tamaño PCM</h3>
+            <div style={{marginBottom:12}}>
+              <div style={{color:"#7c8db8",fontSize:12,marginBottom:6}}>Frecuencia de muestreo (Hz)</div>
+              <div style={{display:"flex",gap:8}}>
+                {[8000,22050,44100,48000].map(r=>(
+                  <button key={r} onClick={()=>setRate(r)}
+                    style={{background:rate===r?"#3b82f6":"#0a1020",border:`1px solid ${rate===r?"#3b82f6":"#1e3a5f"}`,color:rate===r?"#0a1020":"#7c8db8",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontWeight:600,fontSize:11}}>
+                    {r>=1000?`${r/1000}kHz`:r+"Hz"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:12}}>
+              <div style={{color:"#7c8db8",fontSize:12,marginBottom:6}}>Profundidad de bits</div>
+              <div style={{display:"flex",gap:8}}>
+                {[8,16,24,32].map(b=>(
+                  <button key={b} onClick={()=>setBits(b)}
+                    style={{background:bits===b?"#f97316":"#0a1020",border:`1px solid ${bits===b?"#f97316":"#1e3a5f"}`,color:bits===b?"#0a1020":"#7c8db8",borderRadius:6,padding:"5px 14px",cursor:"pointer",fontWeight:600,fontSize:11}}>
+                    {b} bits
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:8,padding:14,fontSize:13}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#7c8db8"}}>Configuración:</span>
+                <span style={{color:"#e8f0fe"}}>{rate/1000}kHz · {bits}bit · Estéreo</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#7c8db8"}}>Bitrate PCM:</span>
+                <span style={{color:"#3b82f6",fontWeight:700}}>{(bitsPerSecond/1000).toFixed(0)} kbps</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                <span style={{color:"#7c8db8"}}>Datos por minuto:</span>
+                <span style={{color:"#f97316",fontWeight:700}}>{mbPerMin.toFixed(1)} MB</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between"}}>
+                <span style={{color:"#7c8db8"}}>Calidad comparable:</span>
+                <span style={{color:"#10b981",fontWeight:700}}>{rate===44100&&bits===16?"CD Audio":rate===8000&&bits===8?"Telefonía":rate>=48000&&bits>=24?"Estudio":"Intermedia"}</span>
+              </div>
+            </div>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3>Teorema de Nyquist-Shannon</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7}}>Para reconstruir perfectamente una señal analógica, la frecuencia de muestreo debe ser <strong style={{color:"#3b82f6"}}>al menos el doble</strong> de la frecuencia máxima de la señal.</p>
+            <div className="mono" style={{marginTop:8,fontSize:12}}>
+              fs ≥ 2 × fmax
+              <div style={{color:"#7c8db8",marginTop:4}}>Audio humano: fmax ≈ 20 kHz</div>
+              <div style={{color:"#3b82f6"}}>→ fs = 44.1 kHz (CD) cubre 22.05 kHz</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [codec,setCodec]=useState("mp3");
+  const codecs={
+    mp3:{name:"MP3 (MPEG-1 Audio Layer III)",color:"#3b82f6",bitrates:"32–320 kbps",year:1993,ratio:"10:1",desc:"Usa modelo psicoacústico para eliminar sonidos inaudibles. Transforma a frecuencias (MDCT), agrupa en subbandas y cuantifica según máscaras auditivas.",use:"Música, podcasts, radio internet. Universal pero patentado (expiró 2017)."},
+    aac:{name:"AAC (Advanced Audio Coding)",color:"#f97316",bitrates:"64–256 kbps",year:1997,ratio:"12:1",desc:"Sucesor de MP3. Mayor eficiencia: misma calidad a menor bitrate. Usa bancos de filtros más flexibles (MDCT de 1024 puntos) y predicción temporal.",use:"iTunes, YouTube, iOS, Android. Estándar de facto en streaming."},
+    opus:{name:"Opus (RFC 6716)",color:"#10b981",bitrates:"6–510 kbps",year:2012,ratio:"Variable",desc:"Combina SILK (voz, baja latencia) y CELT (música, alta calidad). Óptimo para VoIP y streaming. Adaptativo al ancho de banda disponible.",use:"WebRTC, Discord, Zoom, WhatsApp. Mejor codec abierto actual."},
+    flac:{name:"FLAC (Free Lossless Audio)",color:"#8b5cf6",bitrates:"N/A (lossless)",year:2001,ratio:"2:1",desc:"Compresión sin pérdida. Reconstruye bit a bit el audio original. Usa predicción lineal + codificación Rice/Golomb para el residuo.",use:"Archivado profesional, audiófilos. Tidal HiFi, Qobuz."},
+  };
+  const c=codecs[codec];
+  return(
+    <div>
+      <h1>Compresión de Audio — Codecs</h1>
+      <p className="subtitle">Los codecs de audio con pérdida explotan las limitaciones del sistema auditivo humano (psicoacústica)</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {Object.keys(codecs).map(k=>(
+          <button key={k} onClick={()=>setCodec(k)}
+            style={{background:codec===k?codecs[k].color:"#0a1020",border:`2px solid ${codec===k?codecs[k].color:"#1e3a5f"}`,color:codec===k?"#0a1020":"#7c8db8",borderRadius:6,padding:"6px 18px",cursor:"pointer",fontWeight:700,fontSize:13}}>
+            {k.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3 style={{color:c.color}}>{c.name}</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+              <div style={{background:"#0a1020",border:`1px solid ${c.color}44`,borderRadius:6,padding:8,textAlign:"center"}}>
+                <div style={{color:c.color,fontWeight:700,fontSize:13}}>{c.bitrates}</div>
+                <div style={{color:"#7c8db8",fontSize:10,marginTop:2}}>Bitrate</div>
+              </div>
+              <div style={{background:"#0a1020",border:`1px solid ${c.color}44`,borderRadius:6,padding:8,textAlign:"center"}}>
+                <div style={{color:c.color,fontWeight:700,fontSize:13}}>{c.year}</div>
+                <div style={{color:"#7c8db8",fontSize:10,marginTop:2}}>Año</div>
+              </div>
+              <div style={{background:"#0a1020",border:`1px solid ${c.color}44`,borderRadius:6,padding:8,textAlign:"center"}}>
+                <div style={{color:c.color,fontWeight:700,fontSize:13}}>{c.ratio}</div>
+                <div style={{color:"#7c8db8",fontSize:10,marginTop:2}}>Compresión</div>
+              </div>
+            </div>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>{c.desc}</p>
+            <div style={{background:"#0a1020",border:`1px solid ${c.color}33`,borderRadius:6,padding:8,fontSize:12}}>
+              <span style={{color:c.color,fontWeight:600}}>Uso típico: </span>
+              <span style={{color:"#7c8db8"}}>{c.use}</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Psicoacústica — Cómo engañar al oído</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:8,fontSize:12}}>
+              {[
+                {n:"Enmascaramiento temporal",c:"#3b82f6",d:"Un sonido fuerte enmascara sonidos débiles antes y después de él. Zona de silencio audible de hasta 200ms."},
+                {n:"Enmascaramiento en frecuencia",c:"#f97316",d:"Un tono fuerte enmascara tonos cercanos en frecuencia. El umbral auditivo se eleva alrededor del tono dominante."},
+                {n:"Umbral absoluto de audición",c:"#10b981",d:"A ciertas frecuencias (muy altas o muy bajas) se necesita más potencia para ser audible. No se codifican sonidos bajo este umbral."},
+                {n:"Resolución frecuencial",c:"#8b5cf6",d:"El oído agrupa frecuencias en 'bandas críticas' (Bark scale). Cada banda se trata independientemente."},
+              ].map(p=>(
+                <div key={p.n} style={{background:"#0a1020",border:`1px solid ${p.c}33`,borderRadius:6,padding:8}}>
+                  <div style={{color:p.c,fontWeight:600}}>{p.n}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{p.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [mode,setMode]=useState("progressive");
+  const protocols=[
+    {n:"HTTP Progressive Download",c:"#7c8db8",desc:"Archivo descargado progresivamente vía HTTP. Simple pero no adaptativo. El buffer puede llenarse si la conexión es lenta.",pros:["Simple de implementar","Compatible con cualquier servidor HTTP","Permite seeking (si servidor soporta Range)"],cons:["Sin adaptación al ancho de banda","Descarga siempre la misma calidad","Buffer basado en bytes, no tiempo"]},
+    {n:"HLS (HTTP Live Streaming)",c:"#f97316",desc:"Apple. Divide el vídeo/audio en segmentos de ~2-10 s. Un archivo .m3u8 (playlist) lista los segmentos disponibles en múltiples calidades.",pros:["Adaptive bitrate (ABR): cambia calidad","Compatible con proxies y CDN HTTP","Nativo en iOS/Safari"],cons:["Latencia 10-30s (segmentos largos)","Muchos archivos pequeños","Low-latency HLS (LL-HLS) reduce a 2-3s"]},
+    {n:"MPEG-DASH",c:"#3b82f6",desc:"Estándar abierto (ISO 23009). Conceptualmente similar a HLS pero con archivo MPD (XML). Múltiples resoluciones y codecs en el mismo stream.",pros:["Estándar ISO abierto (no propietario)","Flexible: soporta DRM (Widevine, PlayReady)","Usado por YouTube, Netflix"],cons:["Más complejo que HLS","Sin soporte nativo en Safari","Requiere JS player (dash.js, Shaka)"]},
+    {n:"WebRTC",c:"#10b981",desc:"Real-time Communication. Peer-to-peer, basado en UDP. Latencia <500ms. Para videollamadas y streaming en tiempo real.",pros:["Latencia ultra baja (<500ms)","Sin servidor intermediario (P2P)","Nativo en navegadores modernos"],cons:["No escala a millones de viewers","Requiere señalización (TURN/STUN)","Complejo de implementar"]},
+  ];
+  const p=protocols.find(p=>p.n.includes(mode==="progressive"?"Progressive":mode==="hls"?"HLS":mode==="dash"?"DASH":"WebRTC"));
+  return(
+    <div>
+      <h1>Streaming de Audio y Vídeo</h1>
+      <p className="subtitle">El streaming transmite multimedia en tiempo real sin necesidad de descargar el archivo completo antes de reproducirlo</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {["progressive","hls","dash","webrtc"].map(m=>(
+          <button key={m} onClick={()=>setMode(m)}
+            style={{background:mode===m?protocols.find(p=>p.n.toLowerCase().includes(m==="progressive"?"progressive":m))?.c||"#3b82f6":"#0a1020",border:`2px solid ${mode===m?protocols.find(p=>p.n.toLowerCase().includes(m))?.c||"#3b82f6":"#1e3a5f"}`,color:mode===m?"#0a1020":"#7c8db8",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontWeight:700,fontSize:12}}>
+            {m==="progressive"?"Progressive":m.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {p&&(
+            <div className="card">
+              <h3 style={{color:p.c}}>{p.n}</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:12}}>{p.desc}</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <div style={{background:"#0a1020",border:"1px solid #10b98133",borderRadius:6,padding:8}}>
+                  <div style={{color:"#10b981",fontWeight:600,fontSize:12,marginBottom:4}}>Ventajas</div>
+                  {p.pros.map(pr=>(
+                    <div key={pr} style={{display:"flex",gap:6,marginBottom:4,fontSize:11}}>
+                      <span style={{color:"#10b981"}}>✓</span><span style={{color:"#e8f0fe"}}>{pr}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{background:"#0a1020",border:"1px solid #ef444433",borderRadius:6,padding:8}}>
+                  <div style={{color:"#ef4444",fontWeight:600,fontSize:12,marginBottom:4}}>Limitaciones</div>
+                  {p.cons.map(co=>(
+                    <div key={co} style={{display:"flex",gap:6,marginBottom:4,fontSize:11}}>
+                      <span style={{color:"#ef4444"}}>✗</span><span style={{color:"#e8f0fe"}}>{co}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>Adaptive Bitrate (ABR) — HLS ejemplo</h3>
+            <div className="mono" style={{fontSize:11,marginBottom:10}}>
+              <div style={{color:"#7c8db8"}}># playlist.m3u8</div>
+              <div>#EXTM3U</div>
+              <div style={{color:"#f97316"}}>#EXT-X-STREAM-INF:BANDWIDTH=800000,</div>
+              <div style={{color:"#f97316"}}>RESOLUTION=640x360</div>
+              <div>360p/segment.m3u8</div>
+              <div style={{color:"#3b82f6"}}>#EXT-X-STREAM-INF:BANDWIDTH=2800000,</div>
+              <div style={{color:"#3b82f6"}}>RESOLUTION=1280x720</div>
+              <div>720p/segment.m3u8</div>
+              <div style={{color:"#10b981"}}>#EXT-X-STREAM-INF:BANDWIDTH=8000000,</div>
+              <div style={{color:"#10b981"}}>RESOLUTION=1920x1080</div>
+              <div>1080p/segment.m3u8</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Comparativa de latencia</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"WebRTC",lat:"< 500 ms",c:"#10b981",use:"Videollamadas, live gaming"},
+                {n:"LL-HLS / LL-DASH",lat:"2–5 s",c:"#3b82f6",use:"Live TV, eventos deportivos"},
+                {n:"HLS / DASH standard",lat:"10–30 s",c:"#f97316",use:"Live streaming general"},
+                {n:"Video on Demand (VoD)",lat:"N/A",c:"#8b5cf6",use:"Netflix, YouTube vídeos"},
+              ].map(i=>(
+                <div key={i.n} style={{display:"flex",alignItems:"center",gap:10,background:"#0a1020",borderRadius:6,padding:"6px 10px"}}>
+                  <span style={{color:i.c,fontWeight:700,width:130}}>{i.n}</span>
+                  <span style={{color:i.c,fontFamily:"monospace",width:80}}>{i.lat}</span>
+                  <span style={{color:"#7c8db8"}}>{i.use}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>7.5 Multimedia</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

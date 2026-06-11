@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 8.6 – Firewalls y VPNs</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#ef4444;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#ef4444;background:#0a1020;border-left-color:#ef4444;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Tipos de firewalls"},{id:2,label:"VPNs — túneles seguros"},{id:3,label:"Arquitecturas y DMZ"}];
+
+function Scene1(){
+  const [type,setType]=useState("packet");
+  const types={
+    packet:{name:"Filtrado de Paquetes (L3/L4)",color:"#3b82f6",gen:"1ª generación",
+      desc:"Inspecciona cabeceras IP y TCP/UDP. Evalúa cada paquete individualmente contra reglas ACL: IP origen/destino, puerto, protocolo. No guarda estado de conexión.",
+      pros:["Muy rápido (hardware)","Bajo overhead","Transparente para aplicaciones","Barato"],
+      cons:["Sin estado: no detecta ataques secuenciales","No inspecciona payload","Fácil de spoofear (IP falsas)","No entiende aplicaciones"],
+      ex:"iptables -A INPUT -p tcp --dport 22 -s 192.168.1.0/24 -j ACCEPT"},
+    stateful:{name:"Inspección Stateful (L3/L4)",color:"#f97316",gen:"2ª generación",
+      desc:"Mantiene una tabla de estado de conexiones TCP activas. Permite respuestas de conexiones establecidas. Detecta ataques como TCP SYN flood, half-open connections.",
+      pros:["Entiende el contexto de conexión","Detecta escaneos y DoS","Bloquea paquetes fuera de estado","Más seguro que packet filtering"],
+      cons:["Mayor consumo de memoria (tabla de estado)","Más lento bajo alta carga","Aún no entiende aplicaciones","Bypaseable con tunneling en app layer"],
+      ex:"iptables -m state --state ESTABLISHED,RELATED -j ACCEPT"},
+    appfw:{name:"Firewall de Aplicación (L7)",color:"#10b981",gen:"3ª generación / NGFW",
+      desc:"Inspecciona el contenido completo de la capa de aplicación. Entiende HTTP, DNS, SMTP, etc. Incluye IPS, DPI (Deep Packet Inspection), control por usuario/aplicación.",
+      pros:["Inspeción deep packet (DPI)","Control por app/usuario/contenido","IPS integrado","Descifra y reencifra TLS (SSL inspection)"],
+      cons:["Alto costo computacional","Latencia adicional","SSL inspection = proxy MITM (privacidad)","Requiere configuración experta"],
+      ex:"Palo Alto NGFW: block app=bittorrent user=guest"},
+    waf:{name:"WAF — Web Application Firewall",color:"#8b5cf6",gen:"Especializado",
+      desc:"Específico para tráfico HTTP/HTTPS. Protege aplicaciones web de SQLi, XSS, CSRF, path traversal. Entiende el protocolo HTTP en detalle.",
+      pros:["Protección específica web (OWASP Top 10)","Puede operar en modo learning","Virtual patching de vulnerabilidades","Cloud o on-premise"],
+      cons:["Solo protege HTTP/HTTPS","Alta tasa de falsos positivos en aprendizaje","Requiere actualización de reglas","No reemplaza el firewall de red"],
+      ex:"ModSecurity: SecRule ARGS \"\\bexec\\b\" deny,log"},
+  };
+  const t=types[type];
+  return(
+    <div>
+      <h1>Tipos de Firewalls</h1>
+      <p className="subtitle">Un firewall es un sistema que controla el tráfico de red según reglas de seguridad, separando redes de diferente nivel de confianza</p>
+      <div style={{display:"flex",gap:6,marginBottom:16}}>
+        {Object.keys(types).map(k=>(
+          <button key={k} onClick={()=>setType(k)}
+            style={{background:type===k?types[k].color+"22":"#0a1020",border:`2px solid ${type===k?types[k].color:"#1e3a5f"}`,color:type===k?types[k].color:"#7c8db8",borderRadius:6,padding:"6px 12px",cursor:"pointer",fontWeight:600,fontSize:11,flex:1,transition:"all .2s"}}>
+            {types[k].name.split(" ")[0]+" "+types[k].name.split(" ")[1]||k}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card" style={{borderColor:t.color+"44"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <h3 style={{color:t.color}}>{t.name}</h3>
+              <span style={{background:t.color+"22",color:t.color,borderRadius:4,padding:"2px 8px",fontSize:11,fontWeight:600}}>{t.gen}</span>
+            </div>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>{t.desc}</p>
+            <div className="mono" style={{fontSize:11}}>{t.ex}</div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <div style={{background:"#0a1020",border:"1px solid #10b98133",borderRadius:6,padding:10}}>
+                <div style={{color:"#10b981",fontWeight:600,fontSize:12,marginBottom:6}}>Ventajas</div>
+                {t.pros.map(p=>(
+                  <div key={p} style={{display:"flex",gap:5,marginBottom:4,fontSize:11}}>
+                    <span style={{color:"#10b981"}}>✓</span><span style={{color:"#e8f0fe"}}>{p}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{background:"#0a1020",border:"1px solid #ef444433",borderRadius:6,padding:10}}>
+                <div style={{color:"#ef4444",fontWeight:600,fontSize:12,marginBottom:6}}>Limitaciones</div>
+                {t.cons.map(c=>(
+                  <div key={c} style={{display:"flex",gap:5,marginBottom:4,fontSize:11}}>
+                    <span style={{color:"#ef4444"}}>✗</span><span style={{color:"#e8f0fe"}}>{c}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Reglas de firewall — iptables (Linux)</h3>
+            <div className="mono" style={{fontSize:10}}>
+              <div style={{color:"#7c8db8"}}># Política por defecto: DROP todo</div>
+              <div>iptables -P INPUT DROP</div>
+              <div>iptables -P FORWARD DROP</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}># Permitir loopback</div>
+              <div>iptables -A INPUT -i lo -j ACCEPT</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}># Conexiones establecidas</div>
+              <div>iptables -A INPUT -m state \</div>
+              <div>  --state ESTABLISHED,RELATED -j ACCEPT</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}># SSH solo desde red interna</div>
+              <div style={{color:"#10b981"}}>iptables -A INPUT -p tcp --dport 22 \</div>
+              <div style={{color:"#10b981"}}>  -s 10.0.0.0/8 -j ACCEPT</div>
+              <div style={{marginTop:6,color:"#7c8db8"}}># HTTPS público</div>
+              <div>iptables -A INPUT -p tcp --dport 443 -j ACCEPT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [vpn,setVpn]=useState("ipsec");
+  const vpns={
+    ipsec:{name:"IPsec VPN",color:"#3b82f6",desc:"Protocolo estándar de red (L3). Modo túnel para site-to-site. Muy seguro y robusto. Requiere configuración compleja. Usa IKEv2 para intercambio de claves.",use:"Cisco AnyConnect, Juniper, site-to-site corporativo"},
+    ssl:{name:"SSL/TLS VPN",color:"#f97316",desc:"Funciona sobre TLS (HTTPS, port 443). Atraviesa firewalls y NAT fácilmente. Acceso remoto sin cliente especial (clientless) o con cliente ligero. No requiere IPsec en el cliente.",use:"Cisco AnyConnect (SSL mode), Palo Alto GlobalProtect, F5 BIG-IP"},
+    wg:{name:"WireGuard",color:"#10b981",desc:"Protocolo moderno (2020), extremadamente simple y rápido. Código fuente de solo ~4000 líneas. Usa ChaCha20+Poly1305 y Curve25519. Integrado en Linux kernel 5.6+.",use:"Mullvad, ProtonVPN, muchos proyectos open source"},
+    openvpn:{name:"OpenVPN",color:"#8b5cf6",desc:"Software libre, multiplataforma. Usa OpenSSL para TLS. Muy configurable: TCP o UDP, cualquier puerto. Puede encapsularse sobre HTTPS para eludir bloqueos.",use:"Muchos proveedores VPN comerciales, redes corporativas"},
+  };
+  const v=vpns[vpn];
+  return(
+    <div>
+      <h1>VPNs — Virtual Private Networks</h1>
+      <p className="subtitle">Una VPN crea un túnel cifrado sobre una red pública, permitiendo comunicación segura como si fuera una red privada</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {Object.keys(vpns).map(k=>(
+          <button key={k} onClick={()=>setVpn(k)}
+            style={{background:vpn===k?vpns[k].color+"22":"#0a1020",border:`2px solid ${vpn===k?vpns[k].color:"#1e3a5f"}`,color:vpn===k?vpns[k].color:"#7c8db8",borderRadius:6,padding:"6px 14px",cursor:"pointer",fontWeight:600,fontSize:12,flex:1}}>
+            {vpns[k].name}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          <div className="card" style={{borderColor:v.color+"44"}}>
+            <h3 style={{color:v.color}}>{v.name}</h3>
+            <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>{v.desc}</p>
+            <div style={{background:"#0a1020",border:`1px solid ${v.color}33`,borderRadius:6,padding:8,fontSize:12}}>
+              <span style={{color:v.color,fontWeight:600}}>Uso típico: </span>
+              <span style={{color:"#7c8db8"}}>{v.use}</span>
+            </div>
+          </div>
+          <div className="card" style={{marginBottom:0}}>
+            <h3>Tipos de VPN por topología</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"Site-to-Site",c:"#3b82f6",d:"Conecta dos redes corporativas permanentemente. Los endpoints son routers/firewalls. Transparente para usuarios."},
+                {n:"Remote Access (Client VPN)",c:"#f97316",d:"Usuario individual se conecta a la red corporativa desde casa. Requiere cliente VPN en el dispositivo."},
+                {n:"MPLS VPN (L3VPN)",c:"#10b981",d:"VPN de proveedor de red sobre MPLS. SLA garantizado. BGP/VRF. Para sedes empresariales."},
+              ].map(t=>(
+                <div key={t.n} style={{background:"#0a1020",border:`1px solid ${t.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                  <div style={{color:t.c,fontWeight:600}}>{t.n}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{t.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Comparativa protocolos VPN</h3>
+            <table><tbody>
+              <tr><th>Protocolo</th><th>Puerto</th><th>Cifrado</th><th>Velocidad</th></tr>
+              <tr><td style={{color:"#3b82f6"}}>IPsec/IKEv2</td><td>UDP 500/4500</td><td>AES-256+</td><td>Alta</td></tr>
+              <tr><td style={{color:"#f97316"}}>SSL VPN</td><td>TCP 443</td><td>TLS 1.3</td><td>Media-Alta</td></tr>
+              <tr><td style={{color:"#10b981"}}>WireGuard</td><td>UDP 51820</td><td>ChaCha20</td><td>Muy Alta</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>OpenVPN</td><td>UDP/TCP var</td><td>TLS</td><td>Media</td></tr>
+              <tr><td style={{color:"#7c8db8"}}>PPTP</td><td>TCP 1723</td><td>MPPE (débil)</td><td>Alta (inseguro)</td></tr>
+              <tr><td style={{color:"#7c8db8"}}>L2TP/IPsec</td><td>UDP 1701</td><td>AES</td><td>Media</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Split Tunneling</h3>
+            <p style={{color:"#e8f0fe",fontSize:12,lineHeight:1.7,marginBottom:8}}>Con <strong style={{color:"#3b82f6"}}>split tunneling</strong>, solo el tráfico hacia la red corporativa pasa por la VPN. El tráfico internet directo va sin VPN.</p>
+            <div style={{display:"flex",gap:8}}>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #3b82f644",borderRadius:6,padding:8,fontSize:11}}>
+                <div style={{color:"#3b82f6",fontWeight:600,marginBottom:4}}>Full tunnel</div>
+                <div style={{color:"#7c8db8"}}>Todo tráfico va por VPN. Más seguro. ISP no ve tráfico. Pero más lento y más carga en VPN gateway.</div>
+              </div>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #f9731644",borderRadius:6,padding:8,fontSize:11}}>
+                <div style={{color:"#f97316",fontWeight:600,marginBottom:4}}>Split tunnel</div>
+                <div style={{color:"#7c8db8"}}>Solo tráfico corporativo por VPN. Internet directo. Más eficiente pero el ISP ve tráfico no corporativo.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  return(
+    <div>
+      <h1>Arquitecturas de Red Segura y DMZ</h1>
+      <p className="subtitle">La DMZ (Demilitarized Zone) es una red separada donde se ubican servidores accesibles desde internet, aislados de la red interna</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Arquitectura con DMZ (3 interfaces)</h3>
+            <div className="mono" style={{fontSize:11,marginBottom:12}}>
+              <div style={{color:"#ef4444",textAlign:"center"}}>Internet (Untrusted)</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>│ IP pública</div>
+              <div style={{color:"#f97316",textAlign:"center",background:"#1a0a0022",padding:"4px 0",border:"1px solid #f9731644",borderRadius:4}}>FIREWALL EXTERIOR</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>│</div>
+              <div style={{color:"#f97316",textAlign:"center",background:"#1a0a0022",padding:"4px 0",border:"1px solid #f9731644",borderRadius:4}}>DMZ: Web, Mail, DNS públicos</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>│</div>
+              <div style={{color:"#3b82f6",textAlign:"center",background:"#0a102022",padding:"4px 0",border:"1px solid #3b82f644",borderRadius:4}}>FIREWALL INTERIOR</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>│</div>
+              <div style={{color:"#10b981",textAlign:"center",background:"#0a1a0a22",padding:"4px 0",border:"1px solid #10b98144",borderRadius:4}}>Red interna (Trusted): PCs, servidores BD</div>
+            </div>
+            <div style={{fontSize:12,lineHeight:1.8,color:"#7c8db8"}}>
+              <strong style={{color:"#3b82f6"}}>Ventaja:</strong> Si un servidor en la DMZ es comprometido, el atacante no puede acceder directamente a la red interna. El firewall interior lo bloquea.
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>IDS vs IPS</h3>
+            <table style={{marginBottom:10}}><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>IDS</th><th style={{color:"#f97316"}}>IPS</th></tr>
+              <tr><td>Nombre completo</td><td>Intrusion Detection</td><td>Intrusion Prevention</td></tr>
+              <tr><td>Posición</td><td>Out-of-band (copia)</td><td>Inline (en el flujo)</td></tr>
+              <tr><td>Acción</td><td>Solo alertar</td><td>Bloquear + alertar</td></tr>
+              <tr><td>Latencia añadida</td><td>Ninguna</td><td>Mínima</td></tr>
+              <tr><td>Falsos positivos</td><td>Solo alertas falsas</td><td>Bloqueo de tráfico legítimo</td></tr>
+              <tr><td>Ejemplos</td><td>Snort (modo detect)</td><td>Snort (modo inline), Suricata</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Zonas de confianza (Trust Zones)</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:5,fontSize:12}}>
+              {[
+                {n:"Untrusted (Internet)",c:"#ef4444",d:"Tráfico no confiable. Reglas muy restrictivas. Solo permite servicios publicados específicos."},
+                {n:"DMZ",c:"#f97316",d:"Semi-confiable. Servidores públicos. Acceso desde internet pero no a red interna."},
+                {n:"Trusted (LAN interna)",c:"#10b981",d:"Usuarios y sistemas corporativos. Acceso controlado hacia DMZ e internet."},
+                {n:"Management",c:"#3b82f6",d:"Red de gestión separada para firewalls, switches, servidores. Solo acceso de administradores."},
+              ].map(z=>(
+                <div key={z.n} style={{background:"#0a1020",border:`1px solid ${z.c}44`,borderRadius:5,padding:"6px 10px"}}>
+                  <div style={{color:z.c,fontWeight:600}}>{z.n}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{z.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>8.6 Firewalls/VPNs</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

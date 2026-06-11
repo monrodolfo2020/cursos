@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 5.7 – ICMP, ARP y DHCP</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.flow-step{background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:10px 14px;margin-bottom:8px;font-size:13px}
+.flow-step .label{color:#3b82f6;font-weight:600;font-size:12px;margin-bottom:4px}
+.flow-arrow{text-align:center;color:#3a4a72;font-size:18px;margin:2px 0}
+.icmp-type{background:#0a1020;border-left:3px solid #f97316;border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:8px}
+.icmp-type .t{color:#f97316;font-weight:700;font-size:12px}
+.icmp-type .d{color:#e8f0fe;font-size:13px}
+.arp-box{background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-family:monospace;font-size:12px;color:#7c8db8}
+.arp-box .hi{color:#3b82f6}
+.arp-box .hi2{color:#10b981}
+.tag{background:#1e3a5f;color:#7c8db8;font-size:11px;padding:2px 7px;border-radius:4px;display:inline-block;margin:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+
+const SCENES = [
+  {id:1, label:"ICMP — Mensajes de Control"},
+  {id:2, label:"ARP — Resolución de Direcciones"},
+  {id:3, label:"DHCP — Configuración Dinámica"},
+];
+
+function Scene1() {
+  const [sel, setSel] = useState(null);
+  const types = [
+    {t:0, code:"Echo Reply", use:"Respuesta a ping", color:"#10b981"},
+    {t:3, code:"Destination Unreachable", use:"Host/red/puerto inaccesible", color:"#ef4444"},
+    {t:4, code:"Source Quench", use:"Reducir velocidad de envío (obsoleto)", color:"#3a4a72"},
+    {t:5, code:"Redirect", use:"Usar mejor ruta (del router)", color:"#f97316"},
+    {t:8, code:"Echo Request", use:"Solicitud de ping", color:"#3b82f6"},
+    {t:9, code:"Router Advertisement", use:"Router anuncia su presencia", color:"#8b5cf6"},
+    {t:11, code:"Time Exceeded", use:"TTL=0 o reensamblado expiró (traceroute)", color:"#f97316"},
+    {t:12, code:"Parameter Problem", use:"Cabecera IP con error", color:"#ef4444"},
+    {t:13, code:"Timestamp Request", use:"Sincronización de tiempo", color:"#7c8db8"},
+  ];
+  const icmpHdr = [
+    {f:"Type",b:"8 bits",c:"#f97316"},
+    {f:"Code",b:"8 bits",c:"#f97316"},
+    {f:"Checksum",b:"16 bits",c:"#3b82f6"},
+    {f:"Datos Variables",b:"32+ bits",c:"#8b5cf6"},
+  ];
+  const selType = types.find(t=>t.t===sel);
+  return (
+    <div>
+      <h1>ICMP — Internet Control Message Protocol</h1>
+      <p className="subtitle">RFC 792 — Mensajes de error y diagnóstico para IP (protocolo 1)</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Formato del mensaje ICMP</h3>
+            <div style={{display:"flex",gap:6,marginBottom:12}}>
+              {icmpHdr.map(f=>(
+                <div key={f.f} style={{flex:1,background:"#0a1020",border:`2px solid ${f.c}`,borderRadius:6,padding:"8px 6px",textAlign:"center"}}>
+                  <div style={{color:f.c,fontWeight:700,fontSize:11}}>{f.f}</div>
+                  <div style={{color:"#7c8db8",fontSize:11}}>{f.b}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{color:"#7c8db8",fontSize:12}}>ICMP viaja <strong style={{color:"#e8f0fe"}}>dentro de IP</strong> como dato (Protocol=1). No tiene control de flujo ni garantía de entrega.</p>
+          </div>
+          <div className="card">
+            <h3>Tipos ICMP principales — clic para detalle</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {types.map(t=>(
+                <div key={t.t} onClick={()=>setSel(sel===t.t?null:t.t)}
+                  style={{background:sel===t.t?"#1e3a5f":"#0a1020",border:`1px solid ${sel===t.t?t.color:"#1e3a5f"}`,borderRadius:6,padding:"8px 10px",cursor:"pointer"}}>
+                  <div style={{color:t.color,fontWeight:700,fontSize:13}}>Type {t.t}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12}}>{t.code}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          {selType && (
+            <div className="card" style={{border:`1px solid ${selType.color}`}}>
+              <h3 style={{color:selType.color}}>Type {selType.t} — {selType.code}</h3>
+              <p style={{color:"#e8f0fe",fontSize:14,marginBottom:12}}>{selType.use}</p>
+              {selType.t===8&&<div>
+                <div className="flow-step"><span className="label">PING usos:</span> Verificar conectividad, medir RTT</div>
+                <div className="flow-step"><span className="label">Contenido:</span> Identifier + Sequence + datos arbitrarios</div>
+                <div className="flow-step"><span className="label">Respuesta:</span> Type 0 (Echo Reply) con mismos datos</div>
+              </div>}
+              {selType.t===11&&<div>
+                <div className="flow-step"><span className="label">TRACEROUTE:</span> Envía paquetes con TTL=1,2,3…</div>
+                <div className="flow-step"><span className="label">Code 0:</span> TTL expiró en tránsito (router en ruta)</div>
+                <div className="flow-step"><span className="label">Code 1:</span> Tiempo de reensamblado expirado (fragmentos perdidos)</div>
+              </div>}
+              {selType.t===3&&<div>
+                <div className="flow-step"><span className="label">Code 0:</span> Net Unreachable — ruta no existe</div>
+                <div className="flow-step"><span className="label">Code 1:</span> Host Unreachable — host no responde ARP</div>
+                <div className="flow-step"><span className="label">Code 3:</span> Port Unreachable — UDP sin listener</div>
+                <div className="flow-step"><span className="label">Code 4:</span> Fragmentation Needed, DF=1 → PMTUD</div>
+              </div>}
+            </div>
+          )}
+          {!selType && (
+            <div className="card">
+              <h3>ICMPv6 — Funciones extendidas</h3>
+              <table><tbody>
+                <tr><th>Tipo</th><th>Nombre</th><th>Equivale a</th></tr>
+                <tr><td>1</td><td>Destination Unreachable</td><td>ICMPv4 type 3</td></tr>
+                <tr><td>2</td><td>Packet Too Big</td><td>ICMPv4 type 3 code 4</td></tr>
+                <tr><td>3</td><td>Time Exceeded</td><td>ICMPv4 type 11</td></tr>
+                <tr><td>128</td><td>Echo Request</td><td>ICMPv4 type 8</td></tr>
+                <tr><td>133</td><td>Router Solicitation</td><td>Nuevo — SLAAC</td></tr>
+                <tr><td>134</td><td>Router Advertisement</td><td>Nuevo — SLAAC</td></tr>
+                <tr><td>135</td><td>Neighbor Solicitation</td><td>Reemplaza ARP</td></tr>
+                <tr><td>136</td><td>Neighbor Advertisement</td><td>Reemplaza ARP</td></tr>
+              </tbody></table>
+            </div>
+          )}
+          <div className="card">
+            <h3>Uso en herramientas de diagnóstico</h3>
+            <div className="arp-box">
+              <div><span className="hi">ping</span> 8.8.8.8  → ICMP Type 8 → Type 0 + RTT</div>
+              <div style={{marginTop:6}}><span className="hi">traceroute</span> 8.8.8.8:</div>
+              <div>  TTL=1 → Router1 → <span className="hi2">Type 11</span> (RTT1)</div>
+              <div>  TTL=2 → Router2 → <span className="hi2">Type 11</span> (RTT2)</div>
+              <div>  TTL=3 → Destino → <span className="hi2">Type 0</span> (RTT3)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2() {
+  const [step, setStep] = useState(0);
+  const arpSteps = [
+    {s:"ARP Request (broadcast)", d:"¿Quién tiene 192.168.1.10? Díganle a 192.168.1.1", from:"Host A (192.168.1.1 / AA:AA:AA:AA:AA:AA)", to:"FF:FF:FF:FF:FF:FF (todos en LAN)", color:"#f97316"},
+    {s:"ARP Reply (unicast)", d:"192.168.1.10 está en BB:BB:BB:BB:BB:BB", from:"Host B (192.168.1.10 / BB:BB:BB:BB:BB:BB)", to:"AA:AA:AA:AA:AA:AA (solo A)", color:"#10b981"},
+    {s:"Caché ARP actualizado", d:"A guarda: 192.168.1.10 → BB:BB:BB:BB:BB:BB (TTL~20min)", from:"Host A", to:"Tabla ARP local", color:"#3b82f6"},
+    {s:"Envío de datos", d:"Frame Ethernet: Dst=BB:BB, Src=AA:AA, IP Dst=192.168.1.10", from:"Host A", to:"Host B (directo)", color:"#8b5cf6"},
+  ];
+  const arpFrame = [
+    {f:"HW Type",v:"0x0001 (Ethernet)"},
+    {f:"Proto Type",v:"0x0800 (IPv4)"},
+    {f:"HW Size",v:"6 (MAC bytes)"},
+    {f:"Proto Size",v:"4 (IP bytes)"},
+    {f:"Opcode",v:"1=Request, 2=Reply"},
+    {f:"Sender MAC",v:"AA:AA:AA:AA:AA:AA"},
+    {f:"Sender IP",v:"192.168.1.1"},
+    {f:"Target MAC",v:"00:00:00:00:00:00 (Req)"},
+    {f:"Target IP",v:"192.168.1.10"},
+  ];
+  return (
+    <div>
+      <h1>ARP — Address Resolution Protocol</h1>
+      <p className="subtitle">RFC 826 — Mapeo de direcciones IP (L3) a MAC (L2) en la misma LAN</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Flujo ARP — paso a paso</h3>
+            <div style={{marginBottom:10,display:"flex",gap:6}}>
+              {arpSteps.map((s,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{background:step===i?arpSteps[i].color:"#0a1020",border:`1px solid ${arpSteps[i].color}`,color:step===i?"#0a1020":"#e8f0fe",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                  Paso {i+1}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${arpSteps[step].color}`,borderRadius:8,padding:14}}>
+              <div style={{color:arpSteps[step].color,fontWeight:700,fontSize:14,marginBottom:8}}>{arpSteps[step].s}</div>
+              <div style={{color:"#e8f0fe",fontSize:13,marginBottom:8}}>{arpSteps[step].d}</div>
+              <div style={{fontSize:12,color:"#7c8db8"}}><strong style={{color:"#e8f0fe"}}>De:</strong> {arpSteps[step].from}</div>
+              <div style={{fontSize:12,color:"#7c8db8"}}><strong style={{color:"#e8f0fe"}}>A:</strong> {arpSteps[step].to}</div>
+            </div>
+            <div style={{marginTop:12,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+              <div style={{color:"#3b82f6",fontWeight:600,fontSize:12,marginBottom:6}}>Caché ARP (tabla local)</div>
+              <div style={{fontFamily:"monospace",fontSize:12,color:"#e8f0fe"}}>
+                <div>192.168.1.1   AA:AA:AA:AA:AA:AA  <span style={{color:"#10b981"}}>REACHABLE</span></div>
+                {step>=2&&<div>192.168.1.10  BB:BB:BB:BB:BB:BB  <span style={{color:"#10b981"}}>REACHABLE</span></div>}
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Problemas de seguridad — ARP Spoofing</h3>
+            <div style={{background:"#0a1020",borderLeft:"3px solid #ef4444",borderRadius:"0 6px 6px 0",padding:"10px 14px",marginBottom:8}}>
+              <div style={{color:"#ef4444",fontWeight:600,fontSize:13}}>ARP es stateless y sin autenticación</div>
+              <div style={{color:"#e8f0fe",fontSize:12,marginTop:4}}>Un atacante puede enviar ARP Reply falsos ("Yo tengo la IP del gateway") → Man-in-the-Middle, envenenamiento de caché</div>
+            </div>
+            <div style={{background:"#0a1020",borderLeft:"3px solid #10b981",borderRadius:"0 6px 6px 0",padding:"10px 14px"}}>
+              <div style={{color:"#10b981",fontWeight:600,fontSize:13}}>Mitigaciones</div>
+              <div style={{color:"#e8f0fe",fontSize:12,marginTop:4}}>Dynamic ARP Inspection (DAI), Static ARP, 802.1X + DHCP Snooping binding table</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Estructura del paquete ARP</h3>
+            <table><tbody>
+              {arpFrame.map(r=>(
+                <tr key={r.f}><td style={{color:"#3b82f6",fontWeight:600,width:120}}>{r.f}</td><td style={{fontFamily:"monospace",fontSize:12}}>{r.v}</td></tr>
+              ))}
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Variantes y relacionados</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[
+                {n:"Gratuitous ARP",d:"Host anuncia su propia IP/MAC (detección de duplicados, actualización de cachés)"},
+                {n:"Proxy ARP",d:"Router responde ARP en nombre de otro host (distinta subred, RFC 1027)"},
+                {n:"Reverse ARP (RARP)",d:"Obtener IP conociendo solo la MAC — obsoleto, reemplazado por DHCP"},
+                {n:"Neighbor Discovery (ND)",d:"IPv6 reemplaza ARP con ICMPv6 Type 135/136 + multicast solicited-node"},
+              ].map(v=>(
+                <div key={v.n} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+                  <div style={{color:"#f97316",fontWeight:600,fontSize:12,marginBottom:4}}>{v.n}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12}}>{v.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3() {
+  const [phase, setPhase] = useState(0);
+  const dora = [
+    {name:"DISCOVER",short:"D",color:"#f97316",desc:"Cliente → Broadcast (255.255.255.255)",detail:"El cliente sin IP hace broadcast buscando servidores DHCP disponibles. Src: 0.0.0.0:68, Dst: 255.255.255.255:67"},
+    {name:"OFFER",short:"O",color:"#3b82f6",desc:"Servidor → Unicast/Broadcast al cliente",detail:"El servidor reserva una IP y la ofrece junto con máscara, gateway, DNS, lease time. Puede haber múltiples servidores ofertando."},
+    {name:"REQUEST",short:"R",color:"#8b5cf6",desc:"Cliente → Broadcast (acepta oferta específica)",detail:"El cliente elige una oferta (generalmente la primera) y la solicita formalmente. Broadcast para notificar a todos los servidores cual fue elegido."},
+    {name:"ACK",short:"A",color:"#10b981",desc:"Servidor → Cliente (confirmación)",detail:"El servidor confirma la asignación. El cliente configura la interfaz. Si el servidor deniega, envía NACK."},
+  ];
+  const options = [
+    {n:"51",d:"Lease Time (segundos)"},
+    {n:"53",d:"DHCP Message Type"},
+    {n:"54",d:"Server Identifier"},
+    {n:"50",d:"Requested IP"},
+    {n:"1",d:"Subnet Mask"},
+    {n:"3",d:"Router (Default GW)"},
+    {n:"6",d:"DNS Server"},
+    {n:"15",d:"Domain Name"},
+    {n:"12",d:"Hostname"},
+    {n:"121",d:"Classless Static Routes"},
+  ];
+  return (
+    <div>
+      <h1>DHCP — Dynamic Host Configuration Protocol</h1>
+      <p className="subtitle">RFC 2131 — Asignación automática de parámetros IP (sucesor de BOOTP)</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Proceso DORA — clic para ver cada fase</h3>
+            <div style={{display:"flex",gap:8,marginBottom:14}}>
+              {dora.map((d,i)=>(
+                <button key={i} onClick={()=>setPhase(i)}
+                  style={{flex:1,background:phase===i?d.color:"#0a1020",border:`2px solid ${d.color}`,color:phase===i?"#0a1020":"#e8f0fe",borderRadius:8,padding:"10px 6px",cursor:"pointer",fontWeight:700,fontSize:14}}>
+                  {d.short}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${dora[phase].color}`,borderRadius:8,padding:14}}>
+              <div style={{color:dora[phase].color,fontWeight:700,fontSize:16,marginBottom:6}}>{dora[phase].name}</div>
+              <div style={{color:"#e8f0fe",fontSize:13,marginBottom:8}}>{dora[phase].desc}</div>
+              <div style={{color:"#7c8db8",fontSize:13}}>{dora[phase].detail}</div>
+            </div>
+            <div style={{marginTop:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                {dora.map((d,i)=>(
+                  <React.Fragment key={i}>
+                    <div style={{background:d.color,color:"#0a1020",borderRadius:4,padding:"4px 8px",fontSize:12,fontWeight:700}}>{d.short}</div>
+                    {i<3&&<div style={{color:"#3a4a72",fontSize:18}}>→</div>}
+                  </React.Fragment>
+                ))}
+                <div style={{color:"#7c8db8",fontSize:12,marginLeft:8}}>= IP asignada</div>
+              </div>
+              <div style={{color:"#7c8db8",fontSize:11}}>Renovación: cliente envía REQUEST antes de que expire el 50% del lease time</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Modos de asignación</h3>
+            <table><tbody>
+              <tr><th>Modo</th><th>Descripción</th></tr>
+              <tr><td style={{color:"#3b82f6",fontWeight:600}}>Dinámica</td><td>IP del pool, lease time limitado (lo más común)</td></tr>
+              <tr><td style={{color:"#f97316",fontWeight:600}}>Estática</td><td>IP fija basada en MAC del cliente (reservación)</td></tr>
+              <tr><td style={{color:"#10b981",fontWeight:600}}>Automática</td><td>IP permanente desde pool (sin expiración)</td></tr>
+              <tr><td style={{color:"#8b5cf6",fontWeight:600}}>Manual</td><td>Admin configura manualmente cada host</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Opciones DHCP (Option 82 fields)</h3>
+            <div style={{display:"grid",gridTemplateColumns:"50px 1fr",gap:4}}>
+              {options.map(o=>(
+                <React.Fragment key={o.n}>
+                  <div style={{background:"#1e3a5f",borderRadius:4,padding:"4px 8px",textAlign:"center",color:"#3b82f6",fontWeight:700,fontSize:12}}>{o.n}</div>
+                  <div style={{background:"#0a1020",borderRadius:4,padding:"4px 10px",color:"#e8f0fe",fontSize:12,display:"flex",alignItems:"center"}}>{o.d}</div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>DHCP Relay Agent (Helper Address)</h3>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,fontFamily:"monospace",fontSize:12}}>
+              <div style={{color:"#7c8db8"}}>Problema: DHCP usa broadcast → no cruza routers</div>
+              <div style={{color:"#e8f0fe",margin:"8px 0"}}>Solución: <span style={{color:"#3b82f6"}}>ip helper-address</span> en el router</div>
+              <div style={{color:"#7c8db8"}}>Router reenvía DISCOVER como unicast al</div>
+              <div style={{color:"#10b981"}}>servidor DHCP central (otra subred)</div>
+              <div style={{marginTop:8,color:"#7c8db8"}}>
+                <div>Cliente → <span style={{color:"#f97316"}}>broadcast</span> → Router</div>
+                <div>Router → <span style={{color:"#3b82f6"}}>unicast</span> → Servidor DHCP</div>
+                <div>Servidor → <span style={{color:"#3b82f6"}}>unicast</span> → Router</div>
+                <div>Router → <span style={{color:"#10b981"}}>unicast/bcast</span> → Cliente</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [sc, setSc] = useState(1);
+  const cur = SCENES.find(s=>s.id===sc);
+  return (
+    <div className="layout">
+      <div className="sidebar">
+        <h2>5.7 ICMP·ARP·DHCP</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

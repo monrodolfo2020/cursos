@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.6 — Protocolo PPP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">PPP — Point-to-Point Protocol</div>
+    <div className="sec-sub">El protocolo que conectó al mundo a Internet por dial-up y sigue vivo en DSL</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">¿Qué es PPP y por qué importa?</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>PPP (RFC 1661) reemplazó a SLIP (Serial Line IP) aportando negociación de parámetros, autenticación y soporte multi-protocolo. Fue el protocolo estándar para conexiones dial-up (módems 56k), ISDN y enlaces WAN seriales punto a punto.</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+            {[
+              {t:'Ventajas sobre SLIP',items:['Multiprotocolo (IP, IPX, AppleTalk)','Autenticación PAP y CHAP','Negociación dinámica de IP','Detección de errores (CRC)','Compresión opcional']},
+              {t:'Uso actual',items:['PPPoE en DSL (ADSL, VDSL)','PPPoA en ATM/DSL','L2TP sobre PPP (VPN)','PPP en 3G/4G (PDP context)','Backbone de operadores']},
+            ].map((col,i)=>(
+              <div key={i} style={{background:'#060a14',borderRadius:6,padding:'8px',borderLeft:`3px solid ${i===0?'#3b82f6':'#10b981'}`}}>
+                <div style={{fontSize:11,fontWeight:700,color:i===0?'#3b82f6':'#10b981',marginBottom:6}}>{col.t}</div>
+                {col.items.map((it,j)=><div key={j} style={{fontSize:11,color:'#7c8db8',padding:'2px 0'}}>• {it}</div>)}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Estructura de trama PPP</div>
+          <div style={{display:'flex',gap:3,marginBottom:8}}>
+            {[{l:'FLAG\n7E',c:'#f97316',w:45},{l:'ADDR\nFF',c:'#3b82f6',w:45},{l:'CTL\n03',c:'#3b82f6',w:40},{l:'PROTOCOL\n2 bytes',c:'#8b5cf6',w:70},{l:'PAYLOAD\nVariable',c:'#10b981',w:100},{l:'FCS\nCRC-16',c:'#ef4444',w:55},{l:'FLAG\n7E',c:'#f97316',w:45}].map((b,i)=>(
+              <div key={i} style={{background:b.c+'18',border:`1px solid ${b.c}44`,borderRadius:4,padding:'4px 5px',textAlign:'center',color:b.c,fontSize:9,fontWeight:700,minWidth:b.w,whiteSpace:'pre-line',lineHeight:1.4}}>{b.l}</div>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Campo Protocol identifica el contenido: 0x0021=IPv4, 0x0057=IPv6, 0xC021=LCP, 0x8021=IPCP. Addr=FF y Ctl=03 son constantes (broadcast + unnumbered). Se pueden comprimir con LCP.</div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(139,92,246,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#8b5cf6'}}>Componentes de PPP</div>
+          {[
+            {c:'LCP','n':'Link Control Protocol','d':'Negocia y establece el enlace PPP. Acuerda: MRU (tamaño máx trama), compresión, autenticación, detección de bucles. Mantiene y cierra el enlace. Sin LCP, no hay PPP.'},
+            {c:'NCP','n':'Network Control Protocols','d':'Un NCP por protocolo de capa 3. IPCP (IP): negocia direcciones IP dinámicamente. IPX CP, AppleTalk CP, CCP (compresión). Los NCP permiten que PPP sea agnóstico al protocolo de red.'},
+            {c:'Auth','n':'Autenticación','d':'PAP (Password Authentication Protocol): usuario/clave en texto claro, débil. CHAP (Challenge Handshake Authentication Protocol): desafío-respuesta MD5, más seguro. MS-CHAP v2 en Windows.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'8px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:3}}>
+                <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,fontWeight:700,color:'#8b5cf6',minWidth:45}}>{r.c}</span>
+                <span style={{fontSize:12,fontWeight:600,color:'#e8f0fe'}}>{r.n}</span>
+              </div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5,paddingLeft:53}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Fases de una conexión PPP</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`1. DEAD: enlace físico inactivo\n2. ESTABLISH: LCP negocia parámetros\n3. AUTHENTICATE: PAP o CHAP\n4. NETWORK: NCPs configuran protocolos (IPCP → IP)\n5. OPEN: tráfico de red normal\n6. TERMINATE: cierre (LCP Terminate-Request)`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">PPPoE — PPP over Ethernet</div>
+    <div className="sec-sub">Cómo funciona la conexión ADSL en millones de hogares</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>¿Por qué PPPoE?</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Los ISP necesitan autenticar usuarios, asignar IPs dinámicamente y gestionar sesiones en conexiones DSL. Ethernet es el protocolo de último tramo (DSLAM → hogar). PPPoE encapsula PPP sobre tramas Ethernet para obtener autenticación+negociación IP.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`[PC del usuario]\n    ↕ PPPoE (Ethernet L2)\n[Router DSL / Modem]\n    ↕ ATM/PTM sobre ADSL2+\n[DSLAM del operador]\n    ↕ PPPoE encapsulado en IP/MPLS\n[BRAS — Broadband Remote Access Server]\n    → autentica con RADIUS\n    → asigna IP pública al usuario\n    → conecta a Internet`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Encapsulación PPPoE</div>
+          <div style={{display:'flex',gap:3,marginBottom:8}}>
+            {[{l:'Eth DST\n6 B',c:'#3b82f6'},{l:'Eth SRC\n6 B',c:'#3b82f6'},{l:'EtherType\n0x8863/64',c:'#f97316'},{l:'PPPoE Hdr\nVer,Type,Code,Session,Len',c:'#8b5cf6'},{l:'PPP\nProtocol',c:'#10b981'},{l:'IP\nPayload',c:'#10b981'},{l:'FCS',c:'#ef4444'}].map((b,i)=>(
+              <div key={i} style={{background:b.c+'15',border:`1px solid ${b.c}40`,borderRadius:4,padding:'4px 5px',textAlign:'center',color:b.c,fontSize:9,fontWeight:700,flex:i===4?'none':'1',minWidth:i===4?130:40,whiteSpace:'pre-line',lineHeight:1.4}}>{b.l}</div>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.5}}>EtherType 0x8863 = Discovery, 0x8864 = Session. MTU de PPPoE es 1492 bytes (1500 - 8 PPPoE header) — este overhead obliga a ajustar MSS en TCP para evitar fragmentación.</div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Fases de PPPoE</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`DISCOVERY STAGE:\n[PC] ──PADI (broadcast)──────────►[BRAS]\n[PC]◄──PADO (oferta)─────────────[BRAS]\n[PC] ──PADR (solicitud sesión)───►[BRAS]\n[PC]◄──PADS (Session-ID)──────── [BRAS]\n\nSESSION STAGE (PPP normal):\n[PC] ──LCP Configure-Request──►[BRAS]\n[PC]◄──LCP Configure-Ack────── [BRAS]\n[PC] ──CHAP Response──────────►[BRAS]\n[PC]◄──CHAP Success───────────[BRAS]\n[PC] ──IPCP Request (IP=0.0.0.0)►[BRAS]\n[PC]◄──IPCP Ack (IP=203.0.113.5)[BRAS]`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Estado actual de PPP</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7}}>PPPoE sigue siendo el protocolo dominante en conexiones ADSL/VDSL en muchos países (Europa, Latinoamérica). En FTTH con GPON, muchos operadores migraron a IPoE (IP sobre Ethernet directamente) con autenticación por MAC o RADIUS 802.1X. Sin embargo, PPPoE persiste por su madurez y capacidades de gestión de sesiones.</div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const vs=[
+    {t:'Protocolo base',ppp:'RFC 1661 (1994)',hdlc:'ISO 13239 (1975)'},
+    {t:'Delimitadores',ppp:'Flag 0x7E + bit stuffing',hdlc:'Flag 0x7E + bit stuffing (igual)'},
+    {t:'Encabezado dirección',ppp:'FF (broadcast fijo)',hdlc:'Dirección variable 8/16 bits'},
+    {t:'Multiprotocolo',ppp:'Sí — campo Protocol 2 bytes',hdlc:'No — solo un protocolo por enlace'},
+    {t:'Negociación',ppp:'LCP negocia parámetros dinámicos',hdlc:'Configuración estática'},
+    {t:'Autenticación',ppp:'PAP / CHAP incorporado',hdlc:'No (delega a capa superior)'},
+    {t:'Asignación de IP',ppp:'IPCP asigna IP dinámicamente',hdlc:'Configuración manual'},
+    {t:'Control de errores',ppp:'Detección (CRC-16/32) no corrección',hdlc:'Detección + retransmisión (I/S frames)'},
+    {t:'Uso hoy',ppp:'PPPoE en DSL, PPPoA, L2TP',hdlc:'SS7, legado, SONET/SDH'},
+  ];
+  return(<div>
+    <div className="sec-title">PPP vs. HDLC y Perspectiva Final</div>
+    <div className="sec-sub">Comparativa y relevancia de los protocolos de enlace punto a punto</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginBottom:12}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Característica','PPP (RFC 1661)','HDLC (ISO 13239)'].map((h,i)=>(
+            <th key={i} style={{padding:'8px 10px',color:['#7c8db8','#f97316','#3b82f6'][i],textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {vs.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'7px 10px',color:'#e8f0fe',fontWeight:600}}>{r.t}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontSize:10}}>{r.ppp}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontSize:10}}>{r.hdlc}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <div className="card" style={{borderColor:'rgba(59,130,246,0.25)'}}>
+        <div className="card-h">Cierre del Módulo 3</div>
+        <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>En este módulo cubrimos el ciclo completo de la capa de enlace: encuadre de tramas, detección y corrección de errores (Hamming, CRC), control de flujo y errores (Stop-and-Wait, Go-Back-N, Selective Repeat), y dos protocolos industriales completos (HDLC y PPP). Estos conceptos son la base de la confiabilidad en redes modernas.</div>
+      </div>
+      <div className="card" style={{borderColor:'rgba(16,185,129,0.2)'}}>
+        <div className="card-h" style={{color:'#10b981'}}>Próximo módulo: La Subcapa MAC</div>
+        <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>En el Módulo 4 estudiaremos cómo múltiples dispositivos comparten el mismo medio: protocolos ALOHA, CSMA/CD (Ethernet), WiFi 802.11, Bluetooth y conmutación en capa 2. El problema cambia de "cómo comunicar dos dispositivos de forma confiable" a "cómo compartir el medio entre muchos".</div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'PPP: estructura y componentes',C:Scene1},{id:2,label:'PPPoE en DSL',C:Scene2},{id:3,label:'PPP vs HDLC',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 3.6 — Protocolo PPP y PPPoE</div><div className="topbar-sub">Módulo 3 — Capa de Enlace</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comprender la arquitectura de PPP (LCP, NCP, autenticación), cómo funciona PPPoE en DSL y comparar con HDLC.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

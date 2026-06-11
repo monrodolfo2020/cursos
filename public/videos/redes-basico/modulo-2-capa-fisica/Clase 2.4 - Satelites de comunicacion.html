@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.4 — Satélites de Comunicación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-right:4px;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const [sel,setSel]=useState('GEO');
+  const orbitas={
+    GEO:{name:'GEO — Geoestacionaria',alt:'35,786 km',periodo:'24 h (estacionario)',lat:'0° (ecuador)',latencia:'270 ms (ida y vuelta)',cobertura:'1/3 de la Tierra',sats:'3 bastan para cobertura global',pros:['Estático desde tierra: antena fija','Cobertura enorme por satélite','Ideal para TV y meteorología','Sin handoff necesario'],contras:['Latencia alta — inservible para telefonía','Señal débil (distancia enorme)','No cubre polos','Lanzamiento costoso: órbita alta'],ejemplos:'Intelsat, Eutelsat, DirecTV, GOES (meteorología)',color:'#f97316'},
+    MEO:{name:'MEO — Órbita Media',alt:'5,000–20,000 km',periodo:'2–12 horas',lat:'Hasta ±55°',latencia:'100–150 ms',cobertura:'Moderada',sats:'10–20 para global',pros:['Latencia intermedia','Cobertura polar posible','Equilibrio costo/cobertura','Órbitas bien establecidas'],contras:['Handoff necesario','Cinturones de Van Allen dañan electrónica','Más sats que GEO','Cobertura no constante por punto'],ejemplos:'GPS (NAVSTAR), GLONASS, Galileo, O3b/SES',color:'#3b82f6'},
+    LEO:{name:'LEO — Órbita Baja',alt:'160–2,000 km',periodo:'90–120 min',lat:'Cualquier latitud',latencia:'20–40 ms',cobertura:'Pequeña por satélite',sats:'Cientos/miles para global',pros:['Latencia muy baja','Señal fuerte','Antenas pequeñas en tierra','Cobertura polar total'],contras:['Handoff frecuente (cada ~10 min)','Necesita constelaciones enormes','Gestión orbital compleja','Vida útil más corta: ~5 años'],ejemplos:'Starlink (SpaceX, +5000), OneWeb, Iridium, Teledesic',color:'#10b981'},
+  };
+  const o=orbitas[sel];
+  return(<div>
+    <div className="sec-title">Órbitas de Satélites: GEO, MEO, LEO</div>
+    <div className="sec-sub">Trade-offs de altitud, latencia y cobertura</div>
+    <div style={{display:'flex',gap:8,marginBottom:14}}>
+      {Object.keys(orbitas).map(k=>(
+        <button key={k} onClick={()=>setSel(k)} style={{padding:'6px 18px',borderRadius:8,border:`2px solid ${orbitas[k].color}`,background:sel===k?orbitas[k].color+'22':'transparent',color:orbitas[k].color,fontWeight:700,cursor:'pointer',fontFamily:'IBM Plex Mono,monospace',fontSize:13}}>{k}</button>
+      ))}
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:o.color+'44',marginBottom:10}}>
+          <div style={{fontSize:15,fontWeight:700,color:o.color,marginBottom:10}}>{o.name}</div>
+          {[['Altitud',o.alt],['Período orbital',o.periodo],['Latitud cobertura',o.lat],['Latencia (RTT)',o.latencia],['Cobertura/satélite',o.cobertura],['Saturación global',o.sats]].map(([k,v])=>(
+            <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.08)',fontSize:12}}>
+              <span style={{color:'#7c8db8'}}>{k}</span>
+              <span style={{color:'#e8f0fe',fontFamily:'IBM Plex Mono,monospace',fontSize:11}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card" style={{borderColor:o.color+'33'}}>
+          <div className="card-h">Ejemplos reales</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6}}>{o.ejemplos}</div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{marginBottom:10,borderColor:'rgba(16,185,129,0.2)'}}>
+          <div className="card-h" style={{color:'#10b981'}}>Ventajas</div>
+          {o.pros.map((p,i)=><div key={i} style={{fontSize:12,color:'#e8f0fe',padding:'4px 0',borderBottom:'1px solid rgba(59,130,246,0.06)',lineHeight:1.4}}>✓ {p}</div>)}
+        </div>
+        <div className="card" style={{borderColor:'rgba(239,68,68,0.2)'}}>
+          <div className="card-h" style={{color:'#ef4444'}}>Limitaciones</div>
+          {o.contras.map((c,i)=><div key={i} style={{fontSize:12,color:'#e8f0fe',padding:'4px 0',borderBottom:'1px solid rgba(59,130,246,0.06)',lineHeight:1.4}}>✗ {c}</div>)}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Tecnología de Satélites y Transponders</div>
+    <div className="sec-sub">Cómo funciona un enlace satelital</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Arquitectura del enlace</div>
+          <div style={{fontSize:11,fontFamily:'IBM Plex Mono,monospace',color:'#10b981',background:'#060a14',borderRadius:6,padding:'10px',lineHeight:1.8,marginBottom:8}}>
+            {`Tierra ──(uplink)──► SATÉLITE\n         Frecuencia: 6 GHz\n\nSATÉLITE ──(downlink)──► Tierra\n         Frecuencia: 4 GHz\n\nBanda C: 4/6 GHz (más antigua)\nBanda Ku: 11–12 / 14 GHz\nBanda Ka: 20/30 GHz (alta capacidad)`}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>La diferencia de frecuencia uplink/downlink evita interferencia entre las señales transmitidas y recibidas. El transponder en el satélite amplifica y reenvía la señal cambiando frecuencia.</div>
+        </div>
+        <div className="card">
+          <div className="card-h">VSAT — Very Small Aperture Terminal</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7}}>
+            Antenas pequeñas (0.6–1.8 m) para usuarios finales. Arquitectura hub-and-spoke: las VSATs se comunican entre sí via hub central en tierra. Latencia doble (dos saltos GEO). Usado en: retail, cadenas de tiendas, zonas rurales, barcos. Velocidad típica: 1–20 Mbps.
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Problema del enlace — Link Budget</div>
+          {[
+            {item:'EIRP (Potencia isotrópica efectiva)',val:'Potencia TX × ganancia antena'},
+            {item:'Pérdida de trayecto libre',val:'L = (4πd/λ)² — crece con d²'},
+            {item:'Figura de ruido del receptor',val:'Degrada la SNR recibida'},
+            {item:'G/T (figura de mérito)',val:'Ganancia antena / Temperatura ruido'},
+            {item:'Margen de lluvia',val:'3–10 dB para banda Ka'},
+          ].map((r,i)=>(
+            <div key={i} style={{display:'flex',flexDirection:'column',padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+              <span style={{fontSize:11,color:'#e8f0fe',fontWeight:600}}>{r.item}</span>
+              <span style={{fontSize:11,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace'}}>{r.val}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Acceso múltiple al satélite</div>
+          {[
+            {m:'FDMA',d:'Frequency Division: cada terminal usa su banda de frecuencia'},
+            {m:'TDMA',d:'Time Division: turnos de tiempo, ráfagas de datos'},
+            {m:'CDMA',d:'Code Division: transmisión simultánea con códigos ortogonales'},
+            {m:'MF-TDMA',d:'Multi-Frequency TDMA — combinación flexible, usado en DVB-RCS'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+              <span style={{fontSize:11,color:'#f97316',fontFamily:'IBM Plex Mono,monospace',fontWeight:700}}>{r.m}</span>
+              <span style={{fontSize:11,color:'#7c8db8'}}> — {r.d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const apps=[
+    {nombre:'GPS / GNSS',tipo:'LEO/MEO',desc:'Constelaciones de navegación: GPS (31 sats, EE.UU.), GLONASS (Rusia), Galileo (UE), BeiDou (China). Trilateration con ≥4 satélites. Precisión civil: 3–5 m (con corrección diferencial: <1 m). Frecuencias L1(1575 MHz), L2(1227 MHz), L5.'},
+    {nombre:'Starlink / Constelaciones LEO',tipo:'LEO',desc:'SpaceX Starlink: >5000 sats en ~550 km. Latencia 20–40 ms, 50–200 Mbps. Terminal Dishy (antena de usuario autoalineante). Cobertura global incluyendo zonas remotas. También: OneWeb (648 sats), Amazon Kuiper (3236 previstos).'},
+    {nombre:'TV satelital directa (DTH)',tipo:'GEO',desc:'Direct-to-Home via banda Ku/Ka. Antena parabólica 60–90 cm. Estándar DVB-S2 con MPEG-4. Un satélite GEO puede cubrir continentes enteros. DirecTV, Sky, HughesNet (internet), Astra, SES.'},
+    {nombre:'Telefonía satelital',tipo:'LEO',desc:'Iridium: 66 sats LEO en 780 km, cobertura polar 100%. Handoff en ~9 min. Latencia 80 ms. Cruciales para zonas sin cobertura celular: barcos, expediciones árticas, zonas de desastre. Inmarsat (GEO) para marítimo/aeronáutico.'},
+    {nombre:'Tierra remota / IoT',tipo:'LEO/GEO',desc:'Sensores remotos, monitoreo de pipelines, flotas en zonas sin cobertura celular. Satélites de baja velocidad (Argos, Orbcomm) suficientes para telemetría. También: imágenes satelitales para agricultura de precisión.'},
+    {nombre:'Teledetección y meteorología',tipo:'GEO/LEO',desc:'GOES (GEO, NOAA): imágenes meteorológicas cada 30 s. Landsat (LEO): imágenes multiespectrales. Copernicus (ESA): monitoreo ambiental. Resolución espacial: 0.5 m (comercial) a 30 m (Landsat). SAR para deformación del suelo.'},
+  ];
+  return(<div>
+    <div className="sec-title">Aplicaciones y Ecosistema Satelital</div>
+    <div className="sec-sub">Usos actuales y tendencias de los satélites de comunicación</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {apps.map((a,i)=>(
+        <div key={i} className="card" style={{borderColor:i%3===0?'rgba(59,130,246,0.3)':i%3===1?'rgba(249,115,22,0.25)':'rgba(16,185,129,0.2)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#e8f0fe'}}>{a.nombre}</div>
+            <span className="tag" style={{background:'rgba(59,130,246,0.15)',color:'#3b82f6'}}>{a.tipo}</span>
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.65}}>{a.desc}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{marginTop:10,background:'rgba(59,130,246,0.06)',border:'1px solid rgba(59,130,246,0.18)',borderRadius:8,padding:'8px 14px',fontSize:11,color:'#7c8db8'}}>
+      <strong style={{color:'#3b82f6'}}>Tendencia 2024–2030:</strong> Las mega-constelaciones LEO (Starlink, Kuiper) están democratizando el acceso a Internet de banda ancha en zonas rurales y marítimas, compitiendo directamente con fibra en regiones donde el despliegue terrestre es inviable económicamente.
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Órbitas: GEO/MEO/LEO',C:Scene1},{id:2,label:'Tecnología y transponders',C:Scene2},{id:3,label:'Aplicaciones satelitales',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 2.4 — Satélites de Comunicación</div><div className="topbar-sub">Módulo 2 — La Capa Física</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comparar órbitas GEO/MEO/LEO, entender el funcionamiento de un enlace satelital y conocer las aplicaciones actuales.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

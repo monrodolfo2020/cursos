@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.1 — Bases Teóricas: Fourier, Nyquist y Shannon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.formula{background:#060a14;border-radius:6px;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;color:#3b82f6;text-align:center;margin:10px 0;}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function WaveformSVG({harmonics=1,color='#3b82f6',W=300,H=100}){
+  const pts=[];
+  for(let x=0;x<=W;x+=2){
+    const t=x/W*2*Math.PI*2;
+    let y=0;
+    for(let k=1;k<=harmonics;k+=2) y+=Math.sin(k*t)/k;
+    y=y*(H*0.38);
+    pts.push(`${x},${H/2-y}`);
+  }
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{display:'block',margin:'0 auto'}}>
+      <line x1={0} y1={H/2} x2={W} y2={H/2} stroke="#3a4a72" strokeWidth={1}/>
+      <polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth={2}/>
+    </svg>
+  );
+}
+
+function Scene1(){
+  const [harm,setHarm]=useState(1);
+  return(<div>
+    <div className="sec-title">Series de Fourier y Ancho de Banda</div>
+    <div className="sec-sub">Por qué la señal cuadrada perfecta no existe en redes reales</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Análisis de Fourier aplicado a redes</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#7c8db8',marginBottom:8}}>
+            Cualquier señal periódica, incluyendo las señales digitales que usamos en redes, puede descomponerse en una suma de señales sinusoidales (Serie de Fourier). Una onda cuadrada perfecta requiere infinitos armónicos para representarse fielmente.
+          </p>
+          <div className="def-box">
+            <strong style={{color:'#3b82f6'}}>Consecuencia crítica:</strong> Ningún canal de comunicación puede transmitir infinitas frecuencias. Al limitar el ancho de banda del canal, limitamos cuántos armónicos pueden pasar, distorsionando la señal digital original.
+          </div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#7c8db8',marginTop:8}}>
+            Si un canal puede transmitir frecuencias de 0 a B Hz, entonces la señal más rápida transmisible tiene período T = 1/B. Para una señal de datos a tasa R bps, necesitamos B ≥ R/2 Hz de ancho de banda.
+          </p>
+        </div>
+        <div className="card">
+          <div className="card-h">Simulador de armónicos — onda cuadrada</div>
+          <div style={{display:'flex',gap:8,marginBottom:8,alignItems:'center'}}>
+            <span style={{fontSize:11,color:'#7c8db8'}}>Armónicos:</span>
+            {[1,3,5,9,15].map(n=>(
+              <button key={n} onClick={()=>setHarm(n)}
+                style={{padding:'4px 10px',borderRadius:4,border:`1px solid ${harm===n?'#3b82f6':'rgba(59,130,246,0.3)'}`,background:harm===n?'rgba(59,130,246,0.15)':'transparent',color:harm===n?'#3b82f6':'#3a4a72',fontFamily:'IBM Plex Mono,monospace',fontSize:11,cursor:'pointer'}}>
+                {n}
+              </button>
+            ))}
+          </div>
+          <div style={{background:'#060a14',borderRadius:8,padding:'10px',border:'1px solid rgba(59,130,246,0.1)'}}>
+            <WaveformSVG harmonics={harm} W={420} H={90}/>
+            <div style={{fontSize:11,color:'#3a4a72',textAlign:'center',fontFamily:'IBM Plex Mono,monospace',marginTop:4}}>
+              {harm===1?'Solo fundamental: forma triangular':''}
+              {harm===3?'3 armónicos: comienza a parecerse a onda cuadrada':''}
+              {harm>=9?`${harm} armónicos: buena aproximación de onda cuadrada`:''}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Conceptos clave de la capa física</div>
+          {[
+            {t:'Frecuencia (f)',d:'Número de ciclos por segundo, medida en Hz. La frecuencia fundamental de una señal de datos a tasa R bps es f = R/2 Hz.'},
+            {t:'Período (T)',d:'Duración de un ciclo: T = 1/f. Si transmitimos a 1 Mbps, el período de un bit es T = 1 μs.'},
+            {t:'Amplitud',d:'Altura de la señal. En señales digitales bipolar: +V y −V. En AM (Amplitude Modulation), la amplitud codifica la información.'},
+            {t:'Fase (φ)',d:'Posición relativa de una señal en su ciclo. En Phase Shift Keying (PSK), cambios de fase representan bits.'},
+            {t:'Ancho de banda (BW)',d:'Rango de frecuencias que puede transmitir un canal: BW = f_max − f_min. El ancho de banda limita la tasa máxima de datos.'},
+            {t:'Latencia de propagación',d:'Tiempo que tarda la señal en viajar por el medio: t = distancia / (velocidad de propagación). Para cobre, ~0.6c; fibra, ~0.67c.'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <div><span style={{fontSize:12,fontWeight:700,color:'#3b82f6'}}>{r.t}: </span><span style={{fontSize:12,color:'#7c8db8'}}>{r.d}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Teoremas de Nyquist y Shannon</div>
+    <div className="sec-sub">Los límites teóricos de la capacidad de un canal</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Teorema de Nyquist (canal sin ruido)</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#7c8db8',marginBottom:10}}>
+            Harry Nyquist (1924) demostró que incluso en un canal perfectamente libre de ruido, existe una tasa máxima de señalización. Si el canal tiene ancho de banda B Hz y se usan V niveles de señal distintos:
+          </p>
+          <div className="formula">C_Nyquist = 2B × log₂(V) bps</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6,marginBottom:8}}>
+            <strong style={{color:'#e8f0fe'}}>Ejemplo:</strong> Cable telefónico con BW = 3,100 Hz y señalización binaria (V=2):<br/>
+            C = 2 × 3,100 × log₂(2) = 6,200 bps
+          </div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6,marginBottom:8}}>
+            Con V=8 niveles (3 bits/símbolo):<br/>
+            C = 2 × 3,100 × 3 = 18,600 bps
+          </div>
+          <div style={{background:'rgba(59,130,246,0.07)',borderRadius:6,padding:'8px 12px',fontSize:12,color:'#7c8db8',lineHeight:1.5}}>
+            <strong style={{color:'#3b82f6'}}>Límite:</strong> Aunque podamos usar infinitos niveles, el ruido los hace indistinguibles. Nyquist asume canal ideal (sin ruido) — Shannon corrige esto.
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Teorema de Shannon (canal con ruido)</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#7c8db8',marginBottom:10}}>
+            Claude Shannon (1948) demostró el límite fundamental de capacidad de un canal <em>con ruido</em>. La relación señal a ruido (SNR) es el factor limitante:
+          </p>
+          <div className="formula">C_Shannon = B × log₂(1 + S/N) bps</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6,marginBottom:8}}>
+            Donde S/N es la relación señal-ruido (Signal-to-Noise Ratio). En dB: SNR_dB = 10 × log₁₀(S/N).
+          </div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.6,marginBottom:8}}>
+            <strong style={{color:'#e8f0fe'}}>Ejemplo:</strong> Canal telefónico (B=3,100 Hz, SNR=30 dB → S/N=1000):<br/>
+            C = 3,100 × log₂(1001) ≈ 3,100 × 9.97 ≈ 30,894 bps ≈ 31 Kbps
+          </div>
+          <div style={{background:'rgba(16,185,129,0.07)',borderRadius:6,padding:'8px 12px',fontSize:12,color:'#7c8db8',lineHeight:1.5,marginBottom:8}}>
+            <strong style={{color:'#10b981'}}>WiFi 802.11ac:</strong> Con B=160 MHz y SNR=30 dB:<br/>
+            C ≈ 160×10⁶ × 9.97 ≈ 1.6 Gbps (cap teórico; real ≈ 600-800 Mbps)
+          </div>
+          <div style={{background:'rgba(249,115,22,0.07)',borderRadius:6,padding:'8px 12px',fontSize:12,color:'#7c8db8',lineHeight:1.5}}>
+            <strong style={{color:'#f97316'}}>Límite absoluto:</strong> Shannon establece el máximo teórico que ningún sistema puede superar, independientemente del método de modulación. Es un límite de la información, no de la tecnología.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const modulation=[
+    {name:'AM — Amplitude Modulation',desc:'La amplitud de la portadora varía para representar datos. Bit 1 = amplitud alta, bit 0 = amplitud baja (OOK: On-Off Keying). Muy sensible al ruido de amplitud. Usado en radio AM y algunas fibras ópticas (OOK).'},
+    {name:'FM — Frequency Modulation',desc:'La frecuencia de la portadora varía. FSK (Frequency Shift Keying) digital: frecuencia f1 para bit 1, frecuencia f2 para bit 0. Más robusto frente a ruido de amplitud. Módem 56K y RFID.'},
+    {name:'PM — Phase Modulation',desc:'La fase de la portadora varía. BPSK: 0° = bit 0, 180° = bit 1. QPSK: 4 fases = 2 bits/símbolo. 8-PSK: 3 bits/símbolo. WiFi y telefonía móvil 2G usan PSK.'},
+    {name:'QAM — Quadrature Amplitude Modulation',desc:'Combina AM y PM. 16-QAM: 4 amplitudes × 4 fases = 16 combinaciones = 4 bits/símbolo. 64-QAM: 6 bits/símbolo. 256-QAM: 8 bits/símbolo. WiFi 802.11ac y LTE usan 256-QAM.'},
+    {name:'OFDM — Orthogonal FDM',desc:'Divide el canal en cientos de subportadoras ortogonales angostas, cada una modulada independientemente (QAM). Muy eficiente en canales con desvanecimiento selectivo en frecuencia. Usado en WiFi, LTE/5G, ADSL, DVB.'},
+  ];
+  return(<div>
+    <div className="sec-title">Modulación Digital — Codificar Bits en Señales</div>
+    <div className="sec-sub">Cómo se transforman los bits en señales analógicas para la transmisión</div>
+    <p style={{fontSize:12,lineHeight:1.6,color:'#7c8db8',marginBottom:14}}>
+      La <strong style={{color:'#e8f0fe'}}>modulación</strong> es el proceso de codificar los bits digitales en variaciones de una señal portadora analógica (seno/coseno) apta para transmitirse por el medio físico. Existen tres propiedades de la onda portadora que se pueden variar: amplitud, frecuencia y fase.
+    </p>
+    {modulation.map((m,i)=>(
+      <div key={i} style={{padding:'9px 0',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#3b82f6',marginBottom:4}}>{m.name}</div>
+        <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.55}}>{m.desc}</div>
+      </div>
+    ))}
+    <div style={{marginTop:12,background:'rgba(59,130,246,0.07)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+      <strong style={{color:'#3b82f6'}}>Eficiencia espectral:</strong> Las modulaciones modernas como 1024-QAM (WiFi 6) y las técnicas MIMO logran acercarse al límite de Shannon maximizando la cantidad de bits por Hz de ancho de banda. El desafío es siempre el ruido: más niveles de QAM = más sensible al ruido.
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Fourier y ancho de banda',C:Scene1},{id:2,label:'Nyquist y Shannon',C:Scene2},{id:3,label:'Modulación digital',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 2.1 — Bases teóricas: Fourier, Nyquist y Shannon</div><div className="topbar-sub">Módulo 2 — Capa Física</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Aplicar los teoremas de Nyquist y Shannon para calcular la capacidad máxima de un canal de comunicación.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

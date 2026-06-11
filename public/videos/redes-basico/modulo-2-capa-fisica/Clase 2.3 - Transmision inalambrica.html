@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.3 — Transmisión Inalámbrica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function SpectrumSVG(){
+  const bands=[
+    {name:'ELF/VLF',f:'3Hz-30kHz',color:'#3a4a72',w:35,uso:'Submarinos'},
+    {name:'Radio AM',f:'535-1605kHz',color:'#3b82f6',w:40,uso:'Radio AM broadcast'},
+    {name:'FM/TV VHF',f:'30-300MHz',color:'#8b5cf6',w:50,uso:'FM, TV analógica, WiFi'},
+    {name:'UHF',f:'300MHz-3GHz',color:'#ec4899',w:55,uso:'TV digital, WiFi, LTE'},
+    {name:'Microondas',f:'3-300GHz',color:'#f97316',w:60,uso:'WiFi 5/6G, satélite, radar'},
+    {name:'mm-Wave',f:'30-300GHz',color:'#ef4444',w:45,uso:'5G, WiFi 6E, backhaul'},
+    {name:'Infrarrojo',f:'300GHz-430THz',color:'#dc2626',w:50,uso:'Mando a distancia, IrDA'},
+    {name:'Visible/UV',f:'430-750THz',color:'#f59e0b',w:60,uso:'Fibra óptica, LiDAR'},
+  ];
+  let x=10;
+  return(
+    <svg viewBox="0 0 860 120" width="840" height="115" style={{display:'block'}}>
+      {bands.map((b,i)=>{
+        const bx=x; x+=b.w+8;
+        return(
+          <g key={i}>
+            <rect x={bx} y={30} width={b.w} height={40} fill={b.color+'33'} stroke={b.color} strokeWidth={1.5} rx={3}/>
+            <text x={bx+b.w/2} y={50} textAnchor="middle" fill={b.color} fontSize={8} fontFamily="IBM Plex Mono,monospace" fontWeight="700">{b.name}</text>
+            <text x={bx+b.w/2} y={62} textAnchor="middle" fill={b.color} fontSize={7} fontFamily="IBM Plex Mono,monospace">{b.f}</text>
+            <text x={bx+b.w/2} y={86} textAnchor="middle" fill="#3a4a72" fontSize={7} fontFamily="IBM Plex Mono,monospace">{b.uso}</text>
+          </g>
+        );
+      })}
+      <text x={430} y={20} textAnchor="middle" fill="#3b82f6" fontSize={10} fontFamily="IBM Plex Mono,monospace">← frecuencia crece →</text>
+      <line x1={10} y1={22} x2={850} y2={22} stroke="rgba(59,130,246,0.3)" strokeWidth={1}/>
+    </svg>
+  );
+}
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">El Espectro Electromagnético en Comunicaciones</div>
+    <div className="sec-sub">El recurso escaso que gobierna las comunicaciones inalámbricas</div>
+    <div className="card" style={{marginBottom:12,padding:'10px 14px'}}>
+      <div className="card-h">Espectro de frecuencias — usos en telecomunicaciones</div>
+      <div style={{overflowX:'auto'}}>
+        <SpectrumSVG/>
+      </div>
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Propagación por radio (30 MHz – 1 GHz)</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#7c8db8',marginBottom:8}}>
+            Las ondas de radio se propagan omnidireccionalmente desde la antena, penetran paredes y edificios, y pueden difractarse alrededor de obstáculos. A bajas frecuencias (AM), siguen la curvatura de la Tierra (onda de superficie). A frecuencias más altas (FM, VHF), se reflejan en la ionosfera (onda de cielo) o viajan en línea recta (línea de visión).
+          </p>
+          {[
+            {f:'<2 MHz',p:'Onda de superficie — sigue la curvatura terrestre. Radio AM.'},
+            {f:'2-30 MHz',p:'Onda de cielo — rebota en la ionosfera. Radio HF internacional.'},
+            {f:'>30 MHz',p:'Línea de visión (LOS) — no rebota. FM, TV, WiFi, celular.'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,color:'#3b82f6',flexShrink:0,width:65}}>{r.f}</span>
+              <span style={{fontSize:12,color:'#7c8db8'}}>{r.p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Microondas (1 GHz – 300 GHz)</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#7c8db8',marginBottom:8}}>
+            Las microondas viajan en línea recta y requieren antenas orientadas. Son absorbidas por lluvia a frecuencias > 10 GHz (efecto rain fade). Se usan en enlaces punto a punto para backhaul de redes celulares, comunicación por satélite y redes WiFi.
+          </p>
+          {[
+            {t:'Torres de microondas',d:'Backhaul de redes móviles, ~30 km entre repetidores, antenas parabólicas'},
+            {t:'WiFi 2.4 / 5 / 6 GHz',d:'802.11b/g/n/ac/ax — redes locales inalámbricas, hasta decenas de metros a cientos de Mbps/Gbps'},
+            {t:'Satélite Ku-band (12-18 GHz)',d:'TV por satélite (DirecTV, SkyTV), Internet satelital (Starlink usa Ka-band 26.5-40 GHz)'},
+            {t:'5G mmWave (24-100 GHz)',d:'Alta capacidad (multi-Gbps), muy corta distancia (<200 m), requiere muchas antenas pequeñas'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#3b82f6',flexShrink:0}}>▸</span>
+              <div><span style={{fontSize:11,fontWeight:600,color:'#e8f0fe'}}>{r.t}: </span><span style={{fontSize:11,color:'#7c8db8'}}>{r.d}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const fenomenos=[
+    {f:'Reflexión',d:'La señal rebota en superficies planas (paredes, suelo, techo). Genera trayectorias múltiples (multipath) que causan interferencia constructiva y destructiva según la fase en que llegan. Principal problema en redes WiFi en interiores.'},
+    {f:'Difracción',d:'La señal se dobla al rodear objetos y esquinas (fenómeno de Huygens). Permite comunicación sin línea de visión directa (NLOS). A baja frecuencia es más pronunciada, lo que explica por qué AM llega detrás de montañas.'},
+    {f:'Dispersión',d:'La señal se dispersa al incidir sobre superficies rugosas o pequeños objetos del tamaño de la longitud de onda. Importante en millimeter-wave (5G) donde incluso hojas de árboles causan dispersión.'},
+    {f:'Desvanecimiento (Fading)',d:'Variación rápida de la potencia recibida debida a interferencia multipath. Puede ser plano (toda la señal cae) o selectivo en frecuencia (solo algunas frecuencias se atenúan). OFDM es muy efectivo contra fading selectivo.'},
+    {f:'Efecto Doppler',d:'Si el receptor o el transmisor están en movimiento, la frecuencia recibida es ligeramente diferente a la transmitida. Crítico en comunicaciones con vehículos a alta velocidad (trenes, aviones). LTE/5G lo compensan.'},
+    {f:'Atenuación por camino (Path Loss)',d:'La potencia de la señal disminuye con la distancia. En espacio libre: P_r ∝ 1/d². En entornos urbanos: P_r ∝ 1/d^n donde n=2.7-5 según el entorno. Determina el radio de cobertura de una celda móvil.'},
+  ];
+  return(<div>
+    <div className="sec-title">Fenómenos de Propagación Inalámbrica</div>
+    <div className="sec-sub">Por qué la radio no es tan sencilla como parece</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {fenomenos.map((f,i)=>(
+        <div key={i} className="card" style={{marginBottom:0,padding:'11px 14px'}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#3b82f6',marginBottom:4}}>{f.f}</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.55}}>{f.d}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{marginTop:10,background:'rgba(59,130,246,0.07)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+      <strong style={{color:'#3b82f6'}}>MIMO — Multiple Input Multiple Output:</strong> La solución moderna al problema del multipath. En lugar de tratar las múltiples trayectorias como ruido, MIMO las aprovecha como canales independientes para transmitir flujos de datos paralelos. 4×4 MIMO puede multiplicar por 4 el throughput si las trayectorias son suficientemente independientes.
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const espectro=[
+    {b:'ISM 2.4 GHz',lic:'Sin licencia',ancho:'83.5 MHz',uso:'WiFi 802.11b/g/n, Bluetooth, ZigBee, microondas domésticos',pro:'Libre de usar, económico',con:'Muy congestionado, solo 3 canales no solapados (1,6,11)'},
+    {b:'ISM 5 GHz',lic:'Sin licencia',ancho:'500+ MHz',uso:'WiFi 802.11a/n/ac, radar meteorológico',pro:'Más canales, menos interferencia que 2.4G',con:'Mayor atenuación por paredes, menor cobertura'},
+    {b:'6 GHz',lic:'Sin licencia (reciente)',ancho:'1200 MHz',uso:'WiFi 6E (802.11ax), muy alta densidad',pro:'14 canales de 80 MHz, sin interferencia legacy',con:'Poca penetración, equipos aún costosos'},
+    {b:'700 MHz (LTE Band 28)',lic:'Licenciado (subasta)',ancho:'30 MHz típico',uso:'LTE 4G de cobertura, penetra bien en edificios',pro:'Excelente cobertura, penetración en edificios',con:'Ancho de banda limitado, licencia cara'},
+    {b:'3.5 GHz (5G NR n78)',lic:'Licenciado',ancho:'100-400 MHz',uso:'5G capacidad media, balance cobertura/capacidad',pro:'Buen equilibrio cobertura-capacidad para 5G',con:'Menor cobertura que 700 MHz'},
+    {b:'mmWave 26/28 GHz',lic:'Licenciado',ancho:'Varios GHz',uso:'5G ultra alta velocidad, estadios, aeropuertos',pro:'Multi-Gbps, enorme capacidad',con:'Cobertura <200m, bloqueado por obstáculos, lluvia'},
+  ];
+  return(<div>
+    <div className="sec-title">Bandas de Frecuencia y Espectro Radioeléctrico</div>
+    <div className="sec-sub">El espectro es un recurso limitado y regulado</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginBottom:10}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Banda','Licencia','Ancho','Usos','Ventaja','Limitación'].map((h,i)=>(
+            <th key={i} style={{padding:'6px 8px',color:'#3b82f6',textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9,letterSpacing:'.06em'}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {espectro.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'6px 8px',color:'#3b82f6',fontWeight:700,fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.b}</td>
+            <td style={{padding:'6px 8px',color:r.lic.includes('Sin')?'#10b981':'#f97316',fontSize:10}}>{r.lic}</td>
+            <td style={{padding:'6px 8px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.ancho}</td>
+            <td style={{padding:'6px 8px',color:'#7c8db8',fontSize:10}}>{r.uso}</td>
+            <td style={{padding:'6px 8px',color:'#10b981',fontSize:10}}>{r.pro}</td>
+            <td style={{padding:'6px 8px',color:'#f97316',fontSize:10}}>{r.con}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{background:'rgba(249,115,22,0.07)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+      <strong style={{color:'#f97316'}}>Regulación del espectro:</strong> El espectro radioeléctrico es un bien público gestionado por agencias nacionales (FCC en EE.UU., OFCOM en UK, ANTEL en países latinoamericanos). Las bandas sin licencia (ISM: Industrial, Scientific, Medical) permiten operar sin pagar pero con limitaciones de potencia. Las bandas licenciadas se subastan por miles de millones de dólares, garantizando calidad de servicio sin interferencia.
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Espectro EM y propagación',C:Scene1},{id:2,label:'Fenómenos de propagación',C:Scene2},{id:3,label:'Bandas y regulación',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 2.3 — Transmisión inalámbrica: radio, microondas e infrarrojo</div><div className="topbar-sub">Módulo 2 — Capa Física</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comprender la propagación de señales inalámbricas, los fenómenos que la afectan y la regulación del espectro radioeléctrico.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

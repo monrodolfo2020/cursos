@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 3.4 — Ventana Deslizante</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function WindowViz({w,sent,acked,title,color}){
+  const slots=8;
+  return(
+    <div style={{marginBottom:8}}>
+      <div style={{fontSize:11,color:color,fontFamily:'IBM Plex Mono,monospace',marginBottom:4}}>{title}</div>
+      <div style={{display:'flex',gap:3}}>
+        {Array.from({length:slots},(_, i)=>{
+          const inWindow=i>=acked&&i<acked+w;
+          const isSent=i>=acked&&i<sent;
+          const isAcked=i<acked;
+          let bg='#060a14',border=`1px solid #3a4a72`,txtColor='#3a4a72';
+          if(isAcked){bg='rgba(16,185,129,0.2)';border=`1px solid #10b981`;txtColor='#10b981';}
+          else if(isSent){bg='rgba(249,115,22,0.2)';border=`1px solid ${color}`;txtColor=color;}
+          else if(inWindow){bg='rgba(59,130,246,0.1)';border=`1px solid rgba(59,130,246,0.3)`;txtColor='#3b82f6';}
+          return(<div key={i} style={{width:40,height:32,background:bg,border,borderRadius:4,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontFamily:'IBM Plex Mono,monospace',color:txtColor,fontWeight:700}}>{i}</div>);
+        })}
+      </div>
+      <div style={{display:'flex',gap:12,marginTop:4,fontSize:10,fontFamily:'IBM Plex Mono,monospace'}}>
+        <span style={{color:'#10b981'}}>■ Confirmado</span>
+        <span style={{color}}> ■ Enviado sin ACK</span>
+        <span style={{color:'#3b82f6'}}>■ Puede enviar</span>
+        <span style={{color:'#3a4a72'}}>■ Bloqueado</span>
+      </div>
+    </div>
+  );
+}
+
+function Scene1(){
+  const [w,setW]=useState(4);
+  return(<div>
+    <div className="sec-title">Protocolos de Ventana Deslizante</div>
+    <div className="sec-sub">Pipeline de tramas: usar el canal eficientemente</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">El concepto de ventana</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>El emisor puede tener hasta W tramas sin confirmar (en vuelo). La ventana "desliza" hacia adelante conforme llegan los ACKs. Los marcos se numeran con un contador circular de n bits (0 a 2ⁿ-1).</div>
+          <div style={{padding:'10px',background:'#060a14',borderRadius:6,marginBottom:8}}>
+            <WindowViz w={w} sent={5} acked={3} title={`Ventana W=${w}: enviadas 4,5 sin ACK; 6,7 disponibles`} color="#f97316"/>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:11,color:'#7c8db8'}}>Tamaño W:</span>
+            {[1,2,4,6].map(v=>(
+              <button key={v} onClick={()=>setW(v)} style={{padding:'4px 12px',borderRadius:6,border:`1px solid ${w===v?'#3b82f6':'rgba(59,130,246,0.2)'}`,background:w===v?'rgba(59,130,246,0.15)':'transparent',color:w===v?'#3b82f6':'#3a4a72',cursor:'pointer',fontSize:12,fontFamily:'IBM Plex Mono,monospace'}}>{v}</button>
+            ))}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Eficiencia con ventana W</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`Si W ≥ 1 + 2a:\n  Eficiencia = 1  (canal saturado)\n\nSi W < 1 + 2a:\n  Eficiencia = W / (1 + 2a)\n\nEjemplo satélite (a=2250):\n  W mín = 4501 tramas\n  Con W=4501 → η = 100%`}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Numeración de secuencia</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Con n bits de numeración hay 2ⁿ números de secuencia (0 a 2ⁿ-1). El espacio de secuencia debe ser suficientemente grande para que no haya confusión entre la misma trama "nueva" y una "vieja".</div>
+          {[
+            {n:1,seqs:'0,1',wmax_gb:1,wmax_sr:1,nota:'Stop-and-Wait'},
+            {n:3,seqs:'0–7',wmax_gb:7,wmax_sr:4,nota:'HDLC modo básico'},
+            {n:7,seqs:'0–127',wmax_gb:127,wmax_sr:64,nota:'HDLC modo extendido'},
+            {n:12,seqs:'0–4095',wmax_gb:4095,wmax_sr:2048,nota:'Frame Relay'},
+          ].map(r=>(
+            <div key={r.n} style={{display:'grid',gridTemplateColumns:'30px 60px 50px 50px 1fr',gap:6,padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',alignItems:'center',fontSize:11}}>
+              <span style={{color:'#f97316',fontFamily:'IBM Plex Mono,monospace',fontWeight:700}}>{r.n}b</span>
+              <span style={{color:'#e8f0fe',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.seqs}</span>
+              <span style={{color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>GBN:{r.wmax_gb}</span>
+              <span style={{color:'#10b981',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>SR:{r.wmax_sr}</span>
+              <span style={{color:'#3a4a72',fontSize:10}}>{r.nota}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">ACK acumulativo vs. selectivo</div>
+          {[
+            {t:'ACK acumulativo',c:'#3b82f6',d:'ACK(n) confirma todas las tramas hasta n-1 inclusive. Más simple. Si ACK se pierde pero llega un ACK posterior, el anterior se deduce como recibido.'},
+            {t:'ACK selectivo',c:'#10b981',d:'ACK(n) confirma exactamente la trama n. Más preciso. Necesario en Selective Repeat para confirmar tramas fuera de orden.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'7px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:r.c,marginBottom:3}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.5}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Go-Back-N vs. Selective Repeat</div>
+    <div className="sec-sub">Los dos protocolos ARQ de ventana deslizante</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.3)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Go-Back-N (GBN)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Cuando se detecta un error (timeout o NAK), el emisor retransmite la trama errónea Y TODAS LAS SIGUIENTES (va "de regreso a N"). El receptor descarta todas las tramas fuera de orden.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.7,marginBottom:8}}>
+            {`EMISOR:  0  1  2  3  4  5  6  7\n              ↑ ERROR en 2!\n Retransmite: 2  3  4  5  6  7...\n\nRECEPTOR: espera 2, descarta 3,4,5`}
+          </div>
+          {[
+            {k:'Ventana máxima','v':'2ⁿ - 1'},
+            {k:'Buffer en receptor','v':'Solo 1 trama (en orden)'},
+            {k:'Overhead de retransmisión','v':'Alto si hay muchos errores'},
+            {k:'Implementación','v':'Simple'},
+          ].map(r=>(
+            <div key={r.k} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',fontSize:11}}>
+              <span style={{color:'#7c8db8'}}>{r.k}</span>
+              <span style={{color:'#f97316',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.3)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Selective Repeat (SR)</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>Solo se retransmite la trama específica que falló. El receptor almacena en buffer las tramas fuera de orden y las entrega a la capa superior una vez que llena el hueco.</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.7,marginBottom:8}}>
+            {`EMISOR:  0  1  2  3  4  5  6  7\n              ↑ ERROR en 2!\n Retransmite: 2  (solo ese)\n\nRECEPTOR: bufferiza 3,4,5\n          cuando llega 2: entrega 2,3,4,5`}
+          </div>
+          {[
+            {k:'Ventana máxima','v':'2ⁿ⁻¹ (mitad del espacio)'},
+            {k:'Buffer en receptor','v':'W tramas (en desorden)'},
+            {k:'Overhead de retransmisión','v':'Mínimo'},
+            {k:'Implementación','v':'Compleja'},
+          ].map(r=>(
+            <div key={r.k} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid rgba(59,130,246,0.07)',fontSize:11}}>
+              <span style={{color:'#7c8db8'}}>{r.k}</span>
+              <span style={{color:'#10b981',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">¿Por qué SR limita ventana a 2ⁿ⁻¹?</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#8b5cf6',lineHeight:1.7}}>
+            {`Con n=2 bits (seqs 0,1,2,3):\n\nSi W=3: emisor envía 0,1,2 → todos pierden ACK\nEmisor retransmite 0,1,2\nReceptor no sabe si son nuevos o viejos!\n\nCon W=2⁽ⁿ⁻¹⁾=2:\nEmisor envía 0,1 → pierde todos los ACK\nRetransmite 0,1\nReceptor espera 2 o 3 → descarta 0,1 ✓`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const comp=[
+    {t:'Ventana emisor (W_s)',saw:'1',gbn:'2ⁿ - 1',sr:'2ⁿ⁻¹'},
+    {t:'Ventana receptor (W_r)',saw:'1',gbn:'1',sr:'2ⁿ⁻¹'},
+    {t:'Buffer en receptor',saw:'1 trama',gbn:'1 trama',sr:'W_r tramas'},
+    {t:'Retransmisión ante error',saw:'1 trama',gbn:'N tramas (regresa a error)',sr:'Solo trama errónea'},
+    {t:'Eficiencia canal muy ruidoso',saw:'Baja',gbn:'Muy baja',sr:'Alta'},
+    {t:'Eficiencia canal bueno',saw:'Baja (en WAN)',gbn:'Alta',sr:'Alta'},
+    {t:'Complejidad implementación',saw:'Mínima',gbn:'Media',sr:'Alta'},
+    {t:'Ejemplo en la industria',saw:'Protocolos simples',gbn:'HDLC, X.25',sr:'TCP (ventana variable)'},
+  ];
+  return(<div>
+    <div className="sec-title">Comparativa: SAW vs. GBN vs. SR</div>
+    <div className="sec-sub">Cuándo usar cada protocolo de ARQ</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginBottom:12}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Característica','Stop-and-Wait','Go-Back-N','Selective Repeat'].map((h,i)=>(
+            <th key={i} style={{padding:'8px 10px',color:['#7c8db8','#3b82f6','#f97316','#10b981'][i],textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {comp.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'7px 10px',color:'#e8f0fe',fontWeight:600}}>{r.t}</td>
+            <td style={{padding:'7px 10px',color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.saw}</td>
+            <td style={{padding:'7px 10px',color:'#f97316',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.gbn}</td>
+            <td style={{padding:'7px 10px',color:'#10b981',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.sr}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <div className="card" style={{borderColor:'rgba(59,130,246,0.25)'}}>
+        <div className="card-h">TCP y las ventanas deslizantes</div>
+        <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>TCP usa una variante de Selective Repeat con ventana de tamaño variable. El receptor anuncia su ventana de recepción (rwnd). El emisor además respeta la ventana de congestión (cwnd) de TCP. El tamaño de ventana se negocia en cada segmento. SACK (Selective ACK) permite confirmar rangos fuera de orden.</div>
+      </div>
+      <div className="card" style={{borderColor:'rgba(249,115,22,0.2)'}}>
+        <div className="card-h" style={{color:'#f97316'}}>Uso práctico en 2024</div>
+        <div style={{fontSize:11,color:'#7c8db8',lineHeight:1.6}}>Los protocolos de capa 2 modernos (Ethernet, WiFi) delegan la confiabilidad a TCP/IP. Ethernet no usa ACK ni ventanas — si se pierde una trama, es problema de TCP. Solo en enlaces poco confiables (satelital, radio) se implementa ARQ a nivel de enlace (como en LTE RLC o DVB-RCS2).</div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Ventana deslizante',C:Scene1},{id:2,label:'Go-Back-N vs Selective Repeat',C:Scene2},{id:3,label:'Comparativa final',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 3.4 — Protocolos de Ventana Deslizante</div><div className="topbar-sub">Módulo 3 — Capa de Enlace</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender el mecanismo de ventana deslizante, comparar Go-Back-N vs Selective Repeat y su relación con TCP.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 6.3 – TCP: Introducción y Conexión</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Cabecera TCP"},{id:2,label:"Three-Way Handshake"},{id:3,label:"Cierre de conexión"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("seq");
+  const fields={
+    src:{name:"Source Port",bits:"16 bits",color:"#3b82f6",detail:"Puerto del proceso emisor (0-65535)."},
+    dst:{name:"Dest Port",bits:"16 bits",color:"#3b82f6",detail:"Puerto del proceso receptor."},
+    seq:{name:"Sequence Number",bits:"32 bits",color:"#f97316",detail:"Número de secuencia del primer byte de datos en este segmento. En SYN, es el ISN (Initial Sequence Number) aleatorio. Permite ordenamiento y detección de duplicados."},
+    ack:{name:"Acknowledgment Number",bits:"32 bits",color:"#10b981",detail:"Si ACK=1: número del PRÓXIMO byte esperado del otro lado. Confirma todos los bytes hasta ACKnum-1. Piggybacking: se envía junto con datos propios."},
+    off:{name:"Data Offset",bits:"4 bits",color:"#8b5cf6",detail:"Longitud de la cabecera TCP en palabras de 32 bits. Mínimo: 5 (=20 bytes). Máximo: 15 (=60 bytes con opciones)."},
+    flags:{name:"Flags (Control Bits)",bits:"9 bits",color:"#ef4444",detail:"URG, ACK, PSH, RST, SYN, FIN + 3 bits ECN (NS, CWR, ECE). Cada bit tiene un significado específico en el control de conexión."},
+    win:{name:"Window Size",bits:"16 bits",color:"#f97316",detail:"Número de bytes que el receptor puede aceptar (ventana de recepción). Base del control de flujo TCP. Valor 0 = stop sending."},
+    chk:{name:"Checksum",bits:"16 bits",color:"#8b5cf6",detail:"Obligatorio en TCP. Cubre pseudo-cabecera IP + cabecera TCP + datos."},
+    urg:{name:"Urgent Pointer",bits:"16 bits",color:"#7c8db8",detail:"Válido solo si URG=1. Offset al último byte de datos urgentes. Poco usado en la práctica."},
+    opt:{name:"Options",bits:"0–40B",color:"#7c8db8",detail:"MSS, Window Scale, SACK, Timestamps, NOP. Longitud variable, alineada a 32 bits con padding."},
+  };
+  const f=fields[sel]||fields["seq"];
+  const flagList=[
+    {f:"SYN",c:"#3b82f6",d:"Synchronize — establece conexión, sincroniza números de secuencia"},
+    {f:"ACK",c:"#10b981",d:"Acknowledgment — campo Ack Number es válido"},
+    {f:"FIN",c:"#f97316",d:"Finish — emisor no enviará más datos"},
+    {f:"RST",c:"#ef4444",d:"Reset — abortar conexión inmediatamente"},
+    {f:"PSH",c:"#8b5cf6",d:"Push — entregar datos a la aplicación inmediatamente"},
+    {f:"URG",c:"#7c8db8",d:"Urgent — datos urgentes, ver Urgent Pointer"},
+    {f:"ECE",c:"#f97316",d:"ECN-Echo — informa congestión al emisor"},
+    {f:"CWR",c:"#f97316",d:"Congestion Window Reduced — emisor redujo cwnd"},
+  ];
+  return(
+    <div>
+      <h1>Cabecera TCP</h1>
+      <p className="subtitle">RFC 793 (1981) — Protocolo de transporte confiable, orientado a conexión</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Campos de la cabecera — clic para detalle</h3>
+            <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:12}}>
+              {Object.entries(fields).map(([k,v])=>(
+                <button key={k} onClick={()=>setSel(k)}
+                  style={{background:sel===k?"#1e3a5f":"#0a1020",border:`1px solid ${sel===k?v.color:"#1e3a5f"}`,color:sel===k?v.color:"#7c8db8",borderRadius:4,padding:"4px 10px",cursor:"pointer",fontSize:11,fontWeight:600}}>
+                  {v.name.split(" ")[0]}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${f.color}`,borderRadius:8,padding:14,minHeight:70}}>
+              <div style={{color:f.color,fontWeight:700,fontSize:13,marginBottom:4}}>{f.name} ({f.bits})</div>
+              <div style={{color:"#e8f0fe",fontSize:13}}>{f.detail}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Diagrama de la cabecera TCP (mínimo 20 bytes)</h3>
+            <div className="mono">
+              <div> 0          15 16         31</div>
+              <div>┌─────────────┬─────────────┐</div>
+              <div>│<span style={{color:"#3b82f6"}}> Source Port </span>│<span style={{color:"#3b82f6"}}> Dest Port   </span>│</div>
+              <div>├─────────────┴─────────────┤</div>
+              <div>│<span style={{color:"#f97316"}}>      Sequence Number      </span>│</div>
+              <div>├───────────────────────────┤</div>
+              <div>│<span style={{color:"#10b981"}}>    Acknowledgment Number  </span>│</div>
+              <div>├──────┬───────┬────────────┤</div>
+              <div>│<span style={{color:"#8b5cf6"}}>Offst │Reserv│</span><span style={{color:"#ef4444"}}>   Flags    </span>│</div>
+              <div>├──────┴───────┼────────────┤</div>
+              <div>│<span style={{color:"#f97316"}}> Window Size  </span>│<span style={{color:"#8b5cf6"}}>  Checksum  </span>│</div>
+              <div>├──────────────┴────────────┤</div>
+              <div>│<span style={{color:"#7c8db8"}}>       Options (var)       </span>│</div>
+              <div>└───────────────────────────┘</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Flags TCP</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {flagList.map(fl=>(
+                <div key={fl.f} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <div style={{background:"#1e3a5f",border:`1px solid ${fl.c}`,color:fl.c,fontWeight:700,fontSize:12,padding:"3px 8px",borderRadius:4,minWidth:44,textAlign:"center"}}>{fl.f}</div>
+                  <div style={{color:"#e8f0fe",fontSize:12,flex:1,paddingTop:3}}>{fl.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Opciones TCP importantes</h3>
+            <table><tbody>
+              <tr><th>Opción</th><th>Descripción</th></tr>
+              <tr><td style={{color:"#3b82f6",fontWeight:600}}>MSS</td><td>Max Segment Size (negociado en SYN)</td></tr>
+              <tr><td style={{color:"#f97316",fontWeight:600}}>Window Scale</td><td>Multiplica Window por 2^n (hasta 1GB)</td></tr>
+              <tr><td style={{color:"#10b981",fontWeight:600}}>SACK</td><td>Selective ACK — confirma rangos no contiguos</td></tr>
+              <tr><td style={{color:"#8b5cf6",fontWeight:600}}>Timestamps</td><td>RTT preciso + protección contra wrapping</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [step,setStep]=useState(0);
+  const steps=[
+    {label:"SYN",from:"Cliente",to:"Servidor",msg:"SYN, Seq=x (ISN aleatorio)",detail:"El cliente elige un ISN aleatorio x. Envía SYN. Estado cliente: SYN_SENT. El servidor estaba en LISTEN.",color:"#3b82f6",flags:["SYN"]},
+    {label:"SYN-ACK",from:"Servidor",to:"Cliente",msg:"SYN, ACK, Seq=y, Ack=x+1",detail:"El servidor elige su propio ISN y. ACK confirma el SYN del cliente (Ack=x+1). Estado servidor: SYN_RCVD.",color:"#10b981",flags:["SYN","ACK"]},
+    {label:"ACK",from:"Cliente",to:"Servidor",msg:"ACK, Seq=x+1, Ack=y+1",detail:"El cliente confirma el SYN del servidor. Estado ambos: ESTABLISHED. La conexión está lista. Este segmento puede ya llevar datos.",color:"#f97316",flags:["ACK"]},
+  ];
+  const s=steps[step];
+  const isns=[
+    {n:"Protege contra paquetes de conexiones antiguas",c:"#3b82f6"},
+    {n:"Dificulta ataques de predicción de secuencia (TCP hijacking)",c:"#10b981"},
+    {n:"Generado con reloj + hash criptográfico (RFC 6528)",c:"#f97316"},
+  ];
+  return(
+    <div>
+      <h1>Three-Way Handshake (3WHS)</h1>
+      <p className="subtitle">Establecimiento de conexión TCP — sincronización de números de secuencia</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Pasos del handshake</h3>
+            <div style={{display:"flex",gap:10,marginBottom:14}}>
+              {steps.map((s,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{flex:1,background:step===i?s.color:"#0a1020",border:`2px solid ${s.color}`,color:step===i?"#0a1020":"#e8f0fe",borderRadius:8,padding:"8px 6px",cursor:"pointer",fontWeight:700,fontSize:13}}>
+                  {i+1}. {s.label}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${s.color}`,borderRadius:8,padding:14}}>
+              <div style={{display:"flex",gap:8,marginBottom:8}}>
+                {s.flags.map(f=>(
+                  <span key={f} style={{background:s.color,color:"#0a1020",fontWeight:700,fontSize:12,padding:"2px 10px",borderRadius:4}}>{f}</span>
+                ))}
+              </div>
+              <div style={{color:"#7c8db8",fontSize:12,marginBottom:6}}>{s.from} → {s.to}</div>
+              <div style={{color:"#e8f0fe",fontWeight:600,fontSize:13,marginBottom:8,fontFamily:"monospace"}}>{s.msg}</div>
+              <div style={{color:"#e8f0fe",fontSize:13}}>{s.detail}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Diagrama tiempo-espacio</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}>   Cliente          Servidor</div>
+              <div>     │                   │ LISTEN</div>
+              <div><span style={{color:"#3b82f6"}}>SYN_SENT</span> ──SYN(x)────► │</div>
+              <div>     │                   │ <span style={{color:"#10b981"}}>SYN_RCVD</span></div>
+              <div>     │ ◄──SYN(y)+ACK─── │</div>
+              <div><span style={{color:"#f97316"}}>ESTAB</span>    ───ACK──────► │ <span style={{color:"#f97316"}}>ESTAB</span></div>
+              <div>     │ {"{data flow}"}{" "}     │</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>ISN — Initial Sequence Number</h3>
+            <div style={{marginBottom:12}}>
+              {isns.map(i=>(
+                <div key={i.n} style={{background:"#0a1020",borderLeft:`3px solid ${i.c}`,borderRadius:"0 6px 6px 0",padding:"8px 12px",marginBottom:6,fontSize:13,color:"#e8f0fe"}}>
+                  {i.n}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Estados TCP durante 3WHS</h3>
+            <table><tbody>
+              <tr><th>Estado</th><th>Quién</th><th>Descripción</th></tr>
+              <tr><td style={{color:"#7c8db8"}}>CLOSED</td><td>Ambos</td><td>Estado inicial</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>LISTEN</td><td>Servidor</td><td>Esperando conexiones (después de listen())</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>SYN_SENT</td><td>Cliente</td><td>Envió SYN, espera SYN-ACK</td></tr>
+              <tr><td style={{color:"#10b981"}}>SYN_RCVD</td><td>Servidor</td><td>Recibió SYN, envió SYN-ACK</td></tr>
+              <tr><td style={{color:"#f97316",fontWeight:700}}>ESTABLISHED</td><td>Ambos</td><td>Conexión activa, datos fluyen</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>SYN cookies — protección SYN flood</h3>
+            <div style={{fontSize:12,color:"#e8f0fe",lineHeight:1.7}}>
+              <div><strong style={{color:"#f97316"}}>Ataque:</strong> Enviar miles de SYN sin completar handshake → agotar cola SYN_RCVD del servidor.</div>
+              <div style={{marginTop:6}}><strong style={{color:"#10b981"}}>SYN cookies:</strong> Servidor codifica estado de conexión dentro del ISN del SYN-ACK. No guarda estado hasta recibir el ACK final.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [step,setStep]=useState(0);
+  const finSteps=[
+    {label:"FIN",from:"A",to:"B",msg:"FIN+ACK, Seq=u",detail:"A terminó de enviar datos. Envía FIN. Estado A: FIN_WAIT_1. B puede seguir enviando (half-close).",color:"#3b82f6"},
+    {label:"ACK",from:"B",to:"A",msg:"ACK, Ack=u+1",detail:"B confirma el FIN de A. Estado A: FIN_WAIT_2. B todavía puede enviar datos.",color:"#f97316"},
+    {label:"FIN",from:"B",to:"A",msg:"FIN+ACK, Seq=v",detail:"B terminó sus datos. Envía FIN. Estado B: LAST_ACK. A: TIME_WAIT.",color:"#10b981"},
+    {label:"ACK",from:"A",to:"B",msg:"ACK, Ack=v+1",detail:"A confirma FIN de B. Espera 2×MSL (Maximum Segment Lifetime ≈ 60s) en TIME_WAIT antes de cerrar definitivamente.",color:"#8b5cf6"},
+  ];
+  const s=finSteps[step];
+  return(
+    <div>
+      <h1>Cierre de Conexión TCP</h1>
+      <p className="subtitle">Four-Way FIN Handshake — cierre ordenado bidireccional</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>4-way FIN handshake</h3>
+            <div style={{display:"flex",gap:8,marginBottom:14}}>
+              {finSteps.map((s,i)=>(
+                <button key={i} onClick={()=>setStep(i)}
+                  style={{flex:1,background:step===i?s.color:"#0a1020",border:`1px solid ${s.color}`,color:step===i?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 4px",cursor:"pointer",fontWeight:700,fontSize:12}}>
+                  {i+1}. {s.label}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${s.color}`,borderRadius:8,padding:14}}>
+              <div style={{color:"#7c8db8",fontSize:12,marginBottom:4}}>{s.from} → {s.to}</div>
+              <div style={{color:s.color,fontWeight:700,fontFamily:"monospace",fontSize:13,marginBottom:8}}>{s.msg}</div>
+              <div style={{color:"#e8f0fe",fontSize:13}}>{s.detail}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Diagrama 4-way FIN</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}>      A                  B</div>
+              <div>      │ ──FIN+ACK(u)──► │ <span style={{color:"#3b82f6"}}>CLOSE_WAIT</span></div>
+              <div><span style={{color:"#f97316"}}>FIN_W2</span>│ ◄──ACK(u+1)──── │</div>
+              <div>      │ ◄──FIN+ACK(v)── │ <span style={{color:"#10b981"}}>LAST_ACK</span></div>
+              <div><span style={{color:"#8b5cf6"}}>TIME_W│</span> ──ACK(v+1)────► │ CLOSED</div>
+              <div style={{marginTop:4}}>      │   (espera 2MSL)   │</div>
+              <div>CLOSED│                   │</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Estados TCP completos</h3>
+            <table><tbody>
+              <tr><th>Estado</th><th>Descripción</th></tr>
+              <tr><td style={{color:"#7c8db8"}}>CLOSED</td><td>Sin conexión</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>LISTEN</td><td>Esperando conexión</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>SYN_SENT</td><td>SYN enviado, esperando SYN-ACK</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>SYN_RCVD</td><td>SYN recibido, enviado SYN-ACK</td></tr>
+              <tr><td style={{color:"#10b981",fontWeight:700}}>ESTABLISHED</td><td>Conexión activa</td></tr>
+              <tr><td style={{color:"#f97316"}}>FIN_WAIT_1</td><td>Envió FIN, espera ACK</td></tr>
+              <tr><td style={{color:"#f97316"}}>FIN_WAIT_2</td><td>Recibió ACK de FIN, espera FIN del otro</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>CLOSE_WAIT</td><td>Recibió FIN, la app debe cerrar</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>LAST_ACK</td><td>Envió FIN, espera ACK final</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>TIME_WAIT</td><td>Espera 2×MSL (60-120s)</td></tr>
+              <tr><td style={{color:"#10b981"}}>CLOSING</td><td>Simultaneous close (raro)</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>RST — Cierre abrupto</h3>
+            <div style={{background:"#0a1020",borderLeft:"3px solid #ef4444",borderRadius:"0 6px 6px 0",padding:10,fontSize:12}}>
+              <div style={{color:"#ef4444",fontWeight:600,marginBottom:4}}>RST descarta la conexión inmediatamente</div>
+              <div style={{color:"#e8f0fe",lineHeight:1.7}}>
+                <div>• Conexión a puerto cerrado → RST</div>
+                <div>• Aplicación usa SO_LINGER(0) → RST</div>
+                <div>• Firewall rechaza → RST</div>
+                <div>• Segmento fuera de ventana → RST</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>6.3 TCP Conexión</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

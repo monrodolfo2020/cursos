@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 6.4 – Control de Flujo TCP</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Ventana deslizante TCP"},{id:2,label:"Ventana cero y persist"},{id:3,label:"Opciones de ventana"}];
+
+function Scene1(){
+  const [wnd,setWnd]=useState(4);
+  const [sent,setSent]=useState(2);
+  const total=16;
+  const segments=Array.from({length:total},(_,i)=>i+1);
+  const getColor=(i)=>{
+    const s=i+1;
+    if(s<=sent) return "#3a4a72"; // acked
+    if(s<=sent+wnd) return "#3b82f6"; // in window (can send)
+    return "#0a1020"; // beyond window
+  };
+  const getLabel=(i)=>{
+    const s=i+1;
+    if(s<=sent) return "ACK'd";
+    if(s<=sent+wnd) return "Ventana";
+    return "Futuro";
+  };
+  return(
+    <div>
+      <h1>Control de Flujo — Ventana Deslizante</h1>
+      <p className="subtitle">El receptor controla la velocidad del emisor mediante el campo Window Size</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Visualización interactiva de la ventana</h3>
+            <div style={{marginBottom:12}}>
+              <div style={{display:"flex",gap:4,marginBottom:10}}>
+                {segments.map((s,i)=>(
+                  <div key={s} style={{flex:1,background:getColor(i),border:"1px solid #1e3a5f",borderRadius:4,height:40,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontSize:10}}>
+                    <div style={{color:i<sent?"#7c8db8":i<sent+wnd?"#e8f0fe":"#3a4a72",fontWeight:600}}>{s}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:12,fontSize:11,marginBottom:8}}>
+                <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:12,height:12,background:"#3a4a72",display:"inline-block",borderRadius:2}}></span> Confirmados</span>
+                <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:12,height:12,background:"#3b82f6",display:"inline-block",borderRadius:2}}></span> En ventana</span>
+                <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:12,height:12,background:"#0a1020",border:"1px solid #1e3a5f",display:"inline-block",borderRadius:2}}></span> Fuera de ventana</span>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:16,alignItems:"center",marginBottom:12}}>
+              <div>
+                <div style={{color:"#7c8db8",fontSize:11,marginBottom:4}}>Ventana (rwnd): {wnd}</div>
+                <input type="range" min={1} max={8} value={wnd} onChange={e=>setWnd(+e.target.value)} style={{width:120}}/>
+              </div>
+              <div>
+                <div style={{color:"#7c8db8",fontSize:11,marginBottom:4}}>Confirmados (sent): {sent}</div>
+                <input type="range" min={0} max={8} value={sent} onChange={e=>setSent(+e.target.value)} style={{width:120}}/>
+              </div>
+            </div>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10,fontSize:12}}>
+              <div style={{color:"#3b82f6",fontWeight:600,marginBottom:4}}>Estado actual:</div>
+              <div style={{color:"#e8f0fe"}}>SND.UNA = {sent+1} (próximo no confirmado)</div>
+              <div style={{color:"#e8f0fe"}}>SND.WND = {wnd} (ventana del receptor)</div>
+              <div style={{color:"#e8f0fe"}}>Puede enviar hasta seg. {sent+wnd}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Buffer del receptor</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}>Buffer del receptor (tamaño = RcvBuffer)</div>
+              <div>┌──────────────────────────────────┐</div>
+              <div>│<span style={{color:"#10b981"}}> Datos procesados </span>│<span style={{color:"#3b82f6"}}> Datos recibidos  </span>│</div>
+              <div>│<span style={{color:"#10b981"}}> (app ya leyó)    </span>│<span style={{color:"#3b82f6"}}> (pendientes app) </span>│</div>
+              <div>└──────────────────────────────────┘</div>
+              <div style={{marginTop:6}}>rwnd = RcvBuffer - <span style={{color:"#3b82f6"}}>[datos pendientes app]</span></div>
+              <div style={{color:"#f97316"}}>Si app lee lento → rwnd disminuye</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Variables de ventana TCP</h3>
+            <table><tbody>
+              <tr><th>Variable</th><th>Descripción</th></tr>
+              <tr><td style={{color:"#3b82f6",fontFamily:"monospace"}}>SND.UNA</td><td>Oldest unacknowledged byte</td></tr>
+              <tr><td style={{color:"#3b82f6",fontFamily:"monospace"}}>SND.NXT</td><td>Próximo byte a enviar</td></tr>
+              <tr><td style={{color:"#3b82f6",fontFamily:"monospace"}}>SND.WND</td><td>Tamaño de ventana del receptor</td></tr>
+              <tr><td style={{color:"#10b981",fontFamily:"monospace"}}>RCV.NXT</td><td>Próximo byte esperado</td></tr>
+              <tr><td style={{color:"#10b981",fontFamily:"monospace"}}>RCV.WND</td><td>Espacio disponible en buffer receptor</td></tr>
+              <tr><td style={{color:"#f97316",fontFamily:"monospace"}}>cwnd</td><td>Congestion window (control de congestión)</td></tr>
+            </tbody></table>
+            <div style={{marginTop:10,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+              <div style={{color:"#3b82f6",fontWeight:600,fontSize:12,marginBottom:4}}>Efectivo enviable:</div>
+              <div style={{fontFamily:"monospace",fontSize:13,color:"#e8f0fe"}}>min(SND.WND, cwnd) - (SND.NXT - SND.UNA)</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Cómo fluye la ventana</h3>
+            <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.8}}>
+              <div style={{marginBottom:8}}>Cada segmento ACK lleva el campo <strong style={{color:"#3b82f6"}}>Window</strong> actualizado por el receptor.</div>
+              <div>Cuando el receptor ACKa datos y la app los consume:</div>
+              <div style={{paddingLeft:12}}>→ RCV buffer libera espacio</div>
+              <div style={{paddingLeft:12}}>→ Window crece en el siguiente ACK</div>
+              <div style={{paddingLeft:12}}>→ El emisor puede enviar más bytes</div>
+              <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>Este mecanismo previene que el emisor desborde el buffer del receptor (flow control), independiente de la congestión de la red.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [phase,setPhase]=useState(0);
+  const zeroWndPhases=[
+    {label:"rwnd=0",desc:"El receptor anuncia Window=0. El emisor debe DEJAR de enviar datos.",color:"#ef4444"},
+    {label:"Persist Timer",desc:"El emisor inicia el Persist Timer. Periódicamente envía Window Probe de 1 byte para provocar un ACK del receptor.",color:"#f97316"},
+    {label:"rwnd>0",desc:"Cuando la app del receptor consume datos, el buffer libera espacio. El receptor envía ACK con Window>0.",color:"#10b981"},
+    {label:"Reanuda",desc:"El emisor recibe el Window Update y reanuda la transmisión normal.",color:"#3b82f6"},
+  ];
+  return(
+    <div>
+      <h1>Ventana Cero y Persist Timer</h1>
+      <p className="subtitle">Manejo cuando el receptor no puede aceptar más datos</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Secuencia de ventana cero</h3>
+            <div style={{display:"flex",gap:8,marginBottom:14}}>
+              {zeroWndPhases.map((p,i)=>(
+                <button key={i} onClick={()=>setPhase(i)}
+                  style={{flex:1,background:phase===i?p.color:"#0a1020",border:`1px solid ${p.color}`,color:phase===i?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 4px",cursor:"pointer",fontWeight:700,fontSize:11}}>
+                  {i+1}. {p.label}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`2px solid ${zeroWndPhases[phase].color}`,borderRadius:8,padding:14,minHeight:80}}>
+              <div style={{color:zeroWndPhases[phase].color,fontWeight:700,fontSize:14,marginBottom:8}}>{zeroWndPhases[phase].label}</div>
+              <div style={{color:"#e8f0fe",fontSize:13}}>{zeroWndPhases[phase].desc}</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Problema del Silly Window Syndrome</h3>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,marginBottom:10}}>
+              <div style={{color:"#f97316",fontWeight:600,fontSize:13,marginBottom:6}}>Síntoma</div>
+              <div style={{color:"#e8f0fe",fontSize:12}}>El receptor anuncia ventanas pequeñas (1-2 bytes). El emisor envía segmentos pequeñísimos con 20+20 bytes de cabeceras para 1 byte de datos → overhead 97%.</div>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+                <div style={{color:"#3b82f6",fontWeight:600,fontSize:12,marginBottom:4}}>Clark's solution (receptor)</div>
+                <div style={{color:"#e8f0fe",fontSize:12}}>No anunciar ventana hasta que haya al menos min(MSS, RcvBuffer/2) libre</div>
+              </div>
+              <div style={{flex:1,background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:10}}>
+                <div style={{color:"#f97316",fontWeight:600,fontSize:12,marginBottom:4}}>Nagle's algorithm (emisor)</div>
+                <div style={{color:"#e8f0fe",fontSize:12}}>Acumular datos pequeños; enviar solo cuando haya MSS o todos los anteriores estén ACK'd</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Algoritmo de Nagle</h3>
+            <div className="mono">
+              <div style={{color:"#7c8db8"}}>if datos_para_enviar:</div>
+              <div>  if len(datos) &gt;= MSS:</div>
+              <div>    <span style={{color:"#10b981"}}>enviar_segmento()</span></div>
+              <div>  elif no_hay_datos_sin_ack:</div>
+              <div>    <span style={{color:"#10b981"}}>enviar_segmento()</span></div>
+              <div>  else:</div>
+              <div>    <span style={{color:"#f97316"}}>esperar_ack_o_mas_datos()</span></div>
+            </div>
+            <div style={{marginTop:10,background:"#0a1020",borderLeft:"3px solid #ef4444",borderRadius:"0 6px 6px 0",padding:10,fontSize:12}}>
+              <div style={{color:"#ef4444",fontWeight:600}}>Desactivar Nagle (TCP_NODELAY)</div>
+              <div style={{color:"#e8f0fe",marginTop:4}}>En aplicaciones interactivas como SSH o gaming, Nagle añade latencia. Se desactiva con TCP_NODELAY socket option.</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Timers TCP relacionados</h3>
+            <table><tbody>
+              <tr><th>Timer</th><th>Propósito</th><th>Valor típico</th></tr>
+              <tr><td style={{color:"#3b82f6"}}>Retransmission</td><td>Reenviar si no hay ACK (RTO)</td><td>~1s (adaptativo)</td></tr>
+              <tr><td style={{color:"#f97316"}}>Persist</td><td>Sondear receptor con rwnd=0</td><td>5–60s exp. backoff</td></tr>
+              <tr><td style={{color:"#10b981"}}>Keepalive</td><td>Detectar conexiones muertas</td><td>2h (por defecto)</td></tr>
+              <tr><td style={{color:"#8b5cf6"}}>TIME_WAIT</td><td>Tras FIN, evitar paquetes tardíos</td><td>2×MSL (~60-120s)</td></tr>
+              <tr><td style={{color:"#7c8db8"}}>FIN_WAIT_2</td><td>Esperar FIN del peer</td><td>Varía por OS</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  return(
+    <div>
+      <h1>Opciones de Ventana TCP</h1>
+      <p className="subtitle">Window Scale y SACK para maximizar el rendimiento en redes de alta velocidad</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Window Scale (RFC 1323)</h3>
+            <div style={{background:"#0a1020",border:"1px solid #3b82f6",borderRadius:8,padding:14,marginBottom:12}}>
+              <div style={{color:"#3b82f6",fontWeight:700,fontSize:13,marginBottom:8}}>Problema: 16 bits = máx 65535 bytes</div>
+              <div style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7}}>
+                <div>En una red 1 Gbps con RTT 100ms:</div>
+                <div style={{fontFamily:"monospace",marginTop:4,color:"#10b981"}}>BDP = 1Gbps × 0.1s = 12.5 MB</div>
+                <div style={{marginTop:4}}>Con Window=65535 bytes solo se puede usar</div>
+                <div style={{color:"#ef4444"}}>65535 / 12,500,000 = 0.5% del enlace!</div>
+              </div>
+            </div>
+            <div style={{background:"#0a1020",border:"1px solid #10b981",borderRadius:8,padding:14}}>
+              <div style={{color:"#10b981",fontWeight:700,fontSize:13,marginBottom:8}}>Solución: Window Scale Factor</div>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div>Negociado en SYN/SYN-ACK</div>
+                <div style={{fontFamily:"monospace",marginTop:4}}>Ventana real = Window × 2^(scale_factor)</div>
+                <div style={{marginTop:4,color:"#7c8db8"}}>Scale factor 0–14. Con factor 14:</div>
+                <div style={{color:"#10b981",fontFamily:"monospace"}}>65535 × 2^14 = ~1 GB</div>
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Bandwidth-Delay Product (BDP)</h3>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,fontSize:13,lineHeight:1.8}}>
+              <div style={{fontFamily:"monospace"}}>BDP = Ancho de banda × RTT</div>
+              <div style={{marginTop:8}}>
+                <div>• 100Mbps × 20ms = <span style={{color:"#3b82f6"}}>250KB</span></div>
+                <div>• 1Gbps × 50ms = <span style={{color:"#f97316"}}>6.25MB</span></div>
+                <div>• 10Gbps × 100ms = <span style={{color:"#ef4444"}}>125MB</span></div>
+              </div>
+              <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>La ventana de TCP debe ser ≥ BDP para saturar el enlace sin congestion</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>SACK — Selective Acknowledgment (RFC 2018)</h3>
+            <div style={{background:"#0a1020",border:"1px solid #f97316",borderRadius:8,padding:14,marginBottom:12}}>
+              <div style={{color:"#f97316",fontWeight:700,fontSize:13,marginBottom:8}}>Problema con ACK acumulativo</div>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div>Si se pierden segmentos 3 y 5:</div>
+                <div style={{fontFamily:"monospace",marginTop:4}}>
+                  <div>Recibidos: 1,2,<span style={{color:"#ef4444"}}>X</span>,4,<span style={{color:"#ef4444"}}>X</span>,6,7,8</div>
+                  <div>ACK normal: solo confirma hasta 2</div>
+                  <div style={{color:"#ef4444"}}>Retransmite 3,4,5,6,7,8 (innecesario)</div>
+                </div>
+              </div>
+            </div>
+            <div style={{background:"#0a1020",border:"1px solid #10b981",borderRadius:8,padding:14}}>
+              <div style={{color:"#10b981",fontWeight:700,fontSize:13,marginBottom:8}}>SACK — bloques recibidos</div>
+              <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+                <div style={{fontFamily:"monospace"}}>
+                  <div>ACK=3, SACK=[4-4],[6-8]</div>
+                  <div style={{color:"#10b981",marginTop:4}}>Solo retransmite 3 y 5</div>
+                </div>
+                <div style={{marginTop:8,color:"#7c8db8",fontSize:12}}>SACK permite identificar exactamente qué se perdió y retransmitir solo eso.</div>
+              </div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Timestamps TCP (RFC 1323)</h3>
+            <div style={{fontSize:13,color:"#e8f0fe",lineHeight:1.7}}>
+              <div style={{marginBottom:8}}><strong style={{color:"#8b5cf6"}}>TSval:</strong> Timestamp del emisor al enviar</div>
+              <div style={{marginBottom:8}}><strong style={{color:"#8b5cf6"}}>TSecr:</strong> Eco del último TSval recibido</div>
+              <div style={{marginBottom:8}}>RTT preciso = tiempo_actual - TSecr</div>
+              <div style={{padding:8,background:"#0a1020",borderRadius:4}}>
+                <div style={{color:"#f97316",fontWeight:600,marginBottom:4}}>PAWS — Protection Against Wrapped Sequence</div>
+                <div style={{color:"#e8f0fe",fontSize:12}}>Timestamps permiten descartar paquetes tardíos de conexiones anteriores que tendrían sequence numbers válidos (wraparound en 4GB a alta velocidad)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>6.4 Control Flujo</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

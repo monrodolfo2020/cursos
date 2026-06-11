@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 6.1 – Servicio de Transporte y Sockets</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+.primitive{background:#0a1020;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;padding:9px 12px;margin-bottom:7px;font-family:monospace;font-size:12px}
+.primitive .name{color:#3b82f6;font-weight:700}
+.primitive .desc{color:#7c8db8;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Servicio de transporte"},{id:2,label:"Primitivas de socket"},{id:3,label:"Direccionamiento y puertos"}];
+
+function Scene1(){
+  const [sel,setSel]=useState("conn");
+  const services={
+    conn:{label:"Orientado a conexión (TCP)",color:"#3b82f6",pts:[
+      "Entrega garantizada y en orden","Control de flujo y congestión","Establecimiento de conexión (3-way handshake)","Cierre ordenado (4-way FIN)","Usado por HTTP, FTP, SSH, SMTP"
+    ]},
+    conn_less:{label:"Sin conexión (UDP)",color:"#f97316",pts:[
+      "Entrega no garantizada, sin orden","Sin control de flujo ni congestión","Sin establecimiento previo","Mínimo overhead (8 bytes header)","Usado por DNS, VoIP, gaming, streaming"
+    ]},
+  };
+  const s=services[sel];
+  const comparison=[
+    {a:"Confiabilidad",tcp:"Garantizada (ACK)",udp:"No garantizada"},
+    {a:"Orden",tcp:"En orden",udp:"No garantizado"},
+    {a:"Conexión",tcp:"Requerida (3WHS)",udp:"Sin conexión"},
+    {a:"Header",tcp:"20–60 bytes",udp:"8 bytes"},
+    {a:"Velocidad",tcp:"Más lento",udp:"Más rápido"},
+    {a:"Control flujo",tcp:"Sí (ventana)",udp:"No"},
+    {a:"Control congest.",tcp:"Sí (AIMD)",udp:"No"},
+    {a:"Uso",tcp:"HTTP, SSH, FTP","udp":"DNS, VoIP, video"},
+  ];
+  return(
+    <div>
+      <h1>Servicio de Transporte</h1>
+      <p className="subtitle">La capa de transporte proporciona comunicación lógica entre procesos en diferentes hosts</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Tipos de servicio de transporte</h3>
+            <div style={{display:"flex",gap:10,marginBottom:14}}>
+              {Object.entries(services).map(([k,v])=>(
+                <button key={k} onClick={()=>setSel(k)}
+                  style={{flex:1,background:sel===k?"#1e3a5f":"#0a1020",border:`2px solid ${sel===k?v.color:"#1e3a5f"}`,color:sel===k?v.color:"#7c8db8",borderRadius:8,padding:"8px 12px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <div style={{background:"#0a1020",border:`1px solid ${s.color}`,borderRadius:8,padding:14}}>
+              {s.pts.map(p=>(
+                <div key={p} style={{display:"flex",gap:8,marginBottom:6,fontSize:13}}>
+                  <span style={{color:s.color}}>▸</span>
+                  <span style={{color:"#e8f0fe"}}>{p}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Posición en el modelo OSI/TCP-IP</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {[
+                {n:"Aplicación (HTTP, DNS, FTP...)",c:"#8b5cf6",dim:false},
+                {n:"Transporte (TCP / UDP) ← Módulo 6",c:"#3b82f6",dim:false,hi:true},
+                {n:"Red (IP, ICMP, OSPF...)",c:"#10b981",dim:false},
+                {n:"Enlace (Ethernet, WiFi...)",c:"#f97316",dim:false},
+              ].map(l=>(
+                <div key={l.n} style={{background:l.hi?"#1e3a5f":"#0a1020",border:`1px solid ${l.hi?"#3b82f6":"#1e3a5f"}`,borderRadius:6,padding:"8px 14px",textAlign:"center",color:l.c,fontSize:13,fontWeight:l.hi?700:400}}>
+                  {l.n}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>TCP vs UDP — Comparativa</h3>
+            <table><tbody>
+              <tr><th>Característica</th><th style={{color:"#3b82f6"}}>TCP</th><th style={{color:"#f97316"}}>UDP</th></tr>
+              {comparison.map(r=>(
+                <tr key={r.a}>
+                  <td style={{color:"#7c8db8",fontWeight:600}}>{r.a}</td>
+                  <td style={{color:"#e8f0fe",fontSize:12}}>{r.tcp}</td>
+                  <td style={{color:"#e8f0fe",fontSize:12}}>{r.udp}</td>
+                </tr>
+              ))}
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Multiplexado y demultiplexado</h3>
+            <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,fontSize:12,lineHeight:1.8}}>
+              <div style={{color:"#3b82f6",fontWeight:600,marginBottom:6}}>Multiplexado (Emisor)</div>
+              <div style={{color:"#e8f0fe"}}>Varios procesos → cada uno con su socket → capa de transporte combina en un flujo de red</div>
+              <div style={{color:"#3b82f6",fontWeight:600,margin:"8px 0 6px"}}>Demultiplexado (Receptor)</div>
+              <div style={{color:"#e8f0fe"}}>Segmento llega con <strong style={{color:"#f97316"}}>puerto destino</strong> → SO entrega al socket/proceso correcto</div>
+              <div style={{marginTop:8,padding:8,background:"#0f1628",borderRadius:4}}>
+                <div style={{color:"#7c8db8"}}>TCP demux: (src_IP, src_port, dst_IP, dst_port) — 4 tuplas</div>
+                <div style={{color:"#7c8db8"}}>UDP demux: solo (dst_IP, dst_port) — 2 tuplas</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [mode,setMode]=useState("tcp");
+  const tcpPrimitives=[
+    {name:"socket()",sig:"fd = socket(AF_INET, SOCK_STREAM, 0)",desc:"Crea un nuevo socket TCP; retorna file descriptor"},
+    {name:"bind()",sig:"bind(fd, &addr, sizeof(addr))",desc:"Asigna dirección IP y puerto local al socket"},
+    {name:"listen()",sig:"listen(fd, backlog)",desc:"Marca socket como pasivo; backlog = cola de conexiones pendientes"},
+    {name:"accept()",sig:"new_fd = accept(fd, &client, &len)",desc:"Extrae conexión de la cola; retorna nuevo socket para esa conexión"},
+    {name:"connect()",sig:"connect(fd, &server, sizeof(server))",desc:"Inicia 3-way handshake hacia el servidor"},
+    {name:"send()/recv()",sig:"send(fd, buf, len, flags)",desc:"Envía/recibe datos. TCP puede enviar en partes (stream)"},
+    {name:"close()",sig:"close(fd)",desc:"Cierra socket; TCP inicia 4-way FIN handshake"},
+  ];
+  const udpPrimitives=[
+    {name:"socket()",sig:"fd = socket(AF_INET, SOCK_DGRAM, 0)",desc:"Crea socket UDP; sin conexión"},
+    {name:"bind()",sig:"bind(fd, &addr, sizeof(addr))",desc:"Servidor vincula IP:puerto para recibir datagramas"},
+    {name:"sendto()",sig:"sendto(fd, buf, len, 0, &dest, sizeof(dest))",desc:"Envía datagrama UDP a destino específico"},
+    {name:"recvfrom()",sig:"recvfrom(fd, buf, len, 0, &src, &srclen)",desc:"Recibe datagrama; obtiene dirección del remitente"},
+    {name:"close()",sig:"close(fd)",desc:"Cierra socket UDP (no hay handshake de cierre)"},
+  ];
+  const prims=mode==="tcp"?tcpPrimitives:udpPrimitives;
+  return(
+    <div>
+      <h1>Primitivas de Socket</h1>
+      <p className="subtitle">Interfaz de programación para la capa de transporte (Berkeley Sockets API)</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        <button onClick={()=>setMode("tcp")} style={{background:mode==="tcp"?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:mode==="tcp"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>TCP</button>
+        <button onClick={()=>setMode("udp")} style={{background:mode==="udp"?"#f97316":"#0a1020",border:"1px solid #1e3a5f",color:mode==="udp"?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 20px",cursor:"pointer",fontWeight:600}}>UDP</button>
+      </div>
+      <div className="grid2">
+        <div>
+          {prims.map(p=>(
+            <div key={p.name} className="primitive">
+              <div className="name">{p.name}</div>
+              <div style={{color:mode==="tcp"?"#3b82f6":"#f97316",fontSize:11,marginTop:2}}>{p.sig}</div>
+              <div className="desc">{p.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div className="card">
+            <h3>Flujo de llamadas {mode==="tcp"?"TCP":"UDP"}</h3>
+            {mode==="tcp"?(
+              <div className="mono">
+                <div style={{color:"#7c8db8"}}>         Servidor          Cliente</div>
+                <div>socket() ────────────────  socket()</div>
+                <div>bind()                          │</div>
+                <div>listen()                        │</div>
+                <div>accept() ◄──── 3WHS ──── connect()</div>
+                <div>recv()   ◄──── data ──── send()</div>
+                <div>send()   ───── data ───► recv()</div>
+                <div>close()  ◄──── 4FIN ──── close()</div>
+              </div>
+            ):(
+              <div className="mono">
+                <div style={{color:"#7c8db8"}}>      Servidor        Cliente</div>
+                <div>socket()  ──────────── socket()</div>
+                <div>bind()         │            │</div>
+                <div>recvfrom() ◄── dgram ── sendto()</div>
+                <div>sendto()  ──── resp  ──► recvfrom()</div>
+                <div>close()                 close()</div>
+                <div style={{color:"#f97316",marginTop:8}}>Sin establecimiento de conexión</div>
+              </div>
+            )}
+          </div>
+          <div className="card">
+            <h3>Tipos de socket</h3>
+            <table><tbody>
+              <tr><th>Tipo</th><th>Protocolo</th><th>Uso</th></tr>
+              <tr><td style={{color:"#3b82f6",fontWeight:600}}>SOCK_STREAM</td><td>TCP</td><td>HTTP, SSH, FTP</td></tr>
+              <tr><td style={{color:"#f97316",fontWeight:600}}>SOCK_DGRAM</td><td>UDP</td><td>DNS, VoIP</td></tr>
+              <tr><td style={{color:"#10b981",fontWeight:600}}>SOCK_RAW</td><td>IP directo</td><td>ping, traceroute</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const portRanges=[
+    {r:"0–1023",name:"Well-Known Ports",color:"#3b82f6",desc:"Asignados por IANA. Requieren privilegios root para abrir."},
+    {r:"1024–49151",name:"Registered Ports",color:"#f97316",desc:"Asignados a aplicaciones específicas (sin privilegios root)."},
+    {r:"49152–65535",name:"Dynamic/Ephemeral",color:"#10b981",desc:"Usados por el OS para puertos de cliente en conexiones salientes."},
+  ];
+  const wellKnown=[
+    {p:20,s:"FTP Data"},{p:21,s:"FTP Control"},{p:22,s:"SSH"},{p:23,s:"Telnet"},
+    {p:25,s:"SMTP"},{p:53,s:"DNS"},{p:67,s:"DHCP Server"},{p:68,s:"DHCP Client"},
+    {p:80,s:"HTTP"},{p:110,s:"POP3"},{p:143,s:"IMAP"},{p:179,s:"BGP"},
+    {p:443,s:"HTTPS"},{p:993,s:"IMAPS"},{p:995,s:"POP3S"},{p:3389,s:"RDP"},
+  ];
+  return(
+    <div>
+      <h1>Direccionamiento y Puertos</h1>
+      <p className="subtitle">Identificación de procesos mediante el par (dirección IP, número de puerto)</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Rangos de puertos (RFC 6335)</h3>
+            {portRanges.map(r=>(
+              <div key={r.r} style={{background:"#0a1020",border:`1px solid ${r.color}`,borderRadius:8,padding:14,marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                  <span style={{color:r.color,fontWeight:700,fontFamily:"monospace",fontSize:14}}>{r.r}</span>
+                  <span style={{color:"#e8f0fe",fontWeight:600,fontSize:13}}>{r.name}</span>
+                </div>
+                <div style={{color:"#7c8db8",fontSize:12}}>{r.desc}</div>
+              </div>
+            ))}
+            <div className="card" style={{marginTop:0,marginBottom:0}}>
+              <h3>Socket = IP + Puerto</h3>
+              <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:12,fontFamily:"monospace",fontSize:13}}>
+                <div>Socket cliente: <span style={{color:"#f97316"}}>192.168.1.5</span>:<span style={{color:"#10b981"}}>52341</span></div>
+                <div>Socket servidor: <span style={{color:"#f97316"}}>93.184.216.34</span>:<span style={{color:"#3b82f6"}}>443</span></div>
+                <div style={{marginTop:8,color:"#7c8db8",fontSize:11}}>Par de sockets identifica la conexión TCP de forma única</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Puertos Well-Known más usados</h3>
+            <div style={{display:"grid",gridTemplateColumns:"50px 1fr 50px 1fr",gap:4}}>
+              {wellKnown.map(p=>(
+                <React.Fragment key={p.p}>
+                  <div style={{background:"#1e3a5f",borderRadius:4,padding:"4px 8px",textAlign:"center",color:"#3b82f6",fontWeight:700,fontSize:12}}>{p.p}</div>
+                  <div style={{background:"#0a1020",borderRadius:4,padding:"4px 10px",color:"#e8f0fe",fontSize:12,display:"flex",alignItems:"center"}}>{p.s}</div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>6.1 Transporte</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

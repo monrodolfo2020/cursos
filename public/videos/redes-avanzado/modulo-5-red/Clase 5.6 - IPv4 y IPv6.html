@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 5.6 — IPv4 e IPv6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">IPv4: Cabecera y Direccionamiento</div>
+    <div className="sec-sub">El protocolo de Internet que conecta todo desde 1981</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Cabecera IPv4 (20–60 bytes)</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`0       4       8      16      24      32\n├─ Ver ─┤─ IHL ─┤── ToS/DSCP ──┤── Total Length ──┤\n├───────────── ID ──────┤Flags┤── Fragment Offset ──┤\n├─── TTL ───┤─ Protocol ─┤──── Header Checksum ────┤\n├────────────────── Source IP Address ─────────────┤\n├────────────────── Destination IP Address ─────────┤\n├──────────────── Options (si IHL > 5) ─────────────┤`}
+          </div>
+          {[
+            {f:'Version',v:'4 (IPv4)'},
+            {f:'IHL',v:'Longitud header en palabras de 32 bits (mín=5→20 bytes)'},
+            {f:'ToS/DSCP',v:'8 bits para QoS (DSCP=6b + ECN=2b)'},
+            {f:'Total Length',v:'Longitud total del datagrama (máx 65535 bytes)'},
+            {f:'ID/Flags/Offset',v:'Para fragmentación y reensamblado'},
+            {f:'TTL',v:'Time To Live: decrementado por cada router (evita loops)'},
+            {f:'Protocol',v:'6=TCP, 17=UDP, 1=ICMP, 89=OSPF, 47=GRE'},
+            {f:'Checksum',v:'Checksum del header solo (no datos). Recalculado en cada hop.'},
+          ].map(r=>(
+            <div key={r.f} style={{display:'flex',gap:8,padding:'3px 0',borderBottom:'1px solid rgba(59,130,246,0.06)',fontSize:11}}>
+              <span style={{color:'#f97316',fontFamily:'IBM Plex Mono,monospace',minWidth:100,fontSize:10}}>{r.f}</span>
+              <span style={{color:'#3a4a72',fontSize:10}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>Clases de direcciones IPv4</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8,marginBottom:8}}>
+            {`Clase A: 0xxxxxxx.host.host.host\n  0.0.0.0 – 127.255.255.255 (/8)\n  2^24 hosts/red. Solo 128 redes.\n\nClase B: 10xxxxxx.red.host.host\n  128.0.0.0 – 191.255.255.255 (/16)\n  65534 hosts/red. 16384 redes.\n\nClase C: 110xxxxx.red.red.host\n  192.0.0.0 – 223.255.255.255 (/24)\n  254 hosts/red. 2M redes.\n\nClase D: 1110xxxx — Multicast\nClase E: 1111xxxx — Reservada`}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8'}}>El sistema de clases fue reemplazado por CIDR (Classless Inter-Domain Routing) en 1993, que permite prefijos de cualquier longitud (/13, /22, etc.).</div>
+        </div>
+        <div className="card">
+          <div className="card-h">CIDR y subnetting</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8}}>
+            {`192.168.1.0/24 (Bloque CIDR)\n  Máscara: 255.255.255.0\n  Red:     192.168.1.0\n  Hosts:   192.168.1.1 – .254 (254 hosts)\n  Broadcast: 192.168.1.255\n\nSubnetting /26:\n  192.168.1.0/26:   .1–.62 (62 hosts)\n  192.168.1.64/26:  .65–.126\n  192.168.1.128/26: .129–.190\n  192.168.1.192/26: .193–.254`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">IPv6: El Futuro del Direccionamiento</div>
+    <div className="sec-sub">128 bits: espacio para 340 undecillones de direcciones</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{marginBottom:10}}>
+          <div className="card-h">Cabecera IPv6 — Simplificada (40 bytes fijos)</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8,marginBottom:8}}>
+            {`0         4      12     16        24       32\n├─ Ver=6 ─┤─Traffic Class─┤────Flow Label──────┤\n├──────────── Payload Length ─────┤─Next Hdr─┤Hop Limit┤\n├─────────────────── SRC IPv6 Address ────────────────┤\n│                                                     │\n├─────────────────── DST IPv6 Address ────────────────┤\n│                                                     │`}
+          </div>
+          {[
+            {f:'Version',v:'6'},
+            {f:'Traffic Class',v:'8 bits para DSCP/ECN (igual que IPv4 ToS)'},
+            {f:'Flow Label',v:'20 bits para identificar flujos QoS/MPLS-like'},
+            {f:'Payload Length',v:'Longitud después del header fijo (sin el header)'},
+            {f:'Next Header',v:'Protocolo superior o tipo de extension header'},
+            {f:'Hop Limit',v:'TTL equivalente. Sin checksum en header!'},
+          ].map(r=>(
+            <div key={r.f} style={{display:'flex',gap:8,padding:'3px 0',borderBottom:'1px solid rgba(59,130,246,0.06)',fontSize:11}}>
+              <span style={{color:'#f97316',fontFamily:'IBM Plex Mono,monospace',minWidth:120,fontSize:10}}>{r.f}</span>
+              <span style={{color:'#3a4a72',fontSize:10}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Direccionamiento IPv6</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#10b981',lineHeight:1.8,marginBottom:8}}>
+            {`128 bits = 2^128 = 3.4 × 10^38 direcciones\n\nNotación: 8 grupos de 4 hex separados por :\n2001:0db8:85a3:0000:0000:8a2e:0370:7334\n  = 2001:db8:85a3::8a2e:370:7334 (comprimido)\n\nTipos:\n  ::1         Loopback\n  fe80::/10   Link-local (SLAAC)\n  fc00::/7    Unique local (≈RFC1918)\n  ff00::/8    Multicast\n  2000::/3    Global unicast (internet)`}
+          </div>
+          <div style={{fontSize:11,color:'#7c8db8'}}>IPv6 elimina el broadcast. Solo multicast y anycast. Las organizaciones reciben típicamente un /48 (65536 subredes /64 cada una con 2^64 hosts).</div>
+        </div>
+        <div className="card">
+          <div className="card-h">Mejoras de IPv6 sobre IPv4</div>
+          {[
+            {m:'Espacio de direcciones',v:'128 bits vs 32 bits → NAT innecesario'},
+            {m:'Autoconfiguración (SLAAC)',v:'Dispositivos generan su propia IP sin DHCP'},
+            {m:'Headers simplificados',v:'Fijos 40 bytes, sin fragmentación en routers'},
+            {m:'Extension headers',v:'Routing, fragmentación, seguridad (IPsec nativo)'},
+            {m:'Sin checksum de header',v:'Eficiencia: el error lo detecta capa superior'},
+            {m:'Multicast mejorado',v:'NDP reemplaza ARP: Neighbor Discovery Protocol'},
+            {m:'IPsec obligatorio',v:'Soporte nativo, aunque no siempre obligatorio usar'},
+          ].map(r=>(
+            <div key={r.m} style={{display:'flex',justifyContent:'space-between',padding:'4px 0',borderBottom:'1px solid rgba(59,130,246,0.06)',fontSize:11}}>
+              <span style={{color:'#7c8db8'}}>{r.m}</span>
+              <span style={{color:'#10b981',fontSize:10,fontFamily:'IBM Plex Mono,monospace'}}>{r.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  return(<div>
+    <div className="sec-title">NAT y Coexistencia IPv4/IPv6</div>
+    <div className="sec-sub">La transición que lleva 25 años y no termina</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div>
+        <div className="card" style={{borderColor:'rgba(249,115,22,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#f97316'}}>NAT — Network Address Translation</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.7,marginBottom:8}}>NAT extiende la vida de IPv4 al permitir que múltiples dispositivos compartan una IP pública. El router NAT mantiene una tabla de traducciones: (IP privada, puerto privado) ↔ (IP pública, puerto público).</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#f97316',lineHeight:1.8}}>
+            {`Red interna (RFC 1918):\n  192.168.1.10:54321 → google.com:443\n  192.168.1.11:54322 → google.com:443\n\nNAT table:\n  192.168.1.10:54321 ↔ 203.0.113.1:10001\n  192.168.1.11:54322 ↔ 203.0.113.1:10002\n\nSolo 1 IP pública para ambos!\n\nRFCs 1918 (privadas):\n  10.0.0.0/8\n  172.16.0.0/12\n  192.168.0.0/16`}
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Problemas de NAT</div>
+          {[
+            {p:'Viola arquitectura E2E',d:'Internet fue diseñada extremo a extremo. NAT hace algunos hosts no alcanzables directamente (necesita port forwarding).'},
+            {p:'Rompe aplicaciones P2P',d:'Dos clientes detrás de NAT no pueden conectarse directamente sin STUN/TURN (ICE en WebRTC, VoIP).'},
+            {p:'Estado en la red',d:'El router NAT guarda estado — contrario al principio "dumb network". Si el NAT falla, todas las conexiones se pierden.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#ef4444',marginBottom:2}}>{r.p}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:'rgba(16,185,129,0.25)',marginBottom:10}}>
+          <div className="card-h" style={{color:'#10b981'}}>Mecanismos de transición IPv4→IPv6</div>
+          {[
+            {t:'Dual Stack',d:'El host tiene tanto IPv4 como IPv6. Se prefiere IPv6 si el destino lo soporta (Happy Eyeballs). La mayoría de sistemas actuales.'},
+            {t:'Tunneling (6in4, 6to4)',d:'Paquetes IPv6 encapsulados en IPv4 para cruzar la Internet IPv4. Protocolo 41. Túneles 6to4 automáticos (192.88.99.1).'},
+            {t:'NAT64 + DNS64',d:'El router traduce paquetes IPv6 a IPv4 para destinos que solo tienen IPv4. DNS64 genera registros AAAA sintéticos. Permite que hosts solo-IPv6 alcancen Internet IPv4.'},
+            {t:'464XLAT',d:'Usado en redes móviles (CLAT en el dispositivo + PLAT en la red). Permite IPv4 legacy apps en una red solo-IPv6.'},
+          ].map((r,i)=>(
+            <div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(59,130,246,0.07)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#10b981',marginBottom:3}}>{r.t}</div>
+              <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.4}}>{r.d}</div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-h">Estado del despliegue IPv6 (2024)</div>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:11,background:'#060a14',borderRadius:6,padding:'10px',color:'#3b82f6',lineHeight:1.8}}>
+            {`Google IPv6 adoption: ~45% global\nTop países: Bélgica ~70%, India ~70%\nEE.UU.: ~50%, Brasil: ~45%\n\nRIR (agotamiento IPv4):\nIANA: agotó en 2011\nAPNIC: 2011, RIPE NCC: 2019\n\n"IPv6 adoption" ≈ dual-stack predominantemente`}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'IPv4: cabecera y CIDR',C:Scene1},{id:2,label:'IPv6: mejoras y tipos',C:Scene2},{id:3,label:'NAT y transición',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 5.6 — IPv4 e IPv6: El Protocolo de Internet</div><div className="topbar-sub">Módulo 5 — La Capa de Red</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender la cabecera IPv4/v6, CIDR, NAT y los mecanismos de transición hacia IPv6.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 2.2 — Medios Guiados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+.tab-btn{padding:7px 14px;border:1px solid rgba(59,130,246,0.25);border-radius:6px;background:transparent;color:#3a4a72;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s;}
+.tab-btn.sel{background:rgba(59,130,246,0.12);border-color:#3b82f6;color:#3b82f6;font-weight:600;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+const MEDIOS={
+  utp:{
+    label:'Par Trenzado (UTP/STP)',color:'#f97316',
+    struct:'Dos conductores de cobre aislados, trenzados entre sí. El trenzado reduce la interferencia electromagnética (EMI) por cancelación de campo. Apantallado (STP) tiene pantalla adicional.',
+    cats:[
+      {cat:'Cat 3',vel:'10 Mbps',dist:'100 m',uso:'Telefonía analógica, Ethernet 10BASE-T'},
+      {cat:'Cat 5e',vel:'1 Gbps',dist:'100 m',uso:'Gigabit Ethernet 1000BASE-T — muy común'},
+      {cat:'Cat 6',vel:'10 Gbps',dist:'55 m (10G)',uso:'Redes empresariales modernas'},
+      {cat:'Cat 6A',vel:'10 Gbps',dist:'100 m',uso:'Data centers, instalaciones nuevas'},
+      {cat:'Cat 8',vel:'40 Gbps',dist:'30 m',uso:'Data centers de alta densidad'},
+    ],
+    pros:'Económico, flexible, fácil de instalar, ampliamente disponible, conectores RJ-45 estándar',
+    cons:'Susceptible a EMI a largas distancias, atenuación significativa, distancia máxima 100 m',
+  },
+  coax:{
+    label:'Cable Coaxial',color:'#8b5cf6',
+    struct:'Conductor central de cobre, dieléctrico (polietileno), pantalla metálica trenzada o foil, cubierta exterior. La pantalla coaxial (concéntrica) lo hace muy resistente a EMI externa y reduce irradiación.',
+    cats:[
+      {cat:'10BASE5 (thick)',vel:'10 Mbps',dist:'500 m',uso:'Ethernet original (obsoleto) — "el cable amarillo"'},
+      {cat:'10BASE2 (thin)',vel:'10 Mbps',dist:'185 m',uso:'Ethernet delgado, CCTV analógico'},
+      {cat:'RG-6',vel:'Hasta ~500 MHz',dist:'Cientos de m',uso:'Televisión por cable (CATV), antenas de TV'},
+      {cat:'RG-58',vel:'50Ω',dist:'185 m',uso:'LAN 10BASE2, radio amateur'},
+    ],
+    pros:'Buena inmunidad a EMI, mayor BW que par trenzado, usado en CATV y antenas',
+    cons:'Más caro y rígido que UTP, conector BNC de inserción específica, hoy reemplazado por fibra en troncales',
+  },
+  fibra:{
+    label:'Fibra Óptica',color:'#10b981',
+    struct:'Núcleo de vidrio o plástico de alta pureza (8-62.5 μm) rodeado de cladding de menor índice de refracción. La luz se propaga por reflexión interna total. Una cubierta protectora (buffer, jacket) completa la fibra.',
+    cats:[
+      {cat:'Monomodo (SMF)',vel:'100 Gbps+',dist:'80+ km sin amplificar',uso:'WAN, Internet backbone, telecomunicaciones'},
+      {cat:'Multimodo OM3',vel:'10 Gbps',dist:'300 m',uso:'Data centers, conexiones de campus'},
+      {cat:'Multimodo OM4',vel:'10 Gbps',dist:'550 m',uso:'Data centers modernos'},
+      {cat:'Multimodo OM5',vel:'100 Gbps',dist:'150 m',uso:'Centros de datos de alta velocidad (SWDM4)'},
+    ],
+    pros:'Inmune a EMI, sin interferencia entre fibras, muy baja atenuación (<0.2 dB/km), altísima capacidad, segura (no irradia)',
+    cons:'Frágil, conector y empalme especializados, costosa para distancias cortas, necesita convertidores ópticos',
+  },
+};
+
+function Scene1(){
+  const [sel,setSel]=useState('utp');
+  const m=MEDIOS[sel];
+  return(<div>
+    <div className="sec-title">Medios Guiados — Tipos y Características</div>
+    <div className="sec-sub">Los tres grandes tipos de cable para transmisión de datos</div>
+    <div style={{display:'flex',gap:8,marginBottom:14}}>
+      {Object.entries(MEDIOS).map(([k,v])=>(
+        <button key={k} className={`tab-btn${sel===k?' sel':''}`} onClick={()=>setSel(k)}>{v.label.split('(')[0].trim()}</button>
+      ))}
+    </div>
+    <div className="grid2">
+      <div>
+        <div className="card" style={{borderColor:m.color+'33'}}>
+          <div style={{fontSize:15,fontWeight:700,color:m.color,marginBottom:8}}>{m.label}</div>
+          <div className="card-h">Estructura</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#7c8db8',marginBottom:10}}>{m.struct}</p>
+          <div className="card-h">Ventajas vs. Limitaciones</div>
+          <div className="row"><span style={{color:'#10b981',flexShrink:0}}>✓</span><span style={{fontSize:12,color:'#7c8db8'}}>{m.pros}</span></div>
+          <div className="row"><span style={{color:'#f97316',flexShrink:0}}>✗</span><span style={{fontSize:12,color:'#7c8db8'}}>{m.cons}</span></div>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{borderColor:m.color+'33'}}>
+          <div className="card-h" style={{color:m.color}}>Categorías y velocidades</div>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+            <thead>
+              <tr style={{borderBottom:`1px solid ${m.color}44`}}>
+                {['Tipo/Cat','Velocidad','Distancia','Uso típico'].map((h,i)=>(
+                  <th key={i} style={{padding:'5px 8px',color:m.color,textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {m.cats.map((c,i)=>(
+                <tr key={i} style={{borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+                  <td style={{padding:'6px 8px',color:'#e8f0fe',fontFamily:'IBM Plex Mono,monospace',fontWeight:700}}>{c.cat}</td>
+                  <td style={{padding:'6px 8px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace'}}>{c.vel}</td>
+                  <td style={{padding:'6px 8px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace'}}>{c.dist}</td>
+                  <td style={{padding:'6px 8px',color:'#3a4a72',fontSize:10}}>{c.uso}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  return(<div>
+    <div className="sec-title">Fibra Óptica en Detalle</div>
+    <div className="sec-sub">El medio que mueve la Internet global</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Principio de propagación — Reflexión total interna</div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#7c8db8',marginBottom:8}}>
+            La luz viaja por el núcleo de fibra gracias al principio de reflexión total interna. Si el ángulo de incidencia supera el ángulo crítico (determinado por los índices de refracción del núcleo y cladding), la luz se refleja completamente hacia el interior del núcleo, sin pérdida hacia el exterior.
+          </p>
+          <div style={{background:'#060a14',borderRadius:8,padding:10,border:'1px solid rgba(16,185,129,0.15)'}}>
+            <svg viewBox="0 0 460 100" width="440" height="95" style={{display:'block',margin:'0 auto'}}>
+              {/* Fiber cross-section side view */}
+              <rect x={0} y={30} width={460} height={40} fill="rgba(16,185,129,0.08)" stroke="rgba(16,185,129,0.3)" strokeWidth={1} rx={2}/>
+              <rect x={0} y={38} width={460} height={24} fill="rgba(16,185,129,0.15)" rx={0}/>
+              <text x={10} y={27} fill="#10b981" fontSize={9} fontFamily="IBM Plex Mono,monospace">cladding (n₂ bajo)</text>
+              <text x={10} y={55} fill="#10b981" fontSize={9} fontFamily="IBM Plex Mono,monospace">núcleo (n₁ alto)</text>
+              <text x={10} y={78} fill="#10b981" fontSize={9} fontFamily="IBM Plex Mono,monospace">cladding (n₂ bajo)</text>
+              {/* Light ray bouncing */}
+              {[[0,50],[80,40],[160,60],[240,40],[320,60],[400,42],[460,50]].map(([x,y],i,a)=>{
+                if(i===0) return null;
+                const [px,py]=a[i-1];
+                return <line key={i} x1={px} y1={py} x2={x} y2={y} stroke="#f97316" strokeWidth={1.5}/>;
+              })}
+              <text x={200} y={90} textAnchor="middle" fill="#f97316" fontSize={9} fontFamily="IBM Plex Mono,monospace">→ propagación de luz por reflexión interna total</text>
+            </svg>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">Fuentes de luz y detectores</div>
+          {[
+            {d:'LED (Light Emitting Diode)',v:'Multimodo, hasta 10 Gbps, bajo costo, gran ángulo de emisión'},
+            {d:'Láser semiconductor (LD)',v:'Monomodo y multimodo, 100+ Gbps, haz estrecho, alto costo'},
+            {d:'VCSEL (Vertical-Cavity SE Laser)',v:'Multimodo, bajo costo, alta velocidad, data centers'},
+            {d:'Fotodiodo PIN',v:'Detector estándar, alta sensibilidad, bajo costo'},
+            {d:'APD (Avalanche Photodiode)',v:'Alta sensibilidad, larga distancia, mayor costo y complejidad'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#3b82f6',flexShrink:0}}>▸</span>
+              <div><span style={{fontSize:11,fontWeight:600,color:'#e8f0fe'}}>{r.d}: </span><span style={{fontSize:11,color:'#7c8db8'}}>{r.v}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Monomodo vs. Multimodo</div>
+          {[
+            {asp:'Diámetro núcleo',sm:'8-10 μm',mm:'50-62.5 μm'},
+            {asp:'Modos de propagación',sm:'1 (un ángulo)',mm:'Cientos (múltiples ángulos)'},
+            {asp:'Dispersión modal',sm:'Ninguna',mm:'Alta (limita distancia y velocidad)'},
+            {asp:'Fuente de luz',sm:'Láser',mm:'LED o VCSEL'},
+            {asp:'Distancia máx.',sm:'>80 km sin regen.',mm:'<2 km típico'},
+            {asp:'Velocidad máx.',sm:'>100 Gbps',mm:'10-100 Gbps (corta dist.)'},
+            {asp:'Costo',sm:'Alto',mm:'Menor'},
+            {asp:'Uso típico',sm:'WAN, backbone, metro',mm:'Data centers, edificios'},
+          ].map((r,i)=>(
+            <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,padding:'5px 0',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+              <span style={{fontSize:11,color:'#7c8db8'}}>{r.asp}</span>
+              <span style={{fontSize:11,color:'#10b981',fontFamily:'IBM Plex Mono,monospace'}}>{r.sm}</span>
+              <span style={{fontSize:11,color:'#8b5cf6',fontFamily:'IBM Plex Mono,monospace'}}>{r.mm}</span>
+            </div>
+          ))}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,padding:'5px 0',marginTop:4}}>
+            <span style={{fontSize:9,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace'}}>ASPECTO</span>
+            <span style={{fontSize:9,color:'#10b981',fontFamily:'IBM Plex Mono,monospace'}}>MONOMODO</span>
+            <span style={{fontSize:9,color:'#8b5cf6',fontFamily:'IBM Plex Mono,monospace'}}>MULTIMODO</span>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-h">WDM — Multiplexión por longitud de onda</div>
+          <p style={{fontSize:12,lineHeight:1.6,color:'#7c8db8'}}>
+            WDM (Wavelength Division Multiplexing) transmite múltiples señales ópticas simultáneamente en la misma fibra, cada una en una longitud de onda diferente (diferente color de luz). DWDM (Dense WDM) puede multiplexar 80-160 canales en una sola fibra monomodo, logrando capacidades de múltiples Tbps. Es la razón por la cual Internet backbone opera a capacidades astronómicas con las mismas fibras físicas instaladas hace décadas.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const comp=[
+    {m:'Par trenzado Cat 5e',bw:'1 Gbps / 100 m',costo:'$0.15/m',inst:'Muy fácil',emi:'Media',uso:'LAN de oficina, hogares'},
+    {m:'Par trenzado Cat 6A',bw:'10 Gbps / 100 m',costo:'$0.40/m',inst:'Fácil',emi:'Media-baja',uso:'LAN empresarial, nuevo cableado'},
+    {m:'Coaxial RG-6',bw:'~500 MHz (CATV)',costo:'$0.20/m',inst:'Moderada',emi:'Baja',uso:'CATV, antenas'},
+    {m:'Fibra MM OM4',bw:'10 Gbps / 550 m',costo:'$1.5/m',inst:'Especializada',emi:'Ninguna',uso:'Data centers, campus'},
+    {m:'Fibra SM G.652',bw:'100+ Gbps',costo:'$0.50/m (a escala)',inst:'Muy especializada',emi:'Ninguna',uso:'WAN, metro, backbone'},
+    {m:'Power over Ethernet',bw:'No aplica',costo:'No aplica',inst:'Igual que UTP',emi:'Media',uso:'Alimentar APs, cámaras IP, teléfonos VoIP'},
+  ];
+  return(<div>
+    <div className="sec-title">Comparativa Final y Cableado Estructurado</div>
+    <div className="sec-sub">¿Cuándo usar cada medio? EIA/TIA-568 cableado estructurado</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11,marginBottom:14}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Medio','Velocidad / Distancia','Costo aprox.','Instalación','Inmunidad EMI','Uso principal'].map((h,i)=>(
+            <th key={i} style={{padding:'7px 10px',color:'#3b82f6',textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9,letterSpacing:'.06em'}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {comp.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+            <td style={{padding:'7px 10px',color:'#e8f0fe',fontWeight:600}}>{r.m}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.bw}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{r.costo}</td>
+            <td style={{padding:'7px 10px',color:'#7c8db8'}}>{r.inst}</td>
+            <td style={{padding:'7px 10px',color:r.emi==='Ninguna'?'#10b981':r.emi.includes('baja')||r.emi==='Baja'?'#3b82f6':'#f97316'}}>{r.emi}</td>
+            <td style={{padding:'7px 10px',color:'#3a4a72',fontSize:10}}>{r.uso}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{background:'rgba(59,130,246,0.07)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+      <strong style={{color:'#3b82f6'}}>EIA/TIA-568 — Cableado estructurado:</strong> El estándar que define cómo cablear edificios para soportar múltiples aplicaciones (voz, datos, video). Especifica subsistemas: cableado horizontal (desde el cuarto de telecomunicaciones al puesto de trabajo, Cat 6A recomendado), cableado vertical o backbone (entre pisos, típicamente fibra OM4), cuartos de telecomunicaciones (MDF y IDF) y patch panels para gestión de conexiones.
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Tipos de medios guiados',C:Scene1},{id:2,label:'Fibra óptica en detalle',C:Scene2},{id:3,label:'Comparativa y cableado',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 2.2 — Medios guiados: par trenzado, coaxial y fibra óptica</div><div className="topbar-sub">Módulo 2 — Capa Física</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comparar los medios guiados (UTP, coaxial, fibra) y seleccionar el adecuado para cada aplicación de red.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

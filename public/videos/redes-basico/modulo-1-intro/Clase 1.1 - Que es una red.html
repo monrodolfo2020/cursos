@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.1 — ¿Qué es una red de computadoras?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.warn-box{background:rgba(249,115,22,0.07);border-left:3px solid #f97316;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.ok-box{background:rgba(16,185,129,0.07);border-left:3px solid #10b981;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace;margin-right:6px;}
+.badge-b{background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);}
+.badge-o{background:rgba(249,115,22,0.15);color:#f97316;border:1px solid rgba(249,115,22,0.3);}
+.badge-g{background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);}
+.badge-v{background:rgba(139,92,246,0.15);color:#8b5cf6;border:1px solid rgba(139,92,246,0.3);}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  return(<div>
+    <div className="sec-title">¿Qué es una Red de Computadoras?</div>
+    <div className="sec-sub">Definición, propósito y evolución histórica</div>
+    <div className="grid2">
+      <div>
+        <div className="card">
+          <div className="card-h">Definición formal</div>
+          <div className="def-box">
+            Una <strong style={{color:'#e8f0fe'}}>red de computadoras</strong> es un conjunto de computadoras autónomas interconectadas mediante una sola tecnología. Dos computadoras están interconectadas si pueden intercambiar información. La conexión puede ser por cable de cobre, fibra óptica, microondas, infrarrojos, satélites o cualquier otro medio.
+          </div>
+          <p style={{fontSize:12,lineHeight:1.65,color:'#7c8db8',marginBottom:8,marginTop:8}}>
+            Una distinción crítica: una red de computadoras es <em>diferente</em> de un sistema distribuido. En un sistema distribuido, la existencia de múltiples computadoras autónomas es transparente para el usuario (parece una única máquina). En una red, el usuario es consciente de las máquinas individuales.
+          </p>
+          <div className="card-h" style={{marginTop:8}}>Objetivos de las redes</div>
+          {[
+            {o:'Compartir recursos',d:'Impresoras, discos, bases de datos, programas — disponibles para todos sin importar la ubicación física'},
+            {o:'Comunicación persona a persona',d:'Correo electrónico, mensajería instantánea, videoconferencia, redes sociales'},
+            {o:'Comercio electrónico',d:'Transacciones financieras, compra-venta, banca en línea, facturación electrónica'},
+            {o:'Entretenimiento',d:'Streaming de video y audio, juegos en línea, VoD (Video on Demand)'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{color:'#3b82f6',flexShrink:0,fontSize:11,marginTop:1}}>▸</span>
+              <div><span style={{fontSize:12,fontWeight:600,color:'#e8f0fe'}}>{r.o}: </span><span style={{fontSize:12,color:'#7c8db8'}}>{r.d}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="card">
+          <div className="card-h">Evolución histórica</div>
+          {[
+            {año:'1960s',h:'ARPANET',d:'La precursora de Internet, financiada por el Departamento de Defensa de EE.UU. Primer mensaje enviado entre UCLA y Stanford en 1969. Usaba conmutación de paquetes, concepto revolucionario de Kleinrock y Baran.'},
+            {año:'1970s',h:'TCP/IP y redes locales',d:'Cerf y Kahn diseñan TCP/IP (1974). Aparecen las primeras LANs experimentales en Xerox PARC. Ethernet inventada por Metcalfe y Boggs (1973).'},
+            {año:'1980s',h:'Expansión y estándares',d:'IEEE 802 define estándares de LAN. DNS inventado en 1983. NSFNET conecta universidades en EE.UU. El número de hosts supera los 100,000.'},
+            {año:'1990s',h:'World Wide Web',d:'Tim Berners-Lee inventa la Web en el CERN (1989-1991). Mosaic, el primer navegador gráfico (1993). Internet se comercializa. Boom del .com.'},
+            {año:'2000s',h:'Banda ancha y móvil',d:'ADSL y cable reemplazan el dial-up. WiFi se masifica. Redes 3G. Aparecen YouTube, Facebook, Twitter. Virtualización y cloud computing.'},
+            {año:'2010s+',h:'Era actual',d:'Smartphones dominan. 4G/5G. IoT conecta millones de dispositivos. Cloud computing (AWS, Azure, GCP). SDN y NFV transforman las redes.'},
+          ].map((r,i)=>(
+            <div key={i} className="row">
+              <span style={{fontFamily:'IBM Plex Mono,monospace',fontSize:10,color:'#3b82f6',flexShrink:0,width:44}}>{r.año}</span>
+              <div><span style={{fontSize:12,fontWeight:600,color:'#e8f0fe'}}>{r.h}: </span><span style={{fontSize:11,color:'#7c8db8'}}>{r.d}</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+function Scene2(){
+  const usos=[
+    {cat:'Empresas',icon:'🏢',items:['Compartir impresoras y almacenamiento central','Acceso a bases de datos corporativas','Correo electrónico y mensajería interna','VoIP y videoconferencias','CRM, ERP y sistemas de gestión distribuidos']},
+    {cat:'Personas / Hogares',icon:'🏠',items:['Acceso a Internet de banda ancha','Streaming (Netflix, YouTube, Spotify)','Redes sociales y comunicación','Juegos en línea multijugador','Smart home: dispositivos IoT conectados']},
+    {cat:'Usos móviles',icon:'📱',items:['Comunicaciones celulares 4G/5G','GPS y navegación en tiempo real','Pagos NFC y bancarios','Redes sociales móviles','Apps de transporte (Uber, delivery)']},
+    {cat:'Social / Gubernamental',icon:'🌐',items:['e-Government: trámites en línea','Telemedicina y salud remota','Educación a distancia (e-learning)','Votación electrónica','Inteligencia y defensa nacional']},
+  ];
+  return(<div>
+    <div className="sec-title">Usos de las Redes de Computadoras</div>
+    <div className="sec-sub">Aplicaciones en todos los sectores de la sociedad</div>
+    <div className="grid2" style={{gap:12}}>
+      {usos.map((u,i)=>(
+        <div key={i} className="card" style={{marginBottom:0}}>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:10}}>
+            <span style={{fontSize:20}}>{u.icon}</span>
+            <span style={{fontSize:14,fontWeight:700,color:'#e8f0fe'}}>{u.cat}</span>
+          </div>
+          {u.items.map((it,j)=>(
+            <div key={j} className="row">
+              <span style={{color:'#3b82f6',flexShrink:0}}>▸</span>
+              <span style={{fontSize:12,color:'#7c8db8'}}>{it}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+    <div className="ok-box" style={{marginTop:12}}>
+      <strong style={{color:'#10b981'}}>Perspectiva:</strong> Las redes de computadoras están transformando fundamentalmente la sociedad de la misma manera que las redes de distribución de energía eléctrica lo hicieron en el siglo XX. La conectividad ubícua es la nueva infraestructura crítica.
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const conceptos=[
+    {t:'Nodo (node)',d:'Cualquier dispositivo conectado a la red: computadora, servidor, router, switch, impresora, teléfono IP, cámara IP, sensor IoT. Cada nodo tiene una dirección única en la red.'},
+    {t:'Enlace (link)',d:'El canal de comunicación que conecta dos o más nodos. Puede ser físico (cable) o lógico (inalámbrico). Los enlaces tienen propiedades de ancho de banda, latencia y tasa de error.'},
+    {t:'Ancho de banda',d:'Capacidad máxima de transmisión de datos de un enlace, medida en bits por segundo (bps, Kbps, Mbps, Gbps). No confundir con velocidad de propagación (velocidad de la señal en el medio).'},
+    {t:'Latencia',d:'Tiempo que tarda un bit en viajar desde el emisor hasta el receptor. Incluye: retardo de propagación (distancia/velocidad), retardo de transmisión (tamaño paquete/ancho de banda) y retardo de procesamiento.'},
+    {t:'Protocolo',d:'Conjunto de reglas y convenciones que gobiernan la comunicación entre entidades de la red. Define formato de mensajes, orden de envío y recepción, y acciones ante errores.'},
+    {t:'Topología',d:'Estructura geométrica de la red: estrella (Star), bus, anillo (Ring), malla (Mesh), árbol (Tree), híbrida. Afecta la tolerancia a fallos, rendimiento y costo de implementación.'},
+    {t:'Arquitectura en capas',d:'Principio de diseño que divide la complejidad en niveles independientes. Cada capa ofrece servicios a la capa superior y usa servicios de la capa inferior. Facilita diseño modular y estándares interoperables.'},
+    {t:'Conmutación',d:'Proceso de dirigir los datos por la red hacia su destino. Dos paradigmas: conmutación de circuitos (camino dedicado, telefonía clásica) y conmutación de paquetes (datos divididos en paquetes, Internet).'},
+  ];
+  return(<div>
+    <div className="sec-title">Conceptos Fundamentales de Redes</div>
+    <div className="sec-sub">Terminología esencial que usaremos durante todo el curso</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      {conceptos.map((c,i)=>(
+        <div key={i} className="card" style={{marginBottom:0,padding:'11px 14px'}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#3b82f6',marginBottom:4,fontFamily:'IBM Plex Mono,monospace'}}>{c.t}</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.55}}>{c.d}</div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+const SCENES=[{id:1,label:'Definición e historia',C:Scene1},{id:2,label:'Usos y aplicaciones',C:Scene2},{id:3,label:'Conceptos clave',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 1.1 — ¿Qué es una red de computadoras?</div><div className="topbar-sub">Módulo 1 — Introducción · Redes de Computadoras</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Comprender qué es una red de computadoras, su evolución histórica, usos principales y terminología fundamental.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

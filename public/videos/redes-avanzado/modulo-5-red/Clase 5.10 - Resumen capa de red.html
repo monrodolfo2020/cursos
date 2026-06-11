@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 5.10 – Resumen Capa de Red</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.topic{background:#0a1020;border-left:3px solid;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:8px}
+.quiz-opt{background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:10px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;font-size:13px}
+.quiz-opt:hover{border-color:#3b82f6}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+const SCENES=[{id:1,label:"Mapa conceptual del módulo"},{id:2,label:"Protocolos y estándares clave"},{id:3,label:"Quiz de repaso"}];
+
+function Scene1(){
+  const [sel,setSel]=useState(null);
+  const topics=[
+    {id:"diseño",label:"5.1 Diseño de capa de red",color:"#3b82f6",pts:["Datagram vs Circuito Virtual","Routing tables y LPM","Planos: datos, control, gestión","TCAM vs SRAM en routers"]},
+    {id:"algos",label:"5.2 Algoritmos de ruteo",color:"#f97316",pts:["Dijkstra (Link State)","Bellman-Ford (Distance Vector)","Count-to-infinity problem","Ruteo jerárquico y multicast RPF"]},
+    {id:"protos",label:"5.3 Protocolos internet",color:"#10b981",pts:["RIP (DV, AD=120)","OSPF (LS, AD=110, áreas)","BGP (path vector, eBGP/iBGP)","Atributos BGP y selección"]},
+    {id:"congest",label:"5.4 Control de congestión",color:"#8b5cf6",pts:["Curva de colapso","RED y ECN","TCP AIMD, Slow Start","CUBIC vs BBR"]},
+    {id:"qos",label:"5.5 Calidad de servicio",color:"#ef4444",pts:["Token Bucket / Leaky Bucket","DiffServ DSCP (EF/AF/BE)","IntServ RSVP","Scheduling: WFQ, LLQ, WRR"]},
+    {id:"ip",label:"5.6 IPv4 e IPv6",color:"#3b82f6",pts:["Cabecera IPv4 (20B fija)","IPv6 (40B fija, sin fragmentación en routers)","NAT y RFC 1918","Transición: dual-stack, 6in4, NAT64"]},
+    {id:"icmp",label:"5.7 ICMP, ARP, DHCP",color:"#f97316",pts:["ICMP: ping, traceroute, type 3/11","ARP: broadcast→unicast, caché","DHCP DORA process","DHCP Relay Agent"]},
+    {id:"iw",label:"5.8 Internetworking",color:"#10b981",pts:["GRE, IPsec, VXLAN tunnels","Fragmentación IPv4 (offset, MF, DF)","PMTUD y Black Hole","MPLS: LER/LSR, Label Stack, PHP"]},
+    {id:"sdn",label:"5.9 SDN y NFV",color:"#8b5cf6",pts:["SDN: 3 planos, controlador central","OpenFlow: flow tables, PACKET_IN/OUT","NFV: VNFs sobre HW estándar","ETSI MANO: NFVO/VNFM/VIM"]},
+  ];
+  const t=topics.find(t=>t.id===sel);
+  return(
+    <div>
+      <h1>Módulo 5 — Resumen: La Capa de Red</h1>
+      <p className="subtitle">Selecciona un tema para ver los conceptos clave</p>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
+        {topics.map(t=>(
+          <div key={t.id} onClick={()=>setSel(sel===t.id?null:t.id)}
+            style={{background:sel===t.id?"#1e3a5f":"#0f1628",border:`1px solid ${sel===t.id?t.color:"#1e3a5f"}`,borderRadius:8,padding:"10px 14px",cursor:"pointer"}}>
+            <div style={{color:t.color,fontWeight:600,fontSize:12}}>{t.label}</div>
+          </div>
+        ))}
+      </div>
+      {t&&(
+        <div className="card" style={{border:`1px solid ${t.color}`}}>
+          <h3 style={{color:t.color}}>{t.label} — Puntos clave</h3>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {t.pts.map(p=>(
+              <div key={p} style={{background:"#0a1020",borderLeft:`3px solid ${t.color}`,borderRadius:"0 6px 6px 0",padding:"8px 12px",fontSize:13,color:"#e8f0fe"}}>{p}</div>
+            ))}
+          </div>
+        </div>
+      )}
+      {!t&&(
+        <div className="card">
+          <h3>Contexto en el modelo OSI</h3>
+          <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+            {[
+              {n:"7 Aplicación",c:"#8b5cf6",dim:true},{n:"6 Presentación",c:"#8b5cf6",dim:true},
+              {n:"5 Sesión",c:"#8b5cf6",dim:true},{n:"4 Transporte",c:"#10b981",dim:true},
+              {n:"3 Red ← Módulo 5",c:"#3b82f6",dim:false},{n:"2 Enlace",c:"#f97316",dim:true},
+              {n:"1 Física",c:"#7c8db8",dim:true},
+            ].map(l=>(
+              <div key={l.n} style={{background:l.dim?"#0a1020":"#1e3a5f",border:`2px solid ${l.dim?"#1e3a5f":l.c}`,borderRadius:6,padding:"8px 12px",textAlign:"center",fontSize:12,color:l.dim?"#3a4a72":l.c,fontWeight:l.dim?400:700,minWidth:120}}>{l.n}</div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Scene2(){
+  const protos=[
+    {proto:"IPv4",rfc:"RFC 791",capa:"Red",desc:"Protocolo de Internet versión 4, datagram, best-effort"},
+    {proto:"IPv6",rfc:"RFC 8200",capa:"Red",desc:"Sucesor de IPv4, 128-bit, cabecera simplificada"},
+    {proto:"ICMP",rfc:"RFC 792",capa:"Red",desc:"Control y diagnóstico para IPv4 (ping, traceroute)"},
+    {proto:"ICMPv6",rfc:"RFC 4443",capa:"Red",desc:"Control IPv6 + reemplaza ARP (NDP)"},
+    {proto:"ARP",rfc:"RFC 826",capa:"Enlace↔Red",desc:"Resolución IP→MAC en la misma LAN"},
+    {proto:"DHCP",rfc:"RFC 2131",capa:"Aplicación",desc:"Configuración dinámica de parámetros IP"},
+    {proto:"OSPF",rfc:"RFC 5340",capa:"Red",desc:"Link State, áreas, Dijkstra, IGP"},
+    {proto:"BGP-4",rfc:"RFC 4271",capa:"Red",desc:"Path Vector, EGP, inter-AS, internet global"},
+    {proto:"RIP-2",rfc:"RFC 2453",capa:"Red",desc:"Distance Vector, hop count, 15 max"},
+    {proto:"MPLS",rfc:"RFC 3031",capa:"2.5",desc:"Label switching entre L2 y L3"},
+    {proto:"OpenFlow",rfc:"ONF OF-1.5",capa:"SDN",desc:"Protocolo southbound controlador↔switch"},
+    {proto:"GRE",rfc:"RFC 2784",capa:"Red",desc:"Túnel genérico, encapsula cualquier protocolo"},
+  ];
+  const ports=[
+    {p:"DHCP",n:"67/68 UDP"},{p:"DNS",n:"53 TCP/UDP"},{p:"OSPF",n:"89 (IP proto)"},{p:"BGP",n:"179 TCP"},
+    {p:"ICMP",n:"1 (IP proto)"},{p:"GRE",n:"47 (IP proto)"},{p:"IPsec ESP",n:"50 (IP proto)"},{p:"IPsec AH",n:"51 (IP proto)"},
+  ];
+  return(
+    <div>
+      <h1>Protocolos y Estándares de la Capa de Red</h1>
+      <p className="subtitle">Referencia rápida de RFCs y protocolos del módulo 5</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Protocolos clave con RFC</h3>
+            <table><tbody>
+              <tr><th>Protocolo</th><th>RFC</th><th>Descripción</th></tr>
+              {protos.map(p=>(
+                <tr key={p.proto}>
+                  <td style={{color:"#3b82f6",fontWeight:600,width:80}}>{p.proto}</td>
+                  <td style={{color:"#f97316",fontSize:11,width:100,fontFamily:"monospace"}}>{p.rfc}</td>
+                  <td style={{fontSize:12}}>{p.desc}</td>
+                </tr>
+              ))}
+            </tbody></table>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Números de protocolo y puertos</h3>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {ports.map(p=>(
+                <div key={p.p} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:"8px 12px",display:"flex",justifyContent:"space-between"}}>
+                  <span style={{color:"#e8f0fe",fontWeight:600,fontSize:13}}>{p.p}</span>
+                  <span style={{color:"#3b82f6",fontFamily:"monospace",fontSize:12}}>{p.n}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3>Valores de Distancia Administrativa (AD)</h3>
+            <table><tbody>
+              <tr><th>Fuente de ruta</th><th>AD</th></tr>
+              <tr><td>Conectada directamente</td><td style={{color:"#10b981",fontWeight:700}}>0</td></tr>
+              <tr><td>Estática</td><td style={{color:"#10b981",fontWeight:700}}>1</td></tr>
+              <tr><td>OSPF</td><td style={{color:"#3b82f6",fontWeight:700}}>110</td></tr>
+              <tr><td>IS-IS</td><td style={{color:"#3b82f6",fontWeight:700}}>115</td></tr>
+              <tr><td>RIP</td><td style={{color:"#f97316",fontWeight:700}}>120</td></tr>
+              <tr><td>EIGRP externa</td><td style={{color:"#8b5cf6",fontWeight:700}}>170</td></tr>
+              <tr><td>BGP eBGP</td><td style={{color:"#ef4444",fontWeight:700}}>20</td></tr>
+              <tr><td>BGP iBGP</td><td style={{color:"#ef4444",fontWeight:700}}>200</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const questions=[
+    {q:"¿Cuál protocolo de ruteo usa el algoritmo de Dijkstra?",opts:["RIP","BGP","OSPF","EIGRP"],ans:2,exp:"OSPF es un protocolo Link State que ejecuta el algoritmo de Dijkstra (SPF) para calcular las rutas más cortas."},
+    {q:"¿Qué campo IPv4 indica la posición de un fragmento en el datagrama original?",opts:["Identification","TTL","Fragment Offset","Protocol"],ans:2,exp:"El Fragment Offset (13 bits) indica la posición del fragmento en unidades de 8 bytes."},
+    {q:"En DHCP, ¿qué significa la 'R' en el proceso DORA?",opts:["Release","Reply","Request","Route"],ans:2,exp:"DORA = Discover, Offer, Request, Acknowledgment. El cliente envía REQUEST para aceptar formalmente la oferta del servidor."},
+    {q:"¿Qué tipo de mensaje ICMP genera el comando traceroute?",opts:["Type 0 Echo Reply","Type 3 Destination Unreachable","Type 8 Echo Request","Type 11 Time Exceeded"],ans:3,exp:"Traceroute envía paquetes con TTL incremental. Cuando TTL=0, el router descarta el paquete y envía ICMP Type 11 Time Exceeded."},
+    {q:"En SDN, ¿qué componente separa el plano de control del plano de datos?",opts:["MPLS","El controlador SDN","OpenFlow switch","NFV VIM"],ans:1,exp:"El controlador SDN centraliza el plano de control y se comunica con los switches mediante APIs southbound (como OpenFlow)."},
+    {q:"¿Cuál es la diferencia principal entre DiffServ e IntServ?",opts:["DiffServ usa RSVP, IntServ usa DSCP","DiffServ es por flujo, IntServ es por clase","DiffServ marca paquetes por clase, IntServ reserva recursos por flujo","Son idénticos"],ans:2,exp:"DiffServ (DSCP) marca paquetes en clases de tráfico — escalable. IntServ/RSVP reserva recursos garantizados por cada flujo individual — no escala bien."},
+  ];
+  const [answers,setAnswers]=useState({});
+  const [show,setShow]=useState({});
+  const score=Object.entries(answers).filter(([k,v])=>questions[parseInt(k)].ans===v).length;
+  return(
+    <div>
+      <h1>Quiz de Repaso — Módulo 5</h1>
+      <p className="subtitle">Pon a prueba tus conocimientos de la capa de red</p>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+        {questions.map((q,i)=>{
+          const answered=answers[i]!==undefined;
+          const correct=answered&&answers[i]===q.ans;
+          return(
+            <div key={i} style={{background:"#0f1628",border:`1px solid ${answered?(correct?"#10b981":"#ef4444"):"#1e3a5f"}`,borderRadius:8,padding:14}}>
+              <div style={{color:"#e8f0fe",fontSize:13,fontWeight:600,marginBottom:10}}>{i+1}. {q.q}</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {q.opts.map((o,j)=>{
+                  let bg="#0a1020", border="#1e3a5f", color="#e8f0fe";
+                  if(answered){
+                    if(j===q.ans){bg="#0f2a1a";border="#10b981";color="#10b981";}
+                    else if(j===answers[i]&&j!==q.ans){bg="#2a0f0f";border="#ef4444";color="#ef4444";}
+                  }
+                  return(
+                    <div key={j} onClick={()=>{if(!answered){setAnswers({...answers,[i]:j})}}}
+                      style={{background:bg,border:`1px solid ${border}`,borderRadius:5,padding:"6px 10px",cursor:answered?"default":"pointer",color,fontSize:12}}>
+                      {o}
+                    </div>
+                  );
+                })}
+              </div>
+              {answered&&(
+                <div style={{marginTop:8,fontSize:11,color:"#7c8db8",background:"#0a1020",borderRadius:4,padding:"6px 8px"}}>{q.exp}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {Object.keys(answers).length===questions.length&&(
+        <div style={{background:"#0f1628",border:`2px solid ${score>=5?"#10b981":score>=3?"#f97316":"#ef4444"}`,borderRadius:10,padding:16,textAlign:"center"}}>
+          <div style={{fontSize:22,fontWeight:700,color:score>=5?"#10b981":score>=3?"#f97316":"#ef4444"}}>{score}/{questions.length}</div>
+          <div style={{color:"#e8f0fe",fontSize:14,marginTop:4}}>
+            {score>=5?"¡Excelente dominio del módulo!":score>=3?"Buen progreso, repasa los temas fallados":"Revisa el material del módulo 5"}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>5.10 Resumen M5</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

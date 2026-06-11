@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Clase 1.5 — Modelo TCP/IP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:1280px;height:720px;overflow:hidden;background:#060a14;font-family:'Space Grotesk',system-ui,sans-serif;color:#e8f0fe;}
+.slide{width:1280px;height:720px;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:linear-gradient(135deg,#060a14,#0a1020);border-bottom:2px solid rgba(59,130,246,0.35);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:#3b82f6;}
+.topbar-sub{font-size:11px;color:#7c8db8;font-family:'IBM Plex Mono',monospace;}
+.scene-badge{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);color:#3b82f6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;}
+.content{flex:1;display:flex;overflow:hidden;}
+.sidebar{width:220px;background:#0a1020;border-right:1px solid rgba(59,130,246,0.12);padding:12px 0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:11px;color:#3a4a72;border-left:3px solid transparent;transition:all .2s;font-family:'IBM Plex Mono',monospace;line-height:1.4;}
+.nav-item.active{color:#3b82f6;border-left-color:#3b82f6;background:rgba(59,130,246,0.07);font-weight:600;}
+.nav-item:hover:not(.active){color:#e8f0fe;background:rgba(255,255,255,0.03);}
+.main{flex:1;padding:18px 24px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.18);border-radius:2px;}
+.sec-title{font-size:21px;font-weight:700;color:#3b82f6;margin-bottom:3px;}
+.sec-sub{font-size:11px;color:#3a4a72;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.card{background:#0f1628;border:1px solid rgba(59,130,246,0.14);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.card-h{font-size:11px;font-weight:600;color:#3b82f6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+.def-box{background:#060a14;border-left:3px solid #3b82f6;border-radius:0 8px 8px 0;padding:11px 16px;margin:8px 0;font-size:12px;line-height:1.65;}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.08);align-items:flex-start;}
+.row:last-child{border-bottom:none;}
+</style></head><body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState}=React;
+
+function Scene1(){
+  const capas=[
+    {n:4,nombre:'Aplicación',color:'#f97316',osi:'5,6,7',prot:'HTTP, HTTPS, FTP, SMTP, POP3, IMAP, DNS, DHCP, SSH, Telnet, SNMP, NTP, RTP',desc:'Combina las capas de sesión, presentación y aplicación del modelo OSI. Los protocolos de aplicación gestionan sus propias necesidades de sesión y formato. Es la capa donde viven los servicios de Internet que usamos a diario.'},
+    {n:3,nombre:'Transporte',color:'#8b5cf6',osi:'4',prot:'TCP (confiable, conexión), UDP (rápido, sin conexión), SCTP',desc:'Entrega datos de extremo a extremo entre procesos identificados por puertos. TCP garantiza entrega ordenada, sin pérdidas, con control de flujo y congestión. UDP es más simple: entrega rápida sin garantías, ideal para tiempo real.'},
+    {n:2,nombre:'Internet',color:'#3b82f6',osi:'3',prot:'IPv4, IPv6, ICMP, ICMPv6, ARP, RARP, BGP, OSPF, RIP',desc:'La capa "pegamento" de Internet. IP define el direccionamiento global y el enrutamiento entre redes. Es deliberadamente simple y sin estado ("dumb network") para maximizar la flexibilidad y la innovación en los extremos.'},
+    {n:1,nombre:'Acceso a la Red (Host-to-Network)',color:'#10b981',osi:'1,2',prot:'Ethernet, WiFi (802.11), PPP, DOCSIS, Frame Relay, ATM, cualquier enlace',desc:'Todo lo relacionado con la tecnología de enlace específica: cómo se transmiten los paquetes IP sobre un enlace concreto. TCP/IP no especifica cómo debe funcionar esta capa — puede ser cualquier tecnología que transporte paquetes IP.'},
+  ];
+  return(<div>
+    <div className="sec-title">El Modelo TCP/IP — Internet en 4 Capas</div>
+    <div className="sec-sub">El modelo práctico que usa toda Internet</div>
+    {capas.map(c=>(
+      <div key={c.n} style={{display:'flex',gap:12,alignItems:'flex-start',marginBottom:10,background:'#0f1628',borderRadius:10,padding:'12px 16px',borderLeft:`3px solid ${c.color}`,border:`1px solid ${c.color}22`}}>
+        <div style={{flexShrink:0,width:50}}>
+          <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:20,fontWeight:700,color:c.color}}>L{c.n}</div>
+          <div style={{fontSize:9,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace',marginTop:2}}>≡OSI {c.osi}</div>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:15,fontWeight:700,color:c.color,marginBottom:4}}>{c.nombre}</div>
+          <div style={{fontSize:12,color:'#7c8db8',lineHeight:1.55,marginBottom:6}}>{c.desc}</div>
+          <div style={{fontSize:10,color:'#3a4a72',fontFamily:'IBM Plex Mono,monospace',lineHeight:1.5}}>
+            <span style={{color:c.color,fontWeight:700}}>PROTOCOLOS: </span>{c.prot}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>);
+}
+
+function Scene2(){
+  const comp=[
+    {aspecto:'Número de capas',osi:'7',tcp:'4 (o 5 en versión extendida)',ganador:'tcp',motivo:'TCP/IP es más pragmático, combina lo que rara vez se implementa por separado'},
+    {aspecto:'Capas de sesión y presentación',osi:'Explícitas (capas 5 y 6)',tcp:'Absorbidas en capa de aplicación',ganador:'tcp',motivo:'En la práctica, HTTP/TLS/WebSocket gestionan sesión y presentación'},
+    {aspecto:'Protocolo de red',osi:'Sin especificar (genérico)',tcp:'IP (IPv4 + IPv6)',ganador:'tcp',motivo:'OSI fue diseñado para funcionar con cualquier protocolo de red'},
+    {aspecto:'Modelo de servicios',osi:'Orientado a conexión y sin conexión',tcp:'Sin conexión en red (IP), ambos en transporte',ganador:'empate',motivo:'Ambos modelos soportan ambos paradigmas'},
+    {aspecto:'Adopción real',osi:'Casi nula (referencia académica)',tcp:'Universal (toda Internet)',ganador:'tcp',motivo:'El timing y las implementaciones gratuitas de BSD ganaron la batalla'},
+    {aspecto:'Claridad para enseñar',osi:'Alta (7 capas bien definidas)',tcp:'Media (capa de acceso poco especificada)',ganador:'osi',motivo:'OSI es mejor para entender conceptos; TCP/IP para implementar'},
+    {aspecto:'Estandarización',osi:'ISO/IEC 7498 — estándar formal',tcp:'RFCs (IETF) — proceso abierto',ganador:'tcp',motivo:'El proceso RFC es más ágil y permite evolución rápida'},
+  ];
+  return(<div>
+    <div className="sec-title">OSI vs. TCP/IP — Comparación Detallada</div>
+    <div className="sec-sub">Ambos modelos tienen su lugar según el contexto</div>
+    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+      <thead>
+        <tr style={{borderBottom:'2px solid rgba(59,130,246,0.3)'}}>
+          {['Aspecto','Modelo OSI','Modelo TCP/IP','Comentario'].map((h,i)=>(
+            <th key={i} style={{padding:'8px 10px',color:'#3b82f6',textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9,letterSpacing:'.08em'}}>{h}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {comp.map((r,i)=>(
+          <tr key={i} style={{background:i%2===0?'#0f1628':'transparent',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+            <td style={{padding:'8px 10px',color:'#e8f0fe',fontWeight:600}}>{r.aspecto}</td>
+            <td style={{padding:'8px 10px',color:r.ganador==='osi'?'#10b981':'#7c8db8'}}>{r.osi}</td>
+            <td style={{padding:'8px 10px',color:r.ganador==='tcp'?'#10b981':'#7c8db8'}}>{r.tcp}</td>
+            <td style={{padding:'8px 10px',color:'#3a4a72',fontSize:10,fontStyle:'italic'}}>{r.motivo}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style={{marginTop:12,background:'rgba(59,130,246,0.07)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#7c8db8',lineHeight:1.6}}>
+      <strong style={{color:'#3b82f6'}}>Enfoque del curso:</strong> Usamos el modelo OSI como marco de referencia para la terminología y el análisis. Estudiamos los protocolos TCP/IP porque son los que realmente funcionan en Internet. Esta combinación es el estándar en la industria y en todas las certificaciones de redes.
+    </div>
+  </div>);
+}
+
+function Scene3(){
+  const pila=[
+    {capa:'Aplicación (L4)',ejemplos:[
+      {app:'Navegador web',proto:'HTTP/HTTPS (puerto 80/443)',fun:'Solicita y recibe páginas web'},
+      {app:'Cliente de correo',proto:'SMTP (25), POP3 (110), IMAP (143)',fun:'Envía y recibe correos'},
+      {app:'SSH',proto:'SSH (puerto 22)',fun:'Terminal remota cifrada'},
+      {app:'DNS resolver',proto:'DNS (puerto 53 UDP/TCP)',fun:'Resuelve nombres de dominio a IPs'},
+    ],color:'#f97316'},
+    {capa:'Transporte (L3)',ejemplos:[
+      {app:'HTTP, HTTPS, SSH, SMTP',proto:'TCP — entrega confiable, control de flujo',fun:'Segmentos numerados, retransmisión automática'},
+      {app:'DNS, DHCP, VoIP, gaming',proto:'UDP — entrega rápida, sin garantías',fun:'Datagramas independientes, sin conexión'},
+    ],color:'#8b5cf6'},
+    {capa:'Internet (L2)',ejemplos:[
+      {app:'Todo el tráfico IP',proto:'IPv4 / IPv6 — encaminamiento',fun:'Paquetes con IP origen y destino'},
+      {app:'Diagnóstico de red',proto:'ICMP — mensajes de control y error',fun:'ping, traceroute, mensajes de error'},
+    ],color:'#3b82f6'},
+  ];
+  return(<div>
+    <div className="sec-title">La Pila TCP/IP en Acción</div>
+    <div className="sec-sub">Cómo interactúan las capas cuando abres una página web</div>
+    {pila.map((p,pi)=>(
+      <div key={pi} className="card" style={{borderColor:p.color+'33',marginBottom:10}}>
+        <div style={{fontFamily:'IBM Plex Mono,monospace',fontSize:12,fontWeight:700,color:p.color,marginBottom:8}}>CAPA {p.capa}</div>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+          <thead>
+            <tr style={{borderBottom:`1px solid ${p.color}33`}}>
+              {['Aplicación / Servicio','Protocolo','Función'].map((h,i)=>(
+                <th key={i} style={{padding:'5px 8px',color:p.color,textAlign:'left',fontFamily:'IBM Plex Mono,monospace',fontSize:9,letterSpacing:'.08em'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {p.ejemplos.map((e,i)=>(
+              <tr key={i} style={{borderBottom:'1px solid rgba(59,130,246,0.06)'}}>
+                <td style={{padding:'6px 8px',color:'#e8f0fe'}}>{e.app}</td>
+                <td style={{padding:'6px 8px',color:'#7c8db8',fontFamily:'IBM Plex Mono,monospace',fontSize:10}}>{e.proto}</td>
+                <td style={{padding:'6px 8px',color:'#3a4a72',fontStyle:'italic'}}>{e.fun}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ))}
+  </div>);
+}
+
+const SCENES=[{id:1,label:'TCP/IP: 4 capas',C:Scene1},{id:2,label:'OSI vs TCP/IP',C:Scene2},{id:3,label:'La pila en acción',C:Scene3}];
+function App(){
+  const [sc,setSc]=useState(1);
+  const cur=SCENES.find(s=>s.id===sc);
+  return(
+    <div className="slide">
+      <div className="topbar">
+        <div><div className="topbar-title">Clase 1.5 — Modelo TCP/IP: comparación con OSI</div><div className="topbar-sub">Módulo 1 — Introducción</div></div>
+        <div className="scene-badge">ESCENA {sc}/{SCENES.length}</div>
+      </div>
+      <div className="content">
+        <div className="sidebar">
+          <div style={{padding:'8px 14px',fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.16em',textTransform:'uppercase',marginBottom:4}}>Contenido</div>
+          {SCENES.map(s=><div key={s.id} className={`nav-item${sc===s.id?' active':''}`} onClick={()=>setSc(s.id)}>{String(s.id).padStart(2,'0')} · {s.label}</div>)}
+          <div style={{flex:1}}/>
+          <div style={{padding:'10px 14px',borderTop:'1px solid rgba(59,130,246,0.1)'}}>
+            <div style={{fontSize:10,color:'#3b82f6',fontFamily:'IBM Plex Mono,monospace',letterSpacing:'.12em',marginBottom:4}}>OBJETIVO</div>
+            <div style={{fontSize:11,color:'#3a4a72',lineHeight:1.5}}>Entender las 4 capas del modelo TCP/IP, compararlas con OSI y ver cómo se usan en la práctica.</div>
+          </div>
+        </div>
+        <div className="main"><cur.C/></div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

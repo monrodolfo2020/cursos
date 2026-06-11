@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Clase 7.4 – Web Dinámica: Cookies, Sesiones y CDN</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060a14;color:#e8f0fe;font-family:'Segoe UI',sans-serif;width:1280px;height:720px;overflow:hidden}
+.layout{display:flex;height:720px}
+.sidebar{width:220px;background:#0f1628;border-right:1px solid #1e3a5f;display:flex;flex-direction:column;padding:16px 0}
+.sidebar h2{color:#3b82f6;font-size:13px;font-weight:700;padding:0 16px 12px;border-bottom:1px solid #1e3a5f;text-transform:uppercase;letter-spacing:.5px}
+.nav-btn{background:none;border:none;color:#7c8db8;padding:10px 16px;text-align:left;cursor:pointer;font-size:13px;width:100%;transition:all .2s;border-left:3px solid transparent;line-height:1.4}
+.nav-btn:hover{color:#e8f0fe;background:#0a1020}
+.nav-btn.active{color:#3b82f6;background:#0a1020;border-left-color:#3b82f6;font-weight:600}
+.content{flex:1;padding:32px;overflow-y:auto}
+h1{font-size:22px;font-weight:700;color:#e8f0fe;margin-bottom:6px}
+.subtitle{color:#7c8db8;font-size:14px;margin-bottom:24px}
+.card{background:#0f1628;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin-bottom:16px}
+.card h3{color:#3b82f6;font-size:15px;font-weight:600;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#0a1020;color:#3b82f6;padding:8px 10px;text-align:left;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #1e3a5f;color:#e8f0fe}
+tr:last-child td{border-bottom:none}
+.mono{font-family:monospace;background:#0a1020;border:1px solid #1e3a5f;border-radius:6px;padding:12px;font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState}=React;
+const SCENES=[{id:1,label:"Cookies y sesiones"},{id:2,label:"Tecnologías web dinámicas"},{id:3,label:"CDN y rendimiento web"}];
+
+function Scene1(){
+  const [tab,setTab]=useState("cookie");
+  const cookieAttrs=[
+    {a:"Domain",v:"example.com",desc:"Dominios a los que se envía la cookie. Sin domain: solo el host exacto."},
+    {a:"Path",v:"/cart",desc:"Ruta del servidor donde aplica. / = todo el dominio."},
+    {a:"Expires/Max-Age",v:"2025-12-31 / 86400",desc:"Expiración. Sin este atributo: cookie de sesión (se borra al cerrar browser)."},
+    {a:"Secure",v:"(flag)",desc:"Solo se envía en HTTPS. Evita sniffing en HTTP."},
+    {a:"HttpOnly",v:"(flag)",desc:"JavaScript no puede acceder. Protege contra ataques XSS."},
+    {a:"SameSite",v:"Strict/Lax/None",desc:"Controla envío en cross-site requests. Strict: nunca cross-site."},
+  ];
+  return(
+    <div>
+      <h1>Cookies y Gestión de Sesiones</h1>
+      <p className="subtitle">HTTP es stateless: las cookies añaden estado persistente entre requests del mismo cliente</p>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        {["cookie","session","storage"].map(t=>(
+          <button key={t} onClick={()=>setTab(t)}
+            style={{background:tab===t?"#3b82f6":"#0a1020",border:"1px solid #1e3a5f",color:tab===t?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 18px",cursor:"pointer",fontWeight:600,fontSize:13}}>
+            {t==="cookie"?"Cookies HTTP":t==="session"?"Sesiones":"Web Storage"}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {tab==="cookie"&&(
+            <div className="card">
+              <h3>Atributos de Cookie</h3>
+              <div className="mono" style={{marginBottom:10,fontSize:11}}>
+                Set-Cookie: sessionId=abc123; Domain=example.com;<br/>
+                Path=/; Secure; HttpOnly; SameSite=Lax;<br/>
+                Max-Age=86400
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {cookieAttrs.map(a=>(
+                  <div key={a.a} style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:5,padding:"6px 10px"}}>
+                    <div style={{display:"flex",gap:8,marginBottom:2}}>
+                      <span style={{color:"#3b82f6",fontFamily:"monospace",fontWeight:600,fontSize:12}}>{a.a}</span>
+                      <span style={{color:"#f97316",fontFamily:"monospace",fontSize:11}}>{a.v}</span>
+                    </div>
+                    <div style={{color:"#7c8db8",fontSize:11}}>{a.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {tab==="session"&&(
+            <div className="card">
+              <h3>Patrón de Sesión Web</h3>
+              <div className="mono" style={{fontSize:11,marginBottom:10}}>
+                <div style={{color:"#7c8db8"}}>1. Login → servidor crea sesión</div>
+                <div>sessionId = crypto.randomUUID() // "abc123"</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}>2. Almacena en servidor:</div>
+                <div>sessions["abc123"] = {"{"}userId:42, role:"admin"{"}"}</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}>3. Envía al cliente:</div>
+                <div>Set-Cookie: sessionId=abc123; HttpOnly; Secure</div>
+                <div style={{marginTop:6,color:"#7c8db8"}}>4. Próximo request:</div>
+                <div>Cookie: sessionId=abc123 → servidor valida</div>
+              </div>
+              <div style={{background:"#0a1020",border:"1px solid #f97316",borderRadius:6,padding:10,fontSize:12}}>
+                <div style={{color:"#f97316",fontWeight:600,marginBottom:4}}>JWT (JSON Web Token)</div>
+                <div style={{color:"#7c8db8"}}>Alternativa stateless: el estado va en el token firmado. El servidor no necesita almacenar sesiones. Útil para APIs y microservicios.</div>
+              </div>
+            </div>
+          )}
+          {tab==="storage"&&(
+            <div className="card">
+              <h3>Web Storage API</h3>
+              <table><tbody>
+                <tr><th>API</th><th>Alcance</th><th>Persistencia</th><th>Tamaño</th></tr>
+                <tr><td style={{color:"#3b82f6"}}>localStorage</td><td>Origen</td><td>Permanente</td><td>~5-10 MB</td></tr>
+                <tr><td style={{color:"#f97316"}}>sessionStorage</td><td>Pestaña</td><td>Hasta cerrar</td><td>~5-10 MB</td></tr>
+                <tr><td style={{color:"#10b981"}}>Cookie</td><td>Dominio+path</td><td>Configurable</td><td>4 KB</td></tr>
+                <tr><td style={{color:"#8b5cf6"}}>IndexedDB</td><td>Origen</td><td>Permanente</td><td>Cientos MB</td></tr>
+              </tbody></table>
+              <div className="mono" style={{marginTop:10,fontSize:11}}>
+                localStorage.setItem("theme","dark")<br/>
+                const t=localStorage.getItem("theme")<br/>
+                localStorage.removeItem("theme")
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>Ciclo de vida de una cookie</h3>
+            <div className="mono" style={{fontSize:11}}>
+              <div style={{color:"#7c8db8"}}>1. Cliente → Servidor (primer request):</div>
+              <div>GET /login HTTP/1.1</div>
+              <div style={{marginTop:8,color:"#7c8db8"}}>2. Servidor → Cliente (response):</div>
+              <div>HTTP/1.1 200 OK</div>
+              <div>Set-Cookie: user_pref=dark_mode; Max-Age=2592000</div>
+              <div style={{marginTop:8,color:"#7c8db8"}}>3. Navegador guarda la cookie</div>
+              <div style={{color:"#7c8db8"}}>4. Futuros requests al mismo dominio:</div>
+              <div>GET /profile HTTP/1.1</div>
+              <div>Cookie: user_pref=dark_mode</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Tipos de cookies por propósito</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {t:"Sesión",c:"#3b82f6",d:"Mantienen al usuario autenticado. Expiran al cerrar el browser."},
+                {t:"Preferencias",c:"#10b981",d:"Idioma, tema, configuraciones del usuario."},
+                {t:"Seguimiento",c:"#f97316",d:"Analytics (Google Analytics), publicidad, remarketing."},
+                {t:"Terceros",c:"#ef4444",d:"Establecidas por dominios externos (redes sociales, ads). Reguladas por GDPR/CCPA."},
+              ].map(i=>(
+                <div key={i.t} style={{background:"#0a1020",border:`1px solid ${i.c}33`,borderRadius:6,padding:8}}>
+                  <div style={{color:i.c,fontWeight:600}}>{i.t}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{i.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene2(){
+  const [tab,setTab]=useState("php");
+  return(
+    <div>
+      <h1>Tecnologías Web Dinámicas</h1>
+      <p className="subtitle">La web dinámica genera contenido en el servidor o cliente en respuesta a cada request</p>
+      <div style={{display:"flex",gap:8,marginBottom:16}}>
+        {["php","cgi","ajax","spa"].map(t=>(
+          <button key={t} onClick={()=>setTab(t)}
+            style={{background:tab===t?"#8b5cf6":"#0a1020",border:"1px solid #1e3a5f",color:tab===t?"#0a1020":"#e8f0fe",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:600,fontSize:12}}>
+            {t.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <div className="grid2">
+        <div>
+          {tab==="php"&&(
+            <div className="card">
+              <h3>PHP — Hypertext Preprocessor</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>PHP ejecuta en el servidor. El HTML final se envía al cliente sin código PHP. Embebe código directamente en el HTML con etiquetas <code style={{color:"#3b82f6"}}>{"<?php ?>"}</code>.</p>
+              <div className="mono" style={{fontSize:11}}>
+                <div style={{color:"#7c8db8"}}>&lt;!-- saludo.php --&gt;</div>
+                <div>&lt;html&gt;&lt;body&gt;</div>
+                <div>&lt;?php</div>
+                <div style={{color:"#3b82f6"}}>  $name = $_GET["name"] ?? "visitante";</div>
+                <div style={{color:"#3b82f6"}}>  $hour = date("H");</div>
+                <div style={{color:"#3b82f6"}}>  $msg = $hour &lt; 12 ? "Buenos días" : "Buenas tardes";</div>
+                <div style={{color:"#3b82f6"}}>  echo "&lt;h1&gt;$msg, $name!&lt;/h1&gt;";</div>
+                <div>?&gt;</div>
+                <div>&lt;/body&gt;&lt;/html&gt;</div>
+              </div>
+            </div>
+          )}
+          {tab==="cgi"&&(
+            <div className="card">
+              <h3>CGI y Evolución de la Web Dinámica</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>CGI (Common Gateway Interface) fue el primer estándar para scripts del lado del servidor (1993). El servidor ejecuta un programa por cada request.</p>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {[
+                  {n:"CGI (1993)",c:"#7c8db8",d:"Fork de proceso por request. Lento pero universal."},
+                  {n:"FastCGI (1996)",c:"#3b82f6",d:"Proceso persistente, reduce overhead. Usado con PHP-FPM."},
+                  {n:"WSGI / ASGI (Python)",c:"#f97316",d:"Interfaz Python-servidor. Django/Flask (WSGI), FastAPI (ASGI)."},
+                  {n:"Rack (Ruby) / JSGI",c:"#10b981",d:"Equivalente para Ruby on Rails y JavaScript."},
+                  {n:"Serverless (Lambda)",c:"#8b5cf6",d:"Función en la nube por evento. Sin gestión de servidor."},
+                ].map(i=>(
+                  <div key={i.n} style={{background:"#0a1020",border:`1px solid ${i.c}44`,borderRadius:6,padding:"8px 12px"}}>
+                    <div style={{color:i.c,fontWeight:600,fontSize:12}}>{i.n}</div>
+                    <div style={{color:"#7c8db8",fontSize:11,marginTop:2}}>{i.d}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {tab==="ajax"&&(
+            <div className="card">
+              <h3>AJAX — Actualización sin recargar página</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>AJAX (Asynchronous JavaScript and XML) permite actualizar partes de la página sin recargarla completa, mediante requests HTTP asíncronos.</p>
+              <div className="mono" style={{fontSize:11}}>
+                <div style={{color:"#7c8db8"}}>// Fetch API (moderno)</div>
+                <div>fetch('/api/users')</div>
+                <div>  .then(r =&gt; r.json())</div>
+                <div>  .then(data =&gt; {"{"}}</div>
+                <div style={{color:"#3b82f6"}}>    document.getElementById('list')</div>
+                <div style={{color:"#3b82f6"}}>      .innerHTML = data.map(u =&gt;</div>
+                <div style={{color:"#3b82f6"}}>        `&lt;li&gt;${"{"}u.name{"}"}&lt;/li&gt;`).join('')</div>
+                <div>  {"}"});</div>
+                <div style={{marginTop:8,color:"#7c8db8"}}>// Sin AJAX: recarga completa</div>
+                <div style={{color:"#7c8db8"}}>// Con AJAX: solo actualiza el &lt;ul&gt;</div>
+              </div>
+            </div>
+          )}
+          {tab==="spa"&&(
+            <div className="card">
+              <h3>SPA — Single Page Application</h3>
+              <p style={{color:"#e8f0fe",fontSize:13,lineHeight:1.7,marginBottom:10}}>Las SPA cargan una sola página HTML y actualizan el DOM dinámicamente. El router es del lado del cliente.</p>
+              <table><tbody>
+                <tr><th></th><th style={{color:"#3b82f6"}}>SPA</th><th style={{color:"#f97316"}}>MPA tradicional</th></tr>
+                <tr><td>Carga inicial</td><td>Lenta</td><td>Rápida</td></tr>
+                <tr><td>Navegación</td><td>Instantánea</td><td>Recarga completa</td></tr>
+                <tr><td>SEO</td><td>Requiere SSR</td><td>Excelente nativo</td></tr>
+                <tr><td>Ejemplos</td><td>React, Vue, Angular</td><td>PHP, Django, Rails</td></tr>
+                <tr><td>API</td><td>REST / GraphQL</td><td>HTML directo</td></tr>
+              </tbody></table>
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="card">
+            <h3>Arquitectura cliente-servidor moderna</h3>
+            <div className="mono" style={{fontSize:11,marginBottom:12}}>
+              <div style={{color:"#8b5cf6",textAlign:"center"}}>Browser (React/Vue/Angular SPA)</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>↕ HTTPS + JSON (REST/GraphQL)</div>
+              <div style={{color:"#f97316",textAlign:"center"}}>CDN / API Gateway / Load Balancer</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>↕</div>
+              <div style={{color:"#3b82f6",textAlign:"center"}}>Microservicios (Node.js/Python/Go)</div>
+              <div style={{color:"#7c8db8",textAlign:"center"}}>↕</div>
+              <div style={{color:"#10b981",textAlign:"center"}}>Base de datos (PostgreSQL/Redis/MongoDB)</div>
+            </div>
+          </div>
+          <div className="card">
+            <h3>Server-Side Rendering vs Client-Side</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"CSR (Client-Side Rendering)",c:"#8b5cf6",d:"JS descarga, ejecuta y renderiza en browser. Lento FCP, rápido en interacciones."},
+                {n:"SSR (Server-Side Rendering)",c:"#3b82f6",d:"HTML generado en servidor por request. Rápido FCP, bueno para SEO. Next.js, Nuxt."},
+                {n:"SSG (Static Site Generation)",c:"#10b981",d:"HTML pre-generado en build. Ultra rápido. Blog, docs. Gatsby, Hugo, Astro."},
+                {n:"ISR (Incremental Static Regen.)",c:"#f97316",d:"SSG + regeneración on-demand. Balance rendimiento/frescura. Next.js."},
+              ].map(i=>(
+                <div key={i.n} style={{background:"#0a1020",border:`1px solid ${i.c}44`,borderRadius:6,padding:8}}>
+                  <div style={{color:i.c,fontWeight:600}}>{i.n}</div>
+                  <div style={{color:"#7c8db8",marginTop:2}}>{i.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene3(){
+  const [region,setRegion]=useState(null);
+  const regions=[
+    {id:"na",label:"América del Norte",lat:40,lng:-100,pops:["Nueva York","Los Ángeles","Toronto","Miami","Dallas"],color:"#3b82f6"},
+    {id:"eu",label:"Europa",lat:51,lng:10,pops:["Fráncfort","Ámsterdam","Londres","París","Madrid"],color:"#f97316"},
+    {id:"as",label:"Asia-Pacífico",lat:30,lng:120,pops:["Tokio","Singapur","Hong Kong","Sídney","Seúl"],color:"#10b981"},
+  ];
+  return(
+    <div>
+      <h1>CDN — Content Delivery Network</h1>
+      <p className="subtitle">Una CDN distribuye contenido estático en servidores PoP (Points of Presence) globales para reducir latencia</p>
+      <div className="grid2">
+        <div>
+          <div className="card">
+            <h3>Cómo funciona una CDN</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:13,lineHeight:1.7}}>
+              {[
+                {n:"1. Usuario request",c:"#3b82f6",d:"El browser consulta DNS del dominio cdn.example.com"},
+                {n:"2. Anycast / GeoDNS",c:"#f97316",d:"CDN resuelve al servidor PoP más cercano geográficamente"},
+                {n:"3. Caché hit",c:"#10b981",d:"Si el PoP tiene el recurso en caché → responde directamente"},
+                {n:"4. Caché miss",c:"#8b5cf6",d:"PoP solicita al servidor origen, guarda en caché, devuelve al cliente"},
+                {n:"5. TTL expirado",c:"#06b6d4",d:"PoP revalida con el origen (If-None-Match / If-Modified-Since)"},
+              ].map(s=>(
+                <div key={s.n} style={{background:"#0a1020",border:`1px solid ${s.c}33`,borderRadius:6,padding:8}}>
+                  <div style={{color:s.c,fontWeight:600,fontSize:12}}>{s.n}</div>
+                  <div style={{color:"#7c8db8",fontSize:11,marginTop:2}}>{s.d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="card">
+            <h3>Contenido que la CDN sirve</h3>
+            <table style={{marginBottom:12}}><tbody>
+              <tr><th>Tipo</th><th>Ejemplos</th><th>Cache TTL</th></tr>
+              <tr><td style={{color:"#3b82f6"}}>Imágenes</td><td>jpg, png, webp, svg</td><td>1 año</td></tr>
+              <tr><td style={{color:"#3b82f6"}}>JS/CSS</td><td>bundle.js, styles.css</td><td>1 año (hash)</td></tr>
+              <tr><td style={{color:"#f97316"}}>Vídeo</td><td>mp4, HLS, DASH</td><td>Variable</td></tr>
+              <tr><td style={{color:"#10b981"}}>Fuentes</td><td>woff, woff2</td><td>1 año</td></tr>
+              <tr><td style={{color:"#7c8db8"}}>HTML dinámico</td><td>páginas SSR</td><td>No (bypass)</td></tr>
+            </tbody></table>
+          </div>
+          <div className="card">
+            <h3>Beneficios y proveedores</h3>
+            <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12}}>
+              {[
+                {n:"Latencia reducida",c:"#10b981",d:"PoP cercano = menos RTT. De 300ms a 10ms para assets."},
+                {n:"Ancho de banda",c:"#3b82f6",d:"Descarga el origen. 80–95% del tráfico servido por CDN."},
+                {n:"Alta disponibilidad",c:"#f97316",d:"Si origen cae, CDN sigue sirviendo caché. Failover automático."},
+                {n:"Seguridad",c:"#8b5cf6",d:"DDoS mitigation, WAF (Web Application Firewall), TLS termination."},
+              ].map(b=>(
+                <div key={b.n} style={{background:"#0a1020",border:`1px solid ${b.c}44`,borderRadius:6,padding:"6px 10px"}}>
+                  <span style={{color:b.c,fontWeight:600}}>{b.n}: </span>
+                  <span style={{color:"#7c8db8"}}>{b.d}</span>
+                </div>
+              ))}
+              <div style={{background:"#0a1020",border:"1px solid #1e3a5f",borderRadius:6,padding:8,marginTop:4}}>
+                <div style={{color:"#e8f0fe",fontWeight:600,fontSize:12,marginBottom:4}}>Principales CDN</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {["Cloudflare","Akamai","AWS CloudFront","Fastly","Google Cloud CDN","Azure CDN"].map(p=>(
+                    <span key={p} style={{background:"#1e3a5f",color:"#3b82f6",borderRadius:4,padding:"2px 8px",fontSize:11,fontWeight:600}}>{p}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [sc,setSc]=useState(1);
+  return(
+    <div className="layout">
+      <div className="sidebar">
+        <h2>7.4 Web Dinámica</h2>
+        {SCENES.map(s=>(
+          <button key={s.id} className={`nav-btn${sc===s.id?" active":""}`} onClick={()=>setSc(s.id)}>
+            {s.id}. {s.label}
+          </button>
+        ))}
+      </div>
+      <div className="content">
+        {sc===1&&<Scene1/>}
+        {sc===2&&<Scene2/>}
+        {sc===3&&<Scene3/>}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
